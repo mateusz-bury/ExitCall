@@ -126,13 +126,13 @@ Purpose: visible record of progress and completed milestones.
 ## Initial status assignment
 
 - **Ready:** #1
-- **Backlog:** #2–#39 (move the next dependency to Ready only when it is actually actionable)
+- **Backlog:** #2–#39 and #51 (move the next dependency to Ready only when it is actually actionable)
 - **Icebox:** #40–#43
 - **Done:** #44–#50
 
 Suggested near-term sequence:
 
-`#1 -> #2 -> #5 -> #3/#6 -> #4 -> #7/#8 -> #9`
+`#1 -> #2 -> #5 -> #3/#6 -> #4 -> #7/#8/#51 -> #9`
 
 Do not pull P2 visual polish ahead of unresolved P1 call reliability unless a P1 task is genuinely blocked.
 
