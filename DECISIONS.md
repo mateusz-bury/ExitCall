@@ -1,80 +1,102 @@
 # ExitCall Decisions
 
-This file records decisions already made so rejected ideas do not repeatedly return to the active backlog.
+This file records product and technical decisions that should remain stable unless new evidence justifies changing them.
 
 ## Product language
 
-- Avoid `fake call` in user-facing and public-facing wording.
-- Prefer `ExitCall`, `scheduled incoming call`, or `safety call` depending on context.
-- Preferred primary action copy: `Start call`, `Schedule a call`, `Set up a call`.
+Use **ExitCall**, **scheduled incoming call** or **safety call** depending on context.
+
+Preferred primary action wording:
+
+- `Start call`
+- `Schedule a call`
+- `Set up a call`
+
+The product should feel discreet and credible rather than playful or prank-oriented.
 
 ## Product structure
 
-- **Call Setup** is a dedicated area and should remain separate from **Settings**.
-- Default Hang Up behaviour is to leave the ExitCall call flow and return to Android.
-- A post-call summary is optional/post-MVP and must not slow down the user's exit.
+- Call Setup is separate from Settings.
+- Default behaviour after Hang Up is to leave the call flow and return to Android.
+- Home may later show useful statistics/status, but this is not a core MVP blocker.
 
 ## Contacts and privacy
 
-- Do not import the full address book.
-- Use a system picker to choose one contact on demand.
-- Do not implement random contact selection.
+- Do not bulk-import the address book.
+- Use Android's system contact picker for one contact on demand.
+- Do not add a random-contact feature.
 
-## Audio / system behaviour
+## Audio and system behaviour
 
-- ExitCall may have its own vibration preference.
-- Do not intentionally bypass Android global vibration or Do Not Disturb choices.
-- System ringtone selection is desirable.
-- Bluetooth/headset and speakerphone support are backlog features, not blockers for finishing the core Answer/Hang Up flow.
+- ExitCall may provide an app-level vibration preference.
+- The app should respect Android's global vibration and Do Not Disturb behaviour rather than trying to bypass it.
+- Ringtone selection should use Android's system ringtone picker.
+- Bluetooth/headset routing and speakerphone are important later call-quality features.
 
-## Scheduler / Android call flow
+## Core Android call flow
 
-Target shared flow:
+The shared target pipeline is:
 
 `user action / exact alarm -> call launcher/receiver -> foreground call service -> ringtone + vibration -> high-priority call notification -> Full Screen Intent or heads-up fallback -> IncomingCallActivity -> Answer/Decline -> ActiveCallScreen -> Hang Up`
 
-Immediate and scheduled calls should use the same core pipeline and saved CallConfig.
+Immediate and scheduled calls should use the same pipeline and the same persisted `CallConfig`.
 
-## UI / branding
+The app must work when the device is locked without unexpectedly unlocking it.
 
-- Core visual direction: matte/dark black surfaces + pastel/sage green accents.
-- Incoming/active call UI should feel believable and phone-like without tying core behaviour to one OEM skin.
-- Google Phone / Samsung-like variants, if ever implemented, should be UI variants on top of shared call logic.
+## Scheduling
 
-## Demo / onboarding
+- Use `AlarmManager` exact alarms for scheduled ExitCalls where the product requires precise timing.
+- Use Material/Android DatePicker and TimePicker for user input.
+- Persist the scheduled call so it can be restored after reboot.
+- A pending incoming call must have a finite timeout so ringtone/vibration cannot run indefinitely.
 
-- Prefer one practical demo call over a sequence of onboarding slides.
-- Demo caller: `ExitCall`.
-- Guided audio starts after the user answers and demonstrates how the experience can help the user leave an uncomfortable situation.
+## UI direction
 
-## Localization
+- Primary visual direction: matte black/dark surfaces with pastel/sage green accent.
+- Move these colors into the real Material theme rather than duplicating constants across screens.
+- Incoming Call should feel credible and familiar while remaining ExitCall's own interface.
+- Device-specific Google Phone/Samsung-inspired variants may be explored later, but system/call logic must stay shared.
 
-Initial language direction:
-- EN
-- PL
-- DE
-- ES
+## Demo and onboarding
 
-Both UI localization and guided voice content are later product layers; they must not delay the core Android call reliability milestone.
+Prefer one practical ExitCall demo call over slide-based onboarding:
 
-## Monetization — working hypothesis, not final
+- caller displayed as `ExitCall`,
+- after Answer, guided audio calmly demonstrates how to use the app to leave an uncomfortable situation.
 
-- Working concept: 3 free calls total, including 1 demo + 2 user calls, then paid access.
-- Working pricing idea discussed: 4.99 USD/EUR and 14.99 PLN.
-- Billing model and pricing must be validated before implementation.
+## Languages
+
+Initial target languages for UI and guided content:
+
+- English
+- Polish
+- German
+- Spanish
+
+## Monetization
+
+Current working hypothesis only — not final:
+
+- 3 free calls total, including the demo,
+- then paid access,
+- rough price idea: 4.99 USD/EUR and 14.99 PLN.
+
+Before implementation, decide whether the paid model is one-time purchase or subscription and define restore-purchase/offline behaviour.
 
 ## Platform strategy
 
-- Android/Kotlin/Compose is the current product focus.
-- iOS is a later validation-dependent project and should be evaluated as a native Swift/SwiftUI implementation.
+- Android first.
+- Validate the product before committing to iOS.
+- If iOS is built, use native Swift / SwiftUI and first research iOS restrictions around lock-screen/call-like presentation.
 
 ## Growth
 
-- Lightweight marketing experiments are P4 and should start only after the product is stable enough to demonstrate.
-- Asian-market partner/distribution work is exploratory P4 and must not compete with Android MVP delivery.
+- Lightweight TikTok/Facebook/YouTube experiments are P4 until the product is stable.
+- Asian-market partner/distribution exploration is P4 until the product is validated.
 
 ## Development workflow
 
-- GitHub Issues are the actionable source of truth.
-- Keep at most one large task or two small tasks active.
-- New ideas go to Backlog/Icebox instead of interrupting current work.
+- GitHub Issues are the source of truth for actionable tasks.
+- Keep one large task or at most two small tasks active at once.
+- New ideas go to Backlog/Icebox instead of interrupting current P1 work.
+- Avoid large architecture refactors until the core MVP call flow is stable.
