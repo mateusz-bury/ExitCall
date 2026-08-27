@@ -1,31 +1,43 @@
 # ExitCall
 
-ExitCall is an Android app that simulates an incoming phone call to help the user leave an awkward or uncomfortable situation naturally.
+ExitCall is an Android app that creates a realistic incoming-call experience to help a user leave an awkward or uncomfortable situation naturally.
 
 ## Current status
 
-The Android lock-screen fake-call flow is already partially working:
+The core Android lock-screen trigger is already working:
 
-- exact alarm can trigger while the phone is locked,
-- foreground service starts the call flow,
-- ringtone and vibration work on the lock screen,
+- exact `AlarmManager` alarm can trigger while the phone is locked,
+- `CallAlarmReceiver` starts the call flow,
+- `IncomingCallService` runs as a foreground service,
+- system ringtone and vibration work on the lock screen,
 - high-priority notification and Full Screen Intent work,
-- the incoming-call screen appears over the lock screen,
-- Decline stops the call and leaves the phone locked.
+- `IncomingCallActivity` wakes the display and shows `IncomingCallScreen` over the lock screen,
+- Decline stops ringtone/vibration, closes the call screen and leaves the phone locked.
 
-The next critical milestone is completing the full Answer -> Active Call -> Hang Up flow.
+The current critical milestone is completing:
+
+`scheduled trigger -> incoming call -> Answer -> ActiveCallScreen -> Hang Up -> Android`
 
 ## Stack
 
 - Kotlin
-- Jetpack Compose
+- Jetpack Compose / Material 3
 - Android AlarmManager
+- BroadcastReceiver
 - Foreground Service
-- Full Screen Intent
+- Notifications / Full Screen Intent
 
 ## Product direction
 
-The MVP focuses on a convincing fake incoming-call experience, configurable caller details, scheduling, and reliable behaviour on a locked phone.
+The MVP focuses on:
+
+- a convincing incoming-call experience,
+- reliable scheduling while the app is not in the foreground,
+- correct behaviour on a locked device,
+- configurable caller name/number/ringtone/vibration,
+- a small, privacy-friendly configuration surface.
+
+Product wording should use **ExitCall**, **scheduled incoming call** or **safety call** depending on context. Avoid using `fake call` in user-facing copy and public documentation.
 
 ## Development workflow
 
@@ -33,11 +45,15 @@ GitHub Issues are the source of truth for actionable work.
 
 Priority convention:
 
-- `P1` — MVP blocker / do next
-- `P2` — important for MVP quality
-- `P3` — post-MVP / product improvement
-- `P4` — future / exploratory
+- `P1` — MVP blocker / reliability-critical
+- `P2` — MVP quality / important product functionality
+- `P3` — Beta / post-MVP product improvement
+- `P4` — future / exploratory / icebox
 
-Daily rule: work on one large issue or at most two small issues at a time.
+Daily rule: keep **one large task or at most two small tasks** active at once.
 
-See [`BACKLOG.md`](BACKLOG.md) for the full roadmap.
+See:
+
+- [`BACKLOG.md`](BACKLOG.md) — roadmap and issue map
+- [`PROJECT_WORKFLOW.md`](PROJECT_WORKFLOW.md) — GitHub Project fields, statuses and views
+- [`DECISIONS.md`](DECISIONS.md) — product and technical decisions
