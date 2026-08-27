@@ -133,7 +133,7 @@ fun HomeScreen(
                 )
             ) {
                 Text(
-                    text = "Call me now",
+                    text = "Start call",
                     fontSize = 17.sp
                 )
             }
@@ -182,7 +182,7 @@ fun HomeScreen(
                 )
             ) {
                 Text(
-                    text = "Call setup"
+                    text = "Set up a call"
                 )
             }
 
