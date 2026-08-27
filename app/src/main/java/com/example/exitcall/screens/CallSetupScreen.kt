@@ -52,7 +52,7 @@ fun CallSetupScreen(
         ) {
 
             Text(
-                text = "Call setup",
+                text = "Set up a call",
                 color = ExitCallText,
                 fontSize = 28.sp
             )
