@@ -55,7 +55,6 @@ Working rule: **one large task or at most two small tasks active at once**.
 
 - #25 Add automated tests for scheduling, state and persistence.
 - #26 Build Android device/OEM compatibility test matrix.
-- #27 Standardize product wording: ExitCall / scheduled incoming call / safety call; preferred actions `Start call`, `Schedule a call`, `Set up a call`.
 - #28 Review current Google Play/Android requirements for exact alarm, foreground service, notification and Full Screen Intent capabilities before store release.
 
 ## P3 — Beta / product improvements
@@ -81,6 +80,7 @@ Working rule: **one large task or at most two small tasks active at once**.
 
 ## Completed / validated
 
+- #27 Product wording standardized across Home, Call Setup and public documentation.
 - #44 Exact Alarm -> Receiver trigger works on a locked device.
 - #45 Foreground service plays ringtone and vibration on lock screen and cleans them up when stopped.
 - #46 Full Screen Intent wakes device and shows incoming call over lock screen.
