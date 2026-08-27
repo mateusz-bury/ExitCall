@@ -16,37 +16,47 @@ class IncomingCallActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+
             setShowWhenLocked(true)
             setTurnScreenOn(true)
+
         } else {
+
+            @Suppress("DEPRECATION")
             window.addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             )
         }
 
-        val config = CallConfig()
-
         setContent {
+
             ExitCallTheme {
+
+                val config = CallConfig()
+
                 IncomingCallScreen(
                     config = config,
+
                     onDecline = {
                         stopService(
                             Intent(
-                                this@IncomingCallActivity,
+                                this,
                                 IncomingCallService::class.java
                             )
                         )
+
                         finish()
                     },
+
                     onAnswer = {
                         stopService(
                             Intent(
-                                this@IncomingCallActivity,
+                                this,
                                 IncomingCallService::class.java
                             )
                         )
+
                         finish()
                     }
                 )
