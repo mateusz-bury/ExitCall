@@ -28,6 +28,7 @@ Working rule: **one large task or at most two small tasks active at once**.
 - #9 Add end-to-end locked-device regression checklist.
 - #10 Restore scheduled calls after device reboot.
 - #11 Replace `com.example.exitcall` with the permanent production application ID before public release.
+- #51 Add unanswered-call timeout and guaranteed cleanup so ringtone/vibration cannot run indefinitely.
 
 ## P2 — MVP quality / important functionality
 
