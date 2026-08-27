@@ -96,5 +96,5 @@ Working rule: **one large task or at most two small tasks active at once**.
 - Do **not** intentionally bypass Android global vibration or Do Not Disturb behaviour.
 - Keep Call Setup separate from Settings.
 - Default post-call behaviour is to leave the call flow and return to Android.
-- Avoid `fake call` in user-facing/public wording.
+- Use ExitCall / scheduled incoming call / safety call consistently in user-facing and public wording.
 - Android comes first; iOS is a separate later native project if the product validates.
