@@ -37,7 +37,7 @@ The MVP focuses on:
 - configurable caller name/number/ringtone/vibration,
 - a small, privacy-friendly configuration surface.
 
-Product wording should use **ExitCall**, **scheduled incoming call** or **safety call** depending on context.
+Product wording should use **ExitCall**, **scheduled incoming call** or **safety call** depending on context. Primary actions are **Start call**, **Schedule a call** and **Set up a call**.
 
 ## Development workflow
 
