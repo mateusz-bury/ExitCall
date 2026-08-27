@@ -1,32 +1,28 @@
-# ExitCall GitHub Project Workflow
+# ExitCall Project Workflow
 
-This is the intended configuration for the ExitCall GitHub Project.
+This file defines the intended GitHub Project setup and daily operating rules.
 
-## Status field
+## Status columns
 
-Use these columns/status values:
+Use these columns in the main board:
 
-1. **Backlog** — accepted work, not ready/current yet.
-2. **Ready** — sufficiently defined and ready to start.
-3. **In Progress** — actively being worked on.
-4. **Testing** — implementation is ready; physical/device/regression verification is in progress.
-5. **Done** — completed and validated.
-6. **Icebox** — future/exploratory ideas that must not interrupt MVP work.
-
-WIP rule: keep **maximum 1 issue in In Progress**. If a task is very small, a second small task may be active, but do not create a queue of half-finished work.
+1. **Backlog** — known work that is not selected for immediate execution.
+2. **Ready** — the next task(s) that are prepared to start.
+3. **In Progress** — work actively being implemented now.
+4. **Testing** — implementation is complete and needs validation.
+5. **Done** — completed and validated work.
+6. **Icebox** — future/exploratory ideas that must not interrupt MVP delivery.
 
 ## Project fields
 
-### Priority — single select
+### Priority
 
-- P1 — MVP blocker / reliability-critical
-- P2 — MVP quality / important functionality
-- P3 — Beta / post-MVP improvement
-- P4 — future / exploratory
+- `P1` — MVP blocker / reliability-critical
+- `P2` — MVP quality / important functionality
+- `P3` — beta / post-MVP improvement
+- `P4` — future / exploratory
 
-### Type — single select
-
-Recommended values:
+### Type
 
 - Feature
 - Bug
@@ -38,9 +34,7 @@ Recommended values:
 - Release
 - Documentation
 
-### Area — single select
-
-Recommended values:
+### Area
 
 - Call Flow
 - Incoming Call
@@ -56,97 +50,70 @@ Recommended values:
 - Release / Growth
 - iOS
 
-### Size — single select
+### Size
 
-- S — small, normally one focused session
-- M — several connected steps / likely more than one session
-- L — large or uncertain; should be decomposed before starting when possible
+- `S` — small, usually suitable as a light task
+- `M` — medium, normally one focused work item
+- `L` — large, should usually be broken down before implementation
 
-### Release — single select
+### Release
 
-- MVP
-- Beta
-- Post-MVP
+- `MVP`
+- `Beta`
+- `Post-MVP`
 
-## Views
+## Recommended views
 
-### 1. Flow
+### Flow
 
-**Layout:** Board
+Board grouped by Status. Show all six status columns.
 
-**Group by:** Status
+### MVP
 
-Columns:
-`Backlog -> Ready -> In Progress -> Testing -> Done -> Icebox`
+Filter:
 
-Purpose: full project flow.
+- `Release = MVP`
+- exclude `Done`
+- exclude `Icebox`
 
-### 2. MVP
+Sort Priority with P1 first.
 
-**Layout:** Board or Table
+### Today / Current
 
-**Filter:**
-- Release = MVP
-- Status != Done
-- Status != Icebox
+Show only:
 
-Sort by:
-1. Priority ascending (P1 first)
-2. Size ascending where useful
+- `Ready`
+- `In Progress`
+- `Testing`
 
-Purpose: this is the primary planning view. If an item is not here, it should usually not interrupt current MVP work.
+Keep this view intentionally small.
 
-### 3. Today / Current
+### Icebox
 
-**Layout:** Board or Table
+Filter `Status = Icebox`.
 
-**Filter:**
-- Status = Ready OR In Progress OR Testing
+### Done
 
-Purpose: the only view needed when sitting down for a focused development session.
+Filter `Status = Done`, newest completed work first.
 
-### 4. Icebox
+## Working rules
 
-**Layout:** Table
+- Keep at most **one issue In Progress**.
+- A normal session should contain **one large task or at most two small tasks**.
+- New ideas go to Backlog or Icebox instead of interrupting current P1 work.
+- A task moves to Testing when implementation is finished but physical/device validation is still needed.
+- A task moves to Done only after its acceptance criteria are satisfied.
 
-**Filter:** Status = Icebox
+## Current sequence
 
-Purpose: store interesting ideas without allowing them to compete with current development.
-
-### 5. Done
-
-**Layout:** Table
-
-**Filter:** Status = Done
-
-Sort: newest completed first.
-
-Purpose: visible record of progress and completed milestones.
-
-## Initial status assignment
-
-- **Ready:** #1
-- **Backlog:** #2–#39 and #51 (move the next dependency to Ready only when it is actually actionable)
-- **Icebox:** #40–#43
-- **Done:** #44–#50
-
-Suggested near-term sequence:
+Near-term execution order:
 
 `#1 -> #2 -> #5 -> #3/#6 -> #4 -> #7/#8/#51 -> #9`
 
-Do not pull P2 visual polish ahead of unresolved P1 call reliability unless a P1 task is genuinely blocked.
+P2 work can be used occasionally as a small secondary task when it does not open a large technical branch.
 
-## Issue format
+Preferred user-facing actions are:
 
-Each actionable issue should contain, where applicable:
-
-- Priority
-- Type
-- Area
-- Size
-- Release
-- Suggested status
-- Current code state / context
-- Acceptance criteria checklist
-
-The Project fields remain the operational source for filtering; metadata in issue bodies keeps context readable even outside the Project view.
+- `Start call`
+- `Schedule a call`
+- `Set up a call`
