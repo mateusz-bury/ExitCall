@@ -243,7 +243,7 @@ fun CallSetupScreen(
                 )
             ) {
                 Text(
-                    text = "Save setup",
+                    text = "Save call setup",
                     fontSize = 17.sp
                 )
             }
