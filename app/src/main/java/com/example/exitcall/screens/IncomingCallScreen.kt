@@ -1,31 +1,23 @@
 package com.example.exitcall.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Text
 import com.example.exitcall.model.CallConfig
 import kotlin.math.roundToInt
-
-private val ExitCallGreen = Color(0xFFA8D5BA)
-private val ExitCallBackground = Color(0xFF050706)
-private val ExitCallSliderBackground = Color(0xFF292B26)
 
 @Composable
 fun IncomingCallScreen(
@@ -33,210 +25,159 @@ fun IncomingCallScreen(
     onDecline: () -> Unit,
     onAnswer: () -> Unit
 ) {
+    val background = Color(0xFF050706)
+    val green = Color(0xFFA8D5BA)
+    val text = Color(0xFFF2F4F2)
+    val muted = Color(0xFF9BA39E)
 
-    Column(
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ExitCallBackground)
+            .background(background)
             .safeDrawingPadding()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        Spacer(
-            modifier = Modifier.height(130.dp)
-        )
-
-        // AVATAR
-
-        Box(
+        Column(
             modifier = Modifier
-                .size(96.dp)
-                .background(
-                    color = ExitCallGreen,
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(130.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(88.dp)
+                    .background(Color(0xFF222824), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = config.callerName.take(1).uppercase(),
+                    color = green,
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(26.dp))
 
             Text(
-                text = config.callerName
-                    .firstOrNull()
-                    ?.uppercase()
-                    ?: "?",
-                color = ExitCallBackground,
-                fontSize = 40.sp
+                text = config.callerName,
+                color = text,
+                fontSize = 42.sp,
+                fontWeight = FontWeight.Medium
             )
-        }
 
-        Spacer(
-            modifier = Modifier.height(24.dp)
-        )
-
-        // CALLER NAME
-
-        Text(
-            text = config.callerName.ifBlank {
-                "Unknown"
-            },
-            color = Color.White,
-            fontSize = 42.sp
-        )
-
-        // PHONE NUMBER
-
-        if (config.phoneNumber.isNotBlank()) {
-
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = config.phoneNumber,
-                color = Color.LightGray,
+                color = muted,
                 fontSize = 18.sp
             )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            IncomingCallSlider(
+                dragOffset = dragOffset,
+                onDragOffsetChange = { dragOffset = it },
+                onDecline = onDecline,
+                onAnswer = onAnswer,
+                green = green,
+                text = text,
+                muted = muted
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
         }
-
-        // wypychamy slider na dół zamiast używać sztywnego 450.dp
-
-        Spacer(
-            modifier = Modifier.weight(1f)
-        )
-
-        IncomingCallSlider(
-            onDecline = onDecline,
-            onAnswer = onAnswer
-        )
-
-        Spacer(
-            modifier = Modifier.height(16.dp)
-        )
     }
 }
 
-
 @Composable
-fun IncomingCallSlider(
+private fun IncomingCallSlider(
+    dragOffset: Float,
+    onDragOffsetChange: (Float) -> Unit,
     onDecline: () -> Unit,
-    onAnswer: () -> Unit
+    onAnswer: () -> Unit,
+    green: Color,
+    text: Color,
+    muted: Color
 ) {
-
-    var dragOffset by remember {
-        mutableFloatStateOf(0f)
-    }
+    val density = LocalDensity.current
+    val handleSize = 68.dp
+    val horizontalPadding = 12.dp
 
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .height(92.dp)
-            .clip(
-                RoundedCornerShape(46.dp)
-            )
             .background(
-                ExitCallSliderBackground
+                color = Color(0xFF171B18),
+                shape = RoundedCornerShape(46.dp)
             )
     ) {
-
-        val maxDragPx = with(
-            LocalDensity.current
-        ) {
-            ((maxWidth - 76.dp) / 2 - 8.dp)
-                .toPx()
+        val maxDrag = with(density) {
+            ((maxWidth - handleSize - horizontalPadding * 2).toPx() / 2f)
         }
 
-        val actionThreshold =
-            maxDragPx * 0.55f
-
-        Text(
-            text = "Decline",
-            color = Color(0xFFFFB4AB),
+        Row(
             modifier = Modifier
-                .align(
-                    Alignment.CenterStart
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Decline",
+                    color = Color(0xFFE87474),
+                    fontSize = 13.sp
                 )
-                .padding(
-                    start = 24.dp
-                )
-        )
+            }
 
-        Text(
-            text = "Answer",
-            color = Color.White,
-            modifier = Modifier
-                .align(
-                    Alignment.CenterEnd
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Answer",
+                    color = green,
+                    fontSize = 13.sp
                 )
-                .padding(
-                    end = 24.dp
-                )
-        )
+            }
+        }
 
         Box(
             modifier = Modifier
-                .align(
-                    Alignment.Center
-                )
-                .offset {
-
-                    IntOffset(
-                        x = dragOffset.roundToInt(),
-                        y = 0
-                    )
-                }
-                .size(76.dp)
-                .clip(CircleShape)
-                .background(Color.White)
-                .pointerInput(maxDragPx) {
-
-                    detectHorizontalDragGestures(
-
-                        onHorizontalDrag = { _, dragAmount ->
-
-                            dragOffset =
-                                (dragOffset + dragAmount)
-                                    .coerceIn(
-                                        -maxDragPx,
-                                        maxDragPx
-                                    )
+                .align(Alignment.Center)
+                .offset { IntOffset(dragOffset.roundToInt(), 0) }
+                .size(handleSize)
+                .background(Color.White, CircleShape)
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            onDragOffsetChange(
+                                (dragOffset + dragAmount.x)
+                                    .coerceIn(-maxDrag, maxDrag)
+                            )
                         },
-
                         onDragEnd = {
-
                             when {
-
-                                dragOffset >= actionThreshold -> {
-
-                                    dragOffset = 0f
-                                    onAnswer()
-                                }
-
-                                dragOffset <= -actionThreshold -> {
-
-                                    dragOffset = 0f
-                                    onDecline()
-                                }
-
-                                else -> {
-
-                                    dragOffset = 0f
-                                }
+                                dragOffset >= maxDrag * 0.55f -> onAnswer()
+                                dragOffset <= -maxDrag * 0.55f -> onDecline()
+                                else -> onDragOffsetChange(0f)
                             }
                         },
-
                         onDragCancel = {
-
-                            dragOffset = 0f
+                            onDragOffsetChange(0f)
                         }
                     )
                 },
             contentAlignment = Alignment.Center
         ) {
-
             Text(
                 text = "☎",
-                color = Color(0xFF4FC16E),
-                fontSize = 32.sp
+                color = green,
+                fontSize = 30.sp
             )
         }
     }
