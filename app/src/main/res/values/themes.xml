@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.ExitCall" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.ExitCall.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">
+            @color/exitcall_background
+        </item>
+
+        <item name="windowSplashScreenAnimatedIcon">
+            @drawable/ec_logo_screes_1_0
+        </item>
+
+        <item name="postSplashScreenTheme">
+            @style/Theme.ExitCall
+        </item>
+    </style>
+</resources>
