@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val triggerTime = System.currentTimeMillis() + 60_000
+        val triggerTime = System.currentTimeMillis() + 10_000
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 

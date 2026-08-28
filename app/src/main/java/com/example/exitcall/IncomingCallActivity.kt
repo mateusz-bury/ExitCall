@@ -6,9 +6,15 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.example.exitcall.model.CallConfig
+import com.example.exitcall.screens.AppScreen
 import com.example.exitcall.ui.screens.IncomingCallScreen
 import com.example.exitcall.ui.theme.ExitCallTheme
+import androidx.compose.runtime.getValue
+import com.example.exitcall.ui.screens.ActiveCallScreen
 
 class IncomingCallActivity : ComponentActivity() {
 
@@ -34,6 +40,15 @@ class IncomingCallActivity : ComponentActivity() {
             ExitCallTheme {
 
                 val config = CallConfig()
+                var currentScreen by remember {
+                    mutableStateOf(AppScreen.INCOMING_CALL)
+                }
+
+
+                when(currentScreen){
+
+                AppScreen.INCOMING_CALL -> {
+
 
                 IncomingCallScreen(
                     config = config,
@@ -57,9 +72,23 @@ class IncomingCallActivity : ComponentActivity() {
                             )
                         )
 
-                        finish()
+                        currentScreen = AppScreen.ACTIVE_CALL
                     }
                 )
+            }
+
+                    AppScreen.ACTIVE_CALL -> {
+
+                        ActiveCallScreen(
+                            config = config,
+
+                            onHangUp = {
+                                finish()
+                            }
+                        )
+                    }
+                    else -> Unit
+                }
             }
         }
     }
