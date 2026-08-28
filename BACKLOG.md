@@ -6,10 +6,11 @@ GitHub Issues are the source of truth for actionable work. This file is the road
 
 Work in this order unless a blocker forces a change:
 
-1. #1 — Complete Answer -> ActiveCallScreen flow.
-2. #2 — Complete ActiveCallScreen -> Hang Up flow.
-3. #5 — Unify immediate and scheduled call launch pipeline.
-4. Then continue through the remaining P1 reliability work.
+1. #5 — Unify immediate and scheduled call launch pipeline; remove the automatic short debug alarm from normal startup.
+2. #3 — Persist CallConfig between app launches/process death.
+3. #6 — Make IncomingCallService and the real call UI use the saved CallConfig.
+4. #51 — Add unanswered-call timeout and guaranteed cleanup.
+5. Then continue through the remaining P1 reliability work.
 
 Working rule: **one large task or at most two small tasks active at once**.
 
@@ -17,13 +18,10 @@ Working rule: **one large task or at most two small tasks active at once**.
 
 ## P1 — MVP blockers / reliability-critical
 
-- #1 Complete Answer -> ActiveCallScreen flow.
-- #2 Complete ActiveCallScreen -> Hang Up flow.
 - #3 Persist CallConfig between app launches/process death.
 - #4 Finish scheduler UI with DatePicker and TimePicker.
-- #5 Unify immediate and scheduled call launch pipeline; remove automatic +60s debug scheduling from normal startup.
+- #5 Unify immediate and scheduled call launch pipeline; remove automatic debug scheduling from normal startup.
 - #6 Make IncomingCallService use saved CallConfig, including configured ringtone/vibration/caller identity.
-- #7 Add Full Screen Intent fallback with Answer and Decline notification actions.
 - #8 Complete permission/capability UX for exact alarms, notifications and Full Screen Intent.
 - #9 Add end-to-end locked-device regression checklist.
 - #10 Restore scheduled calls after device reboot.
@@ -49,7 +47,8 @@ Working rule: **one large task or at most two small tasks active at once**.
 - #21 Add speakerphone mode.
 - #22 Finish ActiveCallScreen controls and remove prototype placeholders.
 - #23 Implement Settings screen and global preferences.
-- #24 Centralize the matte-black + sage/pastel-green ExitCall theme and remove default Material purple styling.
+- #24 Centralize the matte-black + sage/pastel-green ExitCall theme and remove default Material purple styling; fix the glaring light outline around the filled `Start call` CTA observed on the Motorola test device.
+- #53 Decide whether to show an optional missed-call notification after an unanswered timeout; never show it after Answer or explicit Decline.
 
 ### Reliability / release quality
 
@@ -80,6 +79,9 @@ Working rule: **one large task or at most two small tasks active at once**.
 
 ## Completed / validated
 
+- #1 Answer -> ActiveCallScreen works in the real service/activity flow and was physically verified on 2026-08-28.
+- #2 ActiveCallScreen -> Hang Up closes the call UI cleanly and was physically verified on 2026-08-28.
+- #7 Locked-device Full Screen Intent and unlocked-device call-style notification paths both support working Answer/Decline actions; 6/6 physical tests passed on the primary Motorola device on 2026-08-28.
 - #27 Product wording standardized across Home, Call Setup and public documentation.
 - #44 Exact Alarm -> Receiver trigger works on a locked device.
 - #45 Foreground service plays ringtone and vibration on lock screen and cleans them up when stopped.
@@ -88,6 +90,7 @@ Working rule: **one large task or at most two small tasks active at once**.
 - #48 Initial Home, Call Setup, Incoming Call and Active Call screens/navigation foundation implemented.
 - #49 Branding, icon and splash-screen groundwork implemented.
 - #50 Private GitHub repository and structured backlog/workflow created.
+- #52 Stale IncomingCallScreen after Decline/Answer fixed; completed call state no longer remains as the broken call screen observed during testing.
 
 ## Explicit product decisions / not planned
 
