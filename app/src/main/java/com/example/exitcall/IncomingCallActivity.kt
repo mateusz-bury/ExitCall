@@ -6,17 +6,21 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.example.exitcall.model.CallConfig
 import com.example.exitcall.screens.AppScreen
+import com.example.exitcall.ui.screens.ActiveCallScreen
 import com.example.exitcall.ui.screens.IncomingCallScreen
 import com.example.exitcall.ui.theme.ExitCallTheme
-import androidx.compose.runtime.getValue
-import com.example.exitcall.ui.screens.ActiveCallScreen
 
 class IncomingCallActivity : ComponentActivity() {
+
+    companion object {
+        const val EXTRA_START_ACTIVE = "extra_start_active"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,47 +39,87 @@ class IncomingCallActivity : ComponentActivity() {
             )
         }
 
+        /*
+         * Sprawdzamy, dlaczego Activity zostało uruchomione.
+         *
+         * false:
+         * normalny incoming call
+         *
+         * true:
+         * użytkownik nacisnął Answer w notification
+         */
+        val startActive = intent.getBooleanExtra(
+            EXTRA_START_ACTIVE,
+            false
+        )
+
+        /*
+         * Jeśli użytkownik odebrał przez notification,
+         * zatrzymujemy ringtone i vibration.
+         */
+        if (startActive) {
+
+            stopService(
+                Intent(
+                    this,
+                    IncomingCallService::class.java
+                )
+            )
+        }
+
         setContent {
 
             ExitCallTheme {
 
                 val config = CallConfig()
+
+                /*
+                 * Wybieramy ekran początkowy.
+                 */
                 var currentScreen by remember {
-                    mutableStateOf(AppScreen.INCOMING_CALL)
+
+                    mutableStateOf(
+                        if (startActive) {
+                            AppScreen.ACTIVE_CALL
+                        } else {
+                            AppScreen.INCOMING_CALL
+                        }
+                    )
                 }
 
+                when (currentScreen) {
 
-                when(currentScreen){
+                    AppScreen.INCOMING_CALL -> {
 
-                AppScreen.INCOMING_CALL -> {
+                        IncomingCallScreen(
+                            config = config,
 
+                            onDecline = {
 
-                IncomingCallScreen(
-                    config = config,
+                                stopService(
+                                    Intent(
+                                        this,
+                                        IncomingCallService::class.java
+                                    )
+                                )
 
-                    onDecline = {
-                        stopService(
-                            Intent(
-                                this,
-                                IncomingCallService::class.java
-                            )
+                                finish()
+                            },
+
+                            onAnswer = {
+
+                                stopService(
+                                    Intent(
+                                        this,
+                                        IncomingCallService::class.java
+                                    )
+                                )
+
+                                currentScreen =
+                                    AppScreen.ACTIVE_CALL
+                            }
                         )
-
-                        finish()
-                    },
-
-                    onAnswer = {
-                        stopService(
-                            Intent(
-                                this,
-                                IncomingCallService::class.java
-                            )
-                        )
-
-                        currentScreen = AppScreen.ACTIVE_CALL
                     }
-                )
-            }
 
                     AppScreen.ACTIVE_CALL -> {
 
@@ -87,6 +131,7 @@ class IncomingCallActivity : ComponentActivity() {
                             }
                         )
                     }
+
                     else -> Unit
                 }
             }
