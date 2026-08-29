@@ -8,7 +8,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.example.exitcall.model.CallConfig
 import com.example.exitcall.screens.AppScreen
@@ -22,110 +21,59 @@ class IncomingCallActivity : ComponentActivity() {
         const val EXTRA_START_ACTIVE = "extra_start_active"
     }
 
+    private var currentScreen by mutableStateOf(AppScreen.INCOMING_CALL)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-
             setShowWhenLocked(true)
             setTurnScreenOn(true)
-
         } else {
-
             @Suppress("DEPRECATION")
             window.addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             )
         }
 
-        /*
-         * Sprawdzamy, dlaczego Activity zostało uruchomione.
-         *
-         * false:
-         * normalny incoming call
-         *
-         * true:
-         * użytkownik nacisnął Answer w notification
-         */
         val startActive = intent.getBooleanExtra(
             EXTRA_START_ACTIVE,
             false
         )
 
-        /*
-         * Jeśli użytkownik odebrał przez notification,
-         * zatrzymujemy ringtone i vibration.
-         */
-        if (startActive) {
+        currentScreen = if (startActive) {
+            AppScreen.ACTIVE_CALL
+        } else {
+            AppScreen.INCOMING_CALL
+        }
 
-            stopService(
-                Intent(
-                    this,
-                    IncomingCallService::class.java
-                )
-            )
+        if (startActive) {
+            stopIncomingCallService()
         }
 
         setContent {
-
             ExitCallTheme {
-
                 val config = CallConfig()
 
-                /*
-                 * Wybieramy ekran początkowy.
-                 */
-                var currentScreen by remember {
-
-                    mutableStateOf(
-                        if (startActive) {
-                            AppScreen.ACTIVE_CALL
-                        } else {
-                            AppScreen.INCOMING_CALL
-                        }
-                    )
-                }
-
                 when (currentScreen) {
-
                     AppScreen.INCOMING_CALL -> {
-
                         IncomingCallScreen(
                             config = config,
-
                             onDecline = {
-
-                                stopService(
-                                    Intent(
-                                        this,
-                                        IncomingCallService::class.java
-                                    )
-                                )
-
+                                stopIncomingCallService()
                                 finish()
                             },
-
                             onAnswer = {
-
-                                stopService(
-                                    Intent(
-                                        this,
-                                        IncomingCallService::class.java
-                                    )
-                                )
-
-                                currentScreen =
-                                    AppScreen.ACTIVE_CALL
+                                stopIncomingCallService()
+                                currentScreen = AppScreen.ACTIVE_CALL
                             }
                         )
                     }
 
                     AppScreen.ACTIVE_CALL -> {
-
                         ActiveCallScreen(
                             config = config,
-
                             onHangUp = {
                                 finish()
                             }
@@ -136,5 +84,29 @@ class IncomingCallActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+
+        if (
+            intent.getBooleanExtra(
+                EXTRA_START_ACTIVE,
+                false
+            )
+        ) {
+            stopIncomingCallService()
+            currentScreen = AppScreen.ACTIVE_CALL
+        }
+    }
+
+    private fun stopIncomingCallService() {
+        stopService(
+            Intent(
+                this,
+                IncomingCallService::class.java
+            )
+        )
     }
 }
