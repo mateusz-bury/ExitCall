@@ -51,8 +51,6 @@ class MainActivity : ComponentActivity() {
      * Unlike the old prototype, this is never called automatically on app startup.
      */
     private fun scheduleDebugCall() {
-        if (!BuildConfig.DEBUG) return
-
         val alarmManager =
             getSystemService(ALARM_SERVICE) as AlarmManager
 
