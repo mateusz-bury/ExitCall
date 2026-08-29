@@ -41,7 +41,6 @@ class IncomingCallService : Service() {
             getSystemService(NotificationManager::class.java)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-
             val canUseFullScreenIntent =
                 notificationManager.canUseFullScreenIntent()
 
@@ -51,35 +50,30 @@ class IncomingCallService : Service() {
             )
         }
 
-        /*
-         * Full Screen Intent
-         *
-         * Używany głównie wtedy, kiedy telefon jest zablokowany.
-         */
+        val activityFlags =
+            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
+
         val fullScreenIntent = Intent(
             this,
             IncomingCallActivity::class.java
-        )
+        ).apply {
+            addFlags(activityFlags)
+        }
 
         val fullScreenPendingIntent = PendingIntent.getActivity(
             this,
             2001,
             fullScreenIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or
-                    PendingIntent.FLAG_IMMUTABLE
+                PendingIntent.FLAG_IMMUTABLE
         )
 
-        /*
-         * ANSWER
-         *
-         * Otwieramy IncomingCallActivity, ale przekazujemy informację,
-         * że użytkownik już odebrał połączenie.
-         */
         val answerIntent = Intent(
             this,
             IncomingCallActivity::class.java
         ).apply {
-
+            addFlags(activityFlags)
             putExtra(
                 IncomingCallActivity.EXTRA_START_ACTIVE,
                 true
@@ -91,20 +85,13 @@ class IncomingCallService : Service() {
             2002,
             answerIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or
-                    PendingIntent.FLAG_IMMUTABLE
+                PendingIntent.FLAG_IMMUTABLE
         )
 
-        /*
-         * DECLINE
-         *
-         * Nie otwieramy żadnego Activity.
-         * Wysyłamy akcję bezpośrednio do tego Service.
-         */
         val declineIntent = Intent(
             this,
             IncomingCallService::class.java
         ).apply {
-
             action = ACTION_DECLINE
         }
 
@@ -113,23 +100,14 @@ class IncomingCallService : Service() {
             2003,
             declineIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or
-                    PendingIntent.FLAG_IMMUTABLE
+                PendingIntent.FLAG_IMMUTABLE
         )
 
-        /*
-         * Osoba dzwoniąca dla Android CallStyle.
-         *
-         * Na razie ExitCall na sztywno.
-         * Później weźmiemy dane z CallConfig.
-         */
         val caller = Person.Builder()
             .setName("ExitCall")
             .setImportant(true)
             .build()
 
-        /*
-         * Call-style notification.
-         */
         val notification = NotificationCompat.Builder(
             this,
             CHANNEL_ID
@@ -151,17 +129,11 @@ class IncomingCallService : Service() {
             )
             .build()
 
-        /*
-         * Service przechodzi w foreground.
-         */
         startForeground(
             NOTIFICATION_ID,
             notification
         )
 
-        /*
-         * Uruchamiamy dzwonek i wibrację.
-         */
         startRingtone()
         startVibration()
     }
@@ -171,9 +143,7 @@ class IncomingCallService : Service() {
         flags: Int,
         startId: Int
     ): Int {
-
         if (intent?.action == ACTION_DECLINE) {
-
             Log.d(
                 "ExitCall",
                 "Decline pressed from notification"
@@ -187,7 +157,6 @@ class IncomingCallService : Service() {
     }
 
     private fun startRingtone() {
-
         val ringtoneUri = RingtoneManager.getDefaultUri(
             RingtoneManager.TYPE_RINGTONE
         )
@@ -220,19 +189,15 @@ class IncomingCallService : Service() {
     }
 
     private fun startVibration() {
-
         vibrator =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-
                 val vibratorManager =
                     getSystemService(
                         Context.VIBRATOR_MANAGER_SERVICE
                     ) as VibratorManager
 
                 vibratorManager.defaultVibrator
-
             } else {
-
                 @Suppress("DEPRECATION")
                 getSystemService(
                     Context.VIBRATOR_SERVICE
@@ -246,7 +211,6 @@ class IncomingCallService : Service() {
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
             val effect =
                 VibrationEffect.createWaveform(
                     pattern,
@@ -257,7 +221,6 @@ class IncomingCallService : Service() {
                 Build.VERSION.SDK_INT >=
                 Build.VERSION_CODES.TIRAMISU
             ) {
-
                 val attributes =
                     VibrationAttributes.Builder()
                         .setUsage(
@@ -269,14 +232,10 @@ class IncomingCallService : Service() {
                     effect,
                     attributes
                 )
-
             } else {
-
                 vibrator?.vibrate(effect)
             }
-
         } else {
-
             @Suppress("DEPRECATION")
             vibrator?.vibrate(
                 pattern,
@@ -291,9 +250,7 @@ class IncomingCallService : Service() {
     }
 
     private fun createNotificationChannel() {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Incoming calls",
@@ -312,7 +269,6 @@ class IncomingCallService : Service() {
     }
 
     override fun onDestroy() {
-
         ringtone?.stop()
         ringtone = null
 
