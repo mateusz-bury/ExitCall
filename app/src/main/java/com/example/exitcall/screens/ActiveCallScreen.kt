@@ -51,7 +51,8 @@ fun ActiveCallScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF05070B))
-    ) {
+    )
+    {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -139,6 +140,18 @@ fun ActiveCallScreen(
                 }
             }
         }
+        Text(
+            text = "EC",
+            color = Color(0xFFA8D5BA).copy(alpha = 0.4f),
+            fontSize = 13.sp,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(
+                    top = 12.dp,
+                    end = 16.dp
+                )
+        )
     }
 }
 

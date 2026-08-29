@@ -32,90 +32,98 @@ fun IncomingCallScreen(
     config: CallConfig,
     onDecline: () -> Unit,
     onAnswer: () -> Unit
-) {
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ExitCallBackground)
-            .safeDrawingPadding()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        Spacer(
-            modifier = Modifier.height(130.dp)
-        )
-
-        // AVATAR
-
-        Box(
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(
             modifier = Modifier
-                .size(96.dp)
-                .background(
-                    color = ExitCallGreen,
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .background(ExitCallBackground)
+                .safeDrawingPadding()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            Text(
-                text = config.callerName
-                    .firstOrNull()
-                    ?.uppercase()
-                    ?: "?",
-                color = ExitCallBackground,
-                fontSize = 40.sp
+            Spacer(
+                modifier = Modifier.height(130.dp)
             )
-        }
+            // AVATAR
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .background(
+                        color = ExitCallGreen,
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
 
-        Spacer(
-            modifier = Modifier.height(24.dp)
-        )
-
-        // CALLER NAME
-
-        Text(
-            text = config.callerName.ifBlank {
-                "Unknown"
-            },
-            color = Color.White,
-            fontSize = 42.sp
-        )
-
-        // PHONE NUMBER
-
-        if (config.phoneNumber.isNotBlank()) {
+                Text(
+                    text = config.callerName
+                        .firstOrNull()
+                        ?.uppercase()
+                        ?: "?",
+                    color = ExitCallBackground,
+                    fontSize = 40.sp
+                )
+            }
 
             Spacer(
-                modifier = Modifier.height(12.dp)
+                modifier = Modifier.height(24.dp)
             )
+
+            // CALLER NAME
 
             Text(
-                text = config.phoneNumber,
-                color = Color.LightGray,
-                fontSize = 18.sp
+                text = config.callerName.ifBlank {
+                    "Unknown"
+                },
+                color = Color.White,
+                fontSize = 42.sp
+            )
+
+            // PHONE NUMBER
+
+            if (config.phoneNumber.isNotBlank()) {
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+
+                Text(
+                    text = config.phoneNumber,
+                    color = Color.LightGray,
+                    fontSize = 18.sp
+                )
+            }
+
+            Spacer(
+                modifier = Modifier.weight(1f)
+            )
+
+            IncomingCallSlider(
+                onDecline = onDecline,
+                onAnswer = onAnswer
+            )
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
             )
         }
-
-        // wypychamy slider na dół zamiast używać sztywnego 450.dp
-
-        Spacer(
-            modifier = Modifier.weight(1f)
-        )
-
-        IncomingCallSlider(
-            onDecline = onDecline,
-            onAnswer = onAnswer
-        )
-
-        Spacer(
-            modifier = Modifier.height(16.dp)
+        Text(
+            text = "EC",
+            color = ExitCallGreen.copy(alpha = 0.4f),
+            fontSize = 13.sp,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(
+                    top = 12.dp,
+                    end = 16.dp
+                )
         )
     }
 }
-
-
 @Composable
 fun IncomingCallSlider(
     onDecline: () -> Unit,
