@@ -103,14 +103,22 @@ Filter `Status = Done`, newest completed work first.
 - New ideas go to Backlog or Icebox instead of interrupting current P1 work.
 - A task moves to Testing when implementation is finished but physical/device validation is still needed.
 - A task moves to Done only after its acceptance criteria are satisfied.
+- Partial implementation does not automatically mean a task stays In Progress. If work is intentionally paused behind a dependency, move it back to Backlog/blocked and keep the actual next task Ready.
 
-## Current sequence
+## Current sequence — 2026-08-29
 
-Near-term execution order:
+Completed core flow work includes #1, #2, #5, #7, #51, #55 and #59.
 
-`#1 -> #2 -> #5 -> #3/#6 -> #4 -> #7/#8/#51 -> #9`
+Near-term execution order is now:
 
-P2 work can be used occasionally as a small secondary task when it does not open a large technical branch.
+`#3 -> #6 -> #4 -> #8 -> #9 -> #10 -> #11`
+
+Current intent:
+
+- **In Progress:** #3 CallConfig persistence.
+- **Ready:** #6 service/activity use saved CallConfig.
+- **Paused / blocked:** #4 scheduler UI foundation is implemented, but exact-alarm completion waits for #3/#6.
+- P2 work may be used only as a small secondary task when it does not open another large technical branch.
 
 Preferred user-facing actions are:
 
