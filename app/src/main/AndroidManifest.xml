@@ -32,6 +32,7 @@
             android:name=".IncomingCallActivity"
             android:exported="false"
             android:launchMode="singleTop"
+            android:screenOrientation="portrait"
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
