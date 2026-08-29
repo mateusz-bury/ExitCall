@@ -24,15 +24,19 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.exitcall.model.CallConfig
 import com.example.exitcall.ui.screens.CallSetupScreen
 import com.example.exitcall.ui.screens.HomeScreen
+import com.example.exitcall.ui.screens.ScheduleCallScreen
 import com.example.exitcall.ui.theme.ExitCallTheme
+import android.content.Context
+import android.content.res.Configuration
+import java.util.Locale
+import com.example.exitcall.model.CallConfigStore
 
 class MainActivity : ComponentActivity() {
-
     private enum class MainScreen {
         HOME,
-        CALL_SETUP
+        CALL_SETUP,
+        SCHEDULE_CALL
     }
-
     private fun startImmediateCall() {
         val serviceIntent = Intent(
             this,
@@ -45,50 +49,20 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    /**
-     * DEBUG ONLY.
-     * Temporary manual trigger for lock-screen testing until the real scheduler (#4) exists.
-     * Unlike the old prototype, this is never called automatically on app startup.
-     */
-    private fun scheduleDebugCall() {
-        val alarmManager =
-            getSystemService(ALARM_SERVICE) as AlarmManager
+    override fun attachBaseContext(newBase: Context) {
+        val locale = Locale.ENGLISH
 
-        val alarmIntent = Intent(
-            this,
-            CallAlarmReceiver::class.java
-        )
+        Locale.setDefault(locale)
 
-        val pendingIntent = PendingIntent.getBroadcast(
-            this,
-            1001,
-            alarmIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val triggerTime = System.currentTimeMillis() + 5_000
-
-        if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            !alarmManager.canScheduleExactAlarms()
-        ) {
-            Log.e("ExitCall", "Exact alarm permission NOT granted")
-
-            startActivity(
-                Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                    data = Uri.parse("package:$packageName")
-                }
-            )
-            return
+        val configuration = Configuration(
+            newBase.resources.configuration
+        ).apply {
+            setLocale(locale)
         }
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerTime,
-            pendingIntent
+        super.attachBaseContext(
+            newBase.createConfigurationContext(configuration)
         )
-
-        Log.d("ExitCall", "DEBUG call scheduled for +5 seconds")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -112,6 +86,8 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
+        val callConfigStore = CallConfigStore(this)
+
         setContent {
             ExitCallTheme {
                 var currentScreen by remember {
@@ -119,11 +95,13 @@ class MainActivity : ComponentActivity() {
                 }
 
                 var callConfig by remember {
-                    mutableStateOf(CallConfig())
+                    mutableStateOf(
+                        callConfigStore.load()
+                    )
                 }
 
                 BackHandler(
-                    enabled = currentScreen == MainScreen.CALL_SETUP
+                    enabled = currentScreen != MainScreen.HOME
                 ) {
                     currentScreen = MainScreen.HOME
                 }
@@ -135,8 +113,7 @@ class MainActivity : ComponentActivity() {
                                 startImmediateCall()
                             },
                             onScheduleCall = {
-                                // Temporary DEBUG trigger until the real scheduler (#4) lands.
-                                scheduleDebugCall()
+                                currentScreen = MainScreen.SCHEDULE_CALL
                             },
                             onCallSetup = {
                                 currentScreen = MainScreen.CALL_SETUP
@@ -157,7 +134,24 @@ class MainActivity : ComponentActivity() {
                                 // TODO system ringtone picker
                             },
                             onSave = { newConfig ->
+                                callConfigStore.save(newConfig)
                                 callConfig = newConfig
+                                currentScreen = MainScreen.HOME
+                            }
+                        )
+                    }
+                    MainScreen.SCHEDULE_CALL -> {
+                        ScheduleCallScreen(
+                            onBack = {
+                                currentScreen = MainScreen.HOME
+                            },
+                            onSchedule = { triggerTimeMillis ->
+
+                                Log.d(
+                                    "ExitCall",
+                                    "Selected schedule time: $triggerTimeMillis"
+                                )
+
                                 currentScreen = MainScreen.HOME
                             }
                         )

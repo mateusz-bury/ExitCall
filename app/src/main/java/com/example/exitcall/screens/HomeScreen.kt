@@ -18,6 +18,12 @@ private val ExitCallGreen = Color(0xFFA8D5BA)
 private val ExitCallText = Color(0xFFF2F4F2)
 private val ExitCallMuted = Color(0xFF9BA39E)
 
+private enum class MainScreen {
+    HOME,
+    CALL_SETUP,
+    SCHEDULE_CALL
+}
+
 @Composable
 fun HomeScreen(
     onCallMeNow: () -> Unit,
