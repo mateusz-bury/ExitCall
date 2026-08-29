@@ -52,7 +52,7 @@ class IncomingCallService : Service() {
         const val ACTION_TIMEOUT =
             "com.example.exitcall.ACTION_TIMEOUT"
 
-        const val UNANSWERED_TIMEOUT_MS = 30_000L
+        const val UNANSWERED_TIMEOUT_MS = 20_000L
     }
 
     override fun onCreate() {
