@@ -10,7 +10,9 @@ import android.media.AudioAttributes
 import android.media.Ringtone
 import android.media.RingtoneManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -23,6 +25,22 @@ class IncomingCallService : Service() {
 
     private var ringtone: Ringtone? = null
     private var vibrator: Vibrator? = null
+    private var isEnding = false
+
+    private val timeoutHandler = Handler(Looper.getMainLooper())
+
+    private val timeoutRunnable = Runnable {
+        Log.d(
+            "ExitCall",
+            "Incoming call timed out after ${UNANSWERED_TIMEOUT_MS / 1000} seconds"
+        )
+
+        sendBroadcast(
+            Intent(ACTION_TIMEOUT).setPackage(packageName)
+        )
+
+        finishIncomingCall("timeout")
+    }
 
     companion object {
         const val CHANNEL_ID = "incoming_call_channel"
@@ -30,6 +48,11 @@ class IncomingCallService : Service() {
 
         const val ACTION_DECLINE =
             "com.example.exitcall.ACTION_DECLINE"
+
+        const val ACTION_TIMEOUT =
+            "com.example.exitcall.ACTION_TIMEOUT"
+
+        const val UNANSWERED_TIMEOUT_MS = 20_000L
     }
 
     override fun onCreate() {
@@ -136,6 +159,11 @@ class IncomingCallService : Service() {
 
         startRingtone()
         startVibration()
+
+        timeoutHandler.postDelayed(
+            timeoutRunnable,
+            UNANSWERED_TIMEOUT_MS
+        )
     }
 
     override fun onStartCommand(
@@ -149,11 +177,38 @@ class IncomingCallService : Service() {
                 "Decline pressed from notification"
             )
 
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            finishIncomingCall("decline")
         }
 
         return START_NOT_STICKY
+    }
+
+    private fun finishIncomingCall(reason: String) {
+        if (isEnding) return
+
+        isEnding = true
+        timeoutHandler.removeCallbacks(timeoutRunnable)
+
+        stopAlerting()
+
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        getSystemService(NotificationManager::class.java)
+            .cancel(NOTIFICATION_ID)
+
+        Log.d(
+            "ExitCall",
+            "Incoming call finished: $reason"
+        )
+
+        stopSelf()
+    }
+
+    private fun stopAlerting() {
+        ringtone?.stop()
+        ringtone = null
+
+        vibrator?.cancel()
+        vibrator = null
     }
 
     private fun startRingtone() {
@@ -269,11 +324,12 @@ class IncomingCallService : Service() {
     }
 
     override fun onDestroy() {
-        ringtone?.stop()
-        ringtone = null
+        timeoutHandler.removeCallbacks(timeoutRunnable)
+        stopAlerting()
 
-        vibrator?.cancel()
-        vibrator = null
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        getSystemService(NotificationManager::class.java)
+            .cancel(NOTIFICATION_ID)
 
         Log.d(
             "ExitCall",

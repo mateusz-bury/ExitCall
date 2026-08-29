@@ -1,14 +1,19 @@
 package com.example.exitcall
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import com.example.exitcall.model.CallConfig
 import com.example.exitcall.screens.AppScreen
 import com.example.exitcall.ui.screens.ActiveCallScreen
@@ -22,6 +27,23 @@ class IncomingCallActivity : ComponentActivity() {
     }
 
     private var currentScreen by mutableStateOf(AppScreen.INCOMING_CALL)
+    private var timeoutReceiverRegistered = false
+
+    private val timeoutReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (
+                intent?.action == IncomingCallService.ACTION_TIMEOUT &&
+                currentScreen == AppScreen.INCOMING_CALL
+            ) {
+                Log.d(
+                    "ExitCall",
+                    "IncomingCallActivity closing after unanswered timeout"
+                )
+
+                finish()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +58,14 @@ class IncomingCallActivity : ComponentActivity() {
                     WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             )
         }
+
+        ContextCompat.registerReceiver(
+            this,
+            timeoutReceiver,
+            IntentFilter(IncomingCallService.ACTION_TIMEOUT),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+        timeoutReceiverRegistered = true
 
         val startActive = intent.getBooleanExtra(
             EXTRA_START_ACTIVE,
@@ -99,6 +129,15 @@ class IncomingCallActivity : ComponentActivity() {
             stopIncomingCallService()
             currentScreen = AppScreen.ACTIVE_CALL
         }
+    }
+
+    override fun onDestroy() {
+        if (timeoutReceiverRegistered) {
+            unregisterReceiver(timeoutReceiver)
+            timeoutReceiverRegistered = false
+        }
+
+        super.onDestroy()
     }
 
     private fun stopIncomingCallService() {
