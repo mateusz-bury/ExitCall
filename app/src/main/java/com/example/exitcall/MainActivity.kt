@@ -1,10 +1,15 @@
 package com.example.exitcall
 
 import android.Manifest
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -38,6 +43,54 @@ class MainActivity : ComponentActivity() {
             this,
             serviceIntent
         )
+    }
+
+    /**
+     * DEBUG ONLY.
+     * Temporary manual trigger for lock-screen testing until the real scheduler (#4) exists.
+     * Unlike the old prototype, this is never called automatically on app startup.
+     */
+    private fun scheduleDebugCall() {
+        if (!BuildConfig.DEBUG) return
+
+        val alarmManager =
+            getSystemService(ALARM_SERVICE) as AlarmManager
+
+        val alarmIntent = Intent(
+            this,
+            CallAlarmReceiver::class.java
+        )
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            this,
+            1001,
+            alarmIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val triggerTime = System.currentTimeMillis() + 5_000
+
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            !alarmManager.canScheduleExactAlarms()
+        ) {
+            Log.e("ExitCall", "Exact alarm permission NOT granted")
+
+            startActivity(
+                Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                    data = Uri.parse("package:$packageName")
+                }
+            )
+            return
+        }
+
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerTime,
+            pendingIntent
+        )
+
+        Log.d("ExitCall", "DEBUG call scheduled for +5 seconds")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,7 +137,8 @@ class MainActivity : ComponentActivity() {
                                 startImmediateCall()
                             },
                             onScheduleCall = {
-                                // TODO scheduler
+                                // Temporary DEBUG trigger until the real scheduler (#4) lands.
+                                scheduleDebugCall()
                             },
                             onCallSetup = {
                                 currentScreen = MainScreen.CALL_SETUP
