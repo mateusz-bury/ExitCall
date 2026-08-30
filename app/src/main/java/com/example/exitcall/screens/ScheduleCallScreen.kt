@@ -40,12 +40,22 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
+
+
+private val ExitCallBackground = Color(0xFF101311)
+private val ExitCallSurface = Color(0xFF191D1A)
+private val ExitCallGreen = Color(0xFFA8D5BA)
+private val ExitCallText = Color(0xFFF2F4F2)
+private val ExitCallMuted = Color(0xFF9BA39E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -223,7 +233,7 @@ fun ScheduleCallScreen(
             }
 
             Spacer(
-                modifier = Modifier.height(32.dp)
+                modifier = Modifier.weight(1f)
             )
 
             Button(
@@ -236,7 +246,12 @@ fun ScheduleCallScreen(
                         onSchedule(scheduledAtMillis)
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = buttonColors(
+                    containerColor = ExitCallGreen,
+                    contentColor = ExitCallBackground
+                )
             ) {
                 Text("Schedule")
             }
