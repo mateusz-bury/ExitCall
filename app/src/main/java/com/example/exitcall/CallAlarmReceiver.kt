@@ -5,12 +5,15 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import com.example.exitcall.model.ScheduledCallStore
 
 class CallAlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
 
         Log.d("ExitCall", "Scheduled call triggered!")
+
+        ScheduledCallStore(context).clear()
 
         val serviceIntent = Intent(
             context,
