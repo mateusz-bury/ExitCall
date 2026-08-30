@@ -3,8 +3,10 @@ package com.example.exitcall
 import android.Manifest
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -21,15 +23,12 @@ import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.example.exitcall.model.CallConfig
+import com.example.exitcall.model.CallConfigStore
 import com.example.exitcall.ui.screens.CallSetupScreen
 import com.example.exitcall.ui.screens.HomeScreen
 import com.example.exitcall.ui.screens.ScheduleCallScreen
 import com.example.exitcall.ui.theme.ExitCallTheme
-import android.content.Context
-import android.content.res.Configuration
 import java.util.Locale
-import com.example.exitcall.model.CallConfigStore
 
 class MainActivity : ComponentActivity() {
     private enum class MainScreen {
@@ -37,6 +36,7 @@ class MainActivity : ComponentActivity() {
         CALL_SETUP,
         SCHEDULE_CALL
     }
+
     private fun startImmediateCall() {
         val serviceIntent = Intent(
             this,
@@ -46,6 +46,66 @@ class MainActivity : ComponentActivity() {
         ContextCompat.startForegroundService(
             this,
             serviceIntent
+        )
+    }
+
+    private fun scheduleCall(triggerTimeMillis: Long): Boolean {
+        val alarmManager = getSystemService(AlarmManager::class.java)
+
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            !alarmManager.canScheduleExactAlarms()
+        ) {
+            openExactAlarmSettings()
+            return false
+        }
+
+        val alarmIntent = Intent(
+            this,
+            CallAlarmReceiver::class.java
+        )
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            this,
+            SCHEDULED_CALL_REQUEST_CODE,
+            alarmIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return try {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerTimeMillis,
+                pendingIntent
+            )
+
+            Log.d(
+                "ExitCall",
+                "Scheduled call registered for: $triggerTimeMillis"
+            )
+
+            true
+        } catch (securityException: SecurityException) {
+            Log.e(
+                "ExitCall",
+                "Exact alarm permission missing",
+                securityException
+            )
+
+            openExactAlarmSettings()
+            false
+        }
+    }
+
+    private fun openExactAlarmSettings() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+
+        startActivity(
+            Intent(
+                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                Uri.parse("package:$packageName")
+            )
         )
     }
 
@@ -140,24 +200,25 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+
                     MainScreen.SCHEDULE_CALL -> {
                         ScheduleCallScreen(
                             onBack = {
                                 currentScreen = MainScreen.HOME
                             },
                             onSchedule = { triggerTimeMillis ->
-
-                                Log.d(
-                                    "ExitCall",
-                                    "Selected schedule time: $triggerTimeMillis"
-                                )
-
-                                currentScreen = MainScreen.HOME
+                                if (scheduleCall(triggerTimeMillis)) {
+                                    currentScreen = MainScreen.HOME
+                                }
                             }
                         )
                     }
                 }
             }
         }
+    }
+
+    companion object {
+        private const val SCHEDULED_CALL_REQUEST_CODE = 4001
     }
 }

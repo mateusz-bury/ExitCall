@@ -9,6 +9,7 @@ import android.content.Intent
 import android.media.AudioAttributes
 import android.media.Ringtone
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -20,6 +21,7 @@ import android.os.VibratorManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
+import com.example.exitcall.model.CallConfigStore
 
 class IncomingCallService : Service() {
 
@@ -59,6 +61,13 @@ class IncomingCallService : Service() {
         super.onCreate()
 
         createNotificationChannel()
+
+        val config = CallConfigStore(this).load()
+
+        Log.d(
+            "ExitCall",
+            "Loaded call config for service: caller=${config.callerName}, ringtone=${config.ringtoneName}, vibrate=${config.vibrate}"
+        )
 
         val notificationManager =
             getSystemService(NotificationManager::class.java)
@@ -127,7 +136,11 @@ class IncomingCallService : Service() {
         )
 
         val caller = Person.Builder()
-            .setName("ExitCall")
+            .setName(
+                config.callerName.ifBlank {
+                    "Unknown"
+                }
+            )
             .setImportant(true)
             .build()
 
@@ -157,8 +170,8 @@ class IncomingCallService : Service() {
             notification
         )
 
-        startRingtone()
-        startVibration()
+        startRingtone(config.ringtoneUri)
+        startVibration(config.vibrate)
 
         timeoutHandler.postDelayed(
             timeoutRunnable,
@@ -211,14 +224,22 @@ class IncomingCallService : Service() {
         vibrator = null
     }
 
-    private fun startRingtone() {
-        val ringtoneUri = RingtoneManager.getDefaultUri(
+    private fun startRingtone(configuredRingtoneUri: String?) {
+        val defaultRingtoneUri = RingtoneManager.getDefaultUri(
             RingtoneManager.TYPE_RINGTONE
         )
+
+        val ringtoneUri = configuredRingtoneUri
+            ?.takeIf { it.isNotBlank() }
+            ?.let(Uri::parse)
+            ?: defaultRingtoneUri
 
         ringtone = RingtoneManager.getRingtone(
             applicationContext,
             ringtoneUri
+        ) ?: RingtoneManager.getRingtone(
+            applicationContext,
+            defaultRingtoneUri
         )
 
         ringtone?.audioAttributes =
@@ -243,7 +264,15 @@ class IncomingCallService : Service() {
         )
     }
 
-    private fun startVibration() {
+    private fun startVibration(enabled: Boolean) {
+        if (!enabled) {
+            Log.d(
+                "ExitCall",
+                "Vibration disabled by call config"
+            )
+            return
+        }
+
         vibrator =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val vibratorManager =
