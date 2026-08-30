@@ -6,19 +6,18 @@ GitHub Issues are the source of truth for actionable work. This file is the road
 
 Work in this order unless a blocker forces a change:
 
-1. **#3 — Persist CallConfig between app launches/process death.** Implementation has started: `CallConfigStore` exists and `MainActivity` now loads/saves it. Next: verify persistence and remove remaining default-config reads from the real call flow.
-2. **#6 — Make IncomingCallService and IncomingCallActivity use the saved CallConfig.** This is the next prepared task after #3 verification.
-3. **#4 — Finish the real scheduler.** Scheduler UI, DatePicker, TimePicker and past-time validation are already implemented. Pause here until #3/#6 are complete, then connect the selected time to exact AlarmManager, persist the next call and expose it on Home.
-4. **#8 — Complete permission/capability UX.** Do this after the real scheduling path exists so permission failures can be tested against the real user flow.
-5. **#9 — Run the end-to-end locked/unlocked regression checklist.**
-6. **#10 — Restore pending scheduled calls after device reboot.**
-7. **#11 — Replace `com.example.exitcall` with the permanent production application ID before public release.**
+1. **#6 — Verify saved CallConfig in the real call flow.** Implementation from PR #64 is merged: IncomingCallActivity and IncomingCallService now read the persisted setup. Next session: physically verify caller identity, ringtone and vibration for immediate and scheduled calls.
+2. **#4 — Finish verification of the real scheduler.** Exact Alarm scheduling is working physically. Pending branch adds persisted next-call state, restores the current timestamp in ScheduleCallScreen, displays it on Home and clears it after the alarm fires. Next session: run the scheduler state checklist and close #4 if clean.
+3. **#8 — Complete permission/capability UX.** Do this after #4/#6 are physically signed off so failures can be tested against the real flow.
+4. **#9 — Run the end-to-end locked/unlocked regression checklist.**
+5. **#10 — Restore pending scheduled calls after device reboot.**
+6. **#11 — Replace `com.example.exitcall` with the permanent production application ID before public release.**
 
 Working rule: **one large task or at most two small tasks active at once**.
 
 Recommended immediate sequence:
 
-`#3 -> #6 -> #4 -> #8 -> #9 -> #10 -> #11`
+`verify #6 + #4 -> #8 -> #9 -> #10 -> #11`
 
 ---
 
@@ -26,9 +25,8 @@ Recommended immediate sequence:
 
 ### Active / next
 
-- #3 Persist CallConfig between app launches/process death. **In progress.** `CallConfigStore` and MainActivity load/save are on `main`; real call Activity/Service still need the shared persisted config and verification.
-- #6 Make IncomingCallService and IncomingCallActivity use saved CallConfig, including configured ringtone/vibration/caller identity. **Ready after #3 readback verification.**
-- #4 Finish scheduler UI and exact-alarm integration. **UI foundation complete; paused behind #3/#6.** Date/time selection and validation work, but no real alarm/persisted next-call state yet.
+- #6 Make IncomingCallService and IncomingCallActivity use saved CallConfig, including configured ringtone/vibration/caller identity. **Implementation merged in PR #64; physical end-to-end verification pending.**
+- #4 Finish scheduler UI and exact-alarm integration. **Exact Alarm trigger physically works. Persisted next-call state and Home/Schedule display are implemented on `fix/scheduled-call-state`; physical verification pending.**
 
 ### Remaining P1
 
@@ -41,7 +39,7 @@ Recommended immediate sequence:
 
 ### Scheduler and configuration
 
-- #12 Add edit/cancel controls for scheduled calls and show/manage the real next scheduled call on Home.
+- #12 Add explicit edit/cancel controls for the pending scheduled call.
 - #13 Add Android system ringtone picker.
 - #14 Add privacy-friendly single contact picker; no bulk contact import and no random-contact feature.
 - #15 Add country-code support and phone-number formatting, extensible internationally.
@@ -92,6 +90,7 @@ Recommended immediate sequence:
 
 - #1 Answer -> ActiveCallScreen works in the real service/activity flow and was physically verified.
 - #2 ActiveCallScreen -> Hang Up closes the call UI cleanly and was physically verified.
+- #3 CallConfig persistence survives app kill/relaunch and device restart; `CallConfigStore` is the durable configuration source.
 - #5 Immediate and scheduled triggers now converge on the same service/activity call pipeline; automatic debug scheduling and the duplicate MainActivity call path are gone.
 - #7 Locked-device Full Screen Intent and unlocked-device call-style notification paths support working Answer/Decline actions.
 - #27 Product wording standardized across Home, Call Setup and public documentation.
@@ -111,10 +110,10 @@ Recommended immediate sequence:
 
 These are not reasons to interrupt the active P1 sequence, but they should remain visible:
 
-- `CallConfigStore` is now the beginning of the persistent source of truth, but `IncomingCallActivity` and `IncomingCallService` still bypass it.
-- Scheduler UI exists and produces a validated `triggerTimeMillis`, but the value is currently only logged.
-- Home still displays `Next call: Not scheduled` as a placeholder.
-- `IncomingCallService` still hardcodes notification identity, system-default ringtone and vibration behavior.
+- PR #64 connected persisted CallConfig to IncomingCallActivity and IncomingCallService; physical verification of all configured fields is still pending.
+- Exact Alarm scheduling is now connected and physically confirmed to trigger a call.
+- `ScheduledCallStore` is being added as the source of truth for the pending next-call timestamp; Home and ScheduleCallScreen will read the same persisted value.
+- scheduled alarms are still lost after a full device reboot until #10 adds BOOT_COMPLETED restoration; persisted UI state alone must not be treated as reboot support.
 - central Material theme now uses ExitCall colors, while several screens still use duplicated local constants.
 - `.docs/README.md` is stale and its relative links no longer match the new subfolder layout.
 - the repository has no root `README.md` at the moment.
