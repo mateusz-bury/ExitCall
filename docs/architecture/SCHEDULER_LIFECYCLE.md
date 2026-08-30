@@ -53,6 +53,12 @@ On boot:
 
 There is deliberately no catch-up behavior for a call whose trigger time passed while the device was unavailable. A stale scheduled call is discarded rather than firing unexpectedly after boot.
 
+### Direct Boot boundary
+
+The MVP uses the normal `BOOT_COMPLETED` path and the existing credential-protected `SharedPreferences` stores. It does not attempt to run the full ExitCall flow before the user has unlocked the device for the first time after a reboot.
+
+Supporting a call before first unlock would require a deliberate Direct Boot design, device-protected persistence and compatible access to the call configuration. That is outside issue #10 rather than being silently implied by the current implementation.
+
 ## Exact-alarm permission recovery
 
 Android can revoke `SCHEDULE_EXACT_ALARM`, and revocation removes exact alarms that were already registered. ExitCall therefore also listens for `ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED`, which Android sends when exact-alarm access is granted.
@@ -68,7 +74,7 @@ When that broadcast arrives, ExitCall runs the same persisted-call recovery path
 The scheduler should preserve these invariants:
 
 1. A newly scheduled timestamp is persisted only after `AlarmManager` registration succeeds.
-2. A valid persisted timestamp survives process death and reboot.
+2. A valid persisted timestamp survives process death and normal post-unlock reboot recovery.
 3. Reboot recovery never creates a second `PendingIntent` identity for the same MVP scheduled call.
 4. Expired persisted schedules are cleared instead of replayed.
 5. Triggering the call consumes the persisted schedule.
@@ -81,7 +87,7 @@ Before closing issue #10, verify on the primary Android device:
 
 1. Schedule a call several minutes in the future and confirm Home shows the expected `Next call`.
 2. Reboot the device before the trigger time.
-3. Do not manually recreate the schedule after reboot.
+3. Unlock the device normally after reboot; do not manually recreate the schedule.
 4. Confirm the incoming call starts at the originally selected time.
 5. Confirm the normal Answer / Decline flow still works.
 6. Confirm Home returns to `Not scheduled` after the recovered call fires.
