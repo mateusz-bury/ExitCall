@@ -7,16 +7,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.exitcall.model.CallConfig
-
-private val ExitCallBackground = Color(0xFF101311)
-private val ExitCallSurface = Color(0xFF191D1A)
-private val ExitCallGreen = Color(0xFFA8D5BA)
-private val ExitCallText = Color(0xFFF2F4F2)
-private val ExitCallMuted = Color(0xFF9BA39E)
 
 @Composable
 fun CallSetupScreen(
@@ -41,7 +34,7 @@ fun CallSetupScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ExitCallBackground)
+            .background(MaterialTheme.colorScheme.background)
     ) {
 
         Column(
@@ -53,7 +46,7 @@ fun CallSetupScreen(
 
             Text(
                 text = "Set up a call",
-                color = ExitCallText,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 28.sp
             )
 
@@ -63,7 +56,7 @@ fun CallSetupScreen(
 
             Text(
                 text = "Choose how your incoming call should look and feel.",
-                color = ExitCallMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp
             )
 
@@ -75,7 +68,7 @@ fun CallSetupScreen(
 
                 Text(
                     text = "Caller",
-                    color = ExitCallMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
 
@@ -120,7 +113,7 @@ fun CallSetupScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = ExitCallGreen
+                        contentColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Text("Choose contact")
@@ -135,7 +128,7 @@ fun CallSetupScreen(
 
                 Text(
                     text = "Call behavior",
-                    color = ExitCallMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
 
@@ -152,13 +145,13 @@ fun CallSetupScreen(
 
                         Text(
                             text = "Ringtone",
-                            color = ExitCallText,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 16.sp
                         )
 
                         Text(
                             text = initialConfig.ringtoneName,
-                            color = ExitCallMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp
                         )
                     }
@@ -168,14 +161,14 @@ fun CallSetupScreen(
                     ) {
                         Text(
                             text = "Change",
-                            color = ExitCallGreen
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 14.dp),
-                    color = Color(0xFF2A302C)
+                    color = MaterialTheme.colorScheme.outlineVariant
                 )
 
                 Row(
@@ -187,13 +180,13 @@ fun CallSetupScreen(
 
                         Text(
                             text = "Vibrate",
-                            color = ExitCallText,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 16.sp
                         )
 
                         Text(
                             text = "Use vibration during incoming call",
-                            color = ExitCallMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp
                         )
                     }
@@ -204,13 +197,12 @@ fun CallSetupScreen(
                             vibrate = it
                         },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = ExitCallBackground,
-                            checkedTrackColor = ExitCallGreen,
-                            checkedBorderColor = ExitCallGreen,
-
-                            uncheckedThumbColor = ExitCallMuted,
-                            uncheckedTrackColor = ExitCallSurface,
-                            uncheckedBorderColor = Color(0xFF3B443F)
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            checkedBorderColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surface,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.outline
                         )
                     )
                 }
@@ -238,8 +230,8 @@ fun CallSetupScreen(
                     .height(58.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = ExitCallGreen,
-                    contentColor = ExitCallBackground
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(
@@ -260,12 +252,12 @@ private fun SetupCard(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = ExitCallSurface,
+                color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(20.dp)
             )
             .border(
                 width = 1.dp,
-                color = Color(0xFF252B27),
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(20.dp)
             )
             .padding(18.dp),
