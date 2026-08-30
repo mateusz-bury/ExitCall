@@ -26,8 +26,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.exitcall.model.CallConfigStore
 import com.example.exitcall.model.ScheduledCallStore
@@ -202,6 +202,15 @@ class MainActivity : ComponentActivity() {
             .areNotificationsEnabled()
     }
 
+    private fun canRequestNotificationRuntimePermission(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED &&
+            !notificationPermissionRequestedThisSession
+    }
+
     private fun hasFullScreenIntentCapability(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             return true
@@ -225,15 +234,7 @@ class MainActivity : ComponentActivity() {
     ) {
         when (capability) {
             CallCapability.NOTIFICATIONS -> {
-                val canRequestRuntimePermission =
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                        ContextCompat.checkSelfPermission(
-                            this,
-                            Manifest.permission.POST_NOTIFICATIONS
-                        ) != PackageManager.PERMISSION_GRANTED &&
-                        !notificationPermissionRequestedThisSession
-
-                if (canRequestRuntimePermission) {
+                if (canRequestNotificationRuntimePermission()) {
                     capabilityIssue = null
                     notificationPermissionRequestedThisSession = true
 
@@ -301,14 +302,21 @@ class MainActivity : ComponentActivity() {
         runCatching {
             startActivity(intent)
         }.onFailure {
-            waitingForCapabilitySettings = false
+            waitingForCapabilitySettings = true
 
-            startActivity(
-                Intent(
-                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.parse("package:$packageName")
+            runCatching {
+                startActivity(
+                    Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:$packageName")
+                    )
                 )
-            )
+            }.onFailure {
+                waitingForCapabilitySettings = false
+                capabilityIssue = firstMissingCapability(
+                    requireExactAlarm = pendingRequiresExactAlarm
+                )
+            }
         }
     }
 
@@ -428,8 +436,8 @@ class MainActivity : ComponentActivity() {
                 capabilityIssue?.let { capability ->
                     CallCapabilityDialog(
                         capability = capability,
-                        notificationPermissionRequested =
-                            notificationPermissionRequestedThisSession,
+                        canRequestNotificationPermission =
+                            canRequestNotificationRuntimePermission(),
                         onConfirm = {
                             handleCapabilityAction(capability)
                         },
@@ -466,7 +474,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun CallCapabilityDialog(
     capability: CallCapability,
-    notificationPermissionRequested: Boolean,
+    canRequestNotificationPermission: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -479,10 +487,10 @@ private fun CallCapabilityDialog(
             title = "Notifications required"
             message =
                 "ExitCall needs notifications to show incoming call controls reliably. No call will be started or scheduled until this is enabled."
-            confirmLabel = if (notificationPermissionRequested) {
-                "Open settings"
-            } else {
+            confirmLabel = if (canRequestNotificationPermission) {
                 "Allow notifications"
+            } else {
+                "Open settings"
             }
         }
 
