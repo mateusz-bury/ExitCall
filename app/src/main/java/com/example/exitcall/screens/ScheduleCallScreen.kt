@@ -120,16 +120,19 @@ private fun ScheduleOption(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleCallScreen(
+    initialScheduledAtMillis: Long?,
     onBack: () -> Unit,
     onSchedule: (Long) -> Unit
 ) {
-    val initialTime = remember {
-        Calendar.getInstance().apply {
-            add(Calendar.MINUTE, 5)
-        }.timeInMillis
+    val initialTime = remember(initialScheduledAtMillis) {
+        initialScheduledAtMillis
+            ?.takeIf { it > System.currentTimeMillis() }
+            ?: Calendar.getInstance().apply {
+                add(Calendar.MINUTE, 5)
+            }.timeInMillis
     }
 
-    var scheduledAtMillis by remember {
+    var scheduledAtMillis by remember(initialTime) {
         mutableLongStateOf(initialTime)
     }
 

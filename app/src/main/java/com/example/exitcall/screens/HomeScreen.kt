@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 private val ExitCallBackground = Color(0xFF101311)
 private val ExitCallSurface = Color(0xFF191D1A)
@@ -26,11 +28,18 @@ private enum class MainScreen {
 
 @Composable
 fun HomeScreen(
+    scheduledCallAtMillis: Long?,
     onCallMeNow: () -> Unit,
     onScheduleCall: () -> Unit,
     onCallSetup: () -> Unit,
     onSettings: () -> Unit
 ) {
+    val nextCallText = scheduledCallAtMillis?.let { triggerTimeMillis ->
+        SimpleDateFormat(
+            "MMM d, HH:mm",
+            Locale.ENGLISH
+        ).format(triggerTimeMillis)
+    } ?: "Not scheduled"
 
     Box(
         modifier = Modifier
@@ -96,7 +105,7 @@ fun HomeScreen(
 
                 DashboardBox(
                     title = "Next call",
-                    value = "Not scheduled",
+                    value = nextCallText,
                     modifier = Modifier.weight(1f)
                 )
             }
