@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 private val ExitCallBackground = Color(0xFF101311)
 private val ExitCallSurface = Color(0xFF191D1A)
@@ -26,11 +28,18 @@ private enum class MainScreen {
 
 @Composable
 fun HomeScreen(
+    scheduledCallAtMillis: Long?,
     onCallMeNow: () -> Unit,
     onScheduleCall: () -> Unit,
     onCallSetup: () -> Unit,
     onSettings: () -> Unit
 ) {
+    val nextCallText = scheduledCallAtMillis?.let { triggerTimeMillis ->
+        SimpleDateFormat(
+            "MMM d, HH:mm",
+            Locale.ENGLISH
+        ).format(triggerTimeMillis)
+    } ?: "Not scheduled"
 
     Box(
         modifier = Modifier
@@ -44,8 +53,6 @@ fun HomeScreen(
                 .safeDrawingPadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-
-            // HEADER
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -81,8 +88,6 @@ fun HomeScreen(
                 modifier = Modifier.height(28.dp)
             )
 
-            // DASHBOARD PLACEHOLDERS
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -96,7 +101,7 @@ fun HomeScreen(
 
                 DashboardBox(
                     title = "Next call",
-                    value = "Not scheduled",
+                    value = nextCallText,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -110,8 +115,6 @@ fun HomeScreen(
                 value = "Ready",
                 modifier = Modifier.fillMaxWidth()
             )
-
-            // wypychamy akcje mniej więcej na środek ekranu
 
             Spacer(
                 modifier = Modifier.weight(1f)
