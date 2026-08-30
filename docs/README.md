@@ -5,6 +5,7 @@ This directory contains the maintained project documentation for ExitCall.
 ## Architecture and decisions
 
 - [`architecture/DECISIONS.md`](architecture/DECISIONS.md) - product and technical decisions
+- [`architecture/SCHEDULER_LIFECYCLE.md`](architecture/SCHEDULER_LIFECYCLE.md) - exact-alarm scheduling, trigger lifecycle and reboot recovery
 
 ## Process
 
