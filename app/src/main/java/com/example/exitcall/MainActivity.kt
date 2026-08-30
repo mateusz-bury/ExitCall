@@ -2,6 +2,7 @@ package com.example.exitcall
 
 import android.Manifest
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -16,11 +17,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.exitcall.model.CallConfigStore
@@ -30,6 +36,12 @@ import com.example.exitcall.ui.screens.HomeScreen
 import com.example.exitcall.ui.screens.ScheduleCallScreen
 import com.example.exitcall.ui.theme.ExitCallTheme
 import java.util.Locale
+
+private enum class CallCapability {
+    NOTIFICATIONS,
+    FULL_SCREEN_INTENT,
+    EXACT_ALARM
+}
 
 class MainActivity : ComponentActivity() {
     private enum class MainScreen {
@@ -41,6 +53,24 @@ class MainActivity : ComponentActivity() {
     private lateinit var scheduledCallStore: ScheduledCallStore
 
     private var scheduledCallAtMillis by mutableStateOf<Long?>(null)
+    private var capabilityIssue by mutableStateOf<CallCapability?>(null)
+
+    private var pendingCapabilityAction: (() -> Unit)? = null
+    private var pendingRequiresExactAlarm = false
+    private var waitingForCapabilitySettings = false
+    private var notificationPermissionRequestedThisSession = false
+
+    private val notificationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            if (granted) {
+                continuePendingCapabilityAction()
+            } else {
+                notificationPermissionRequestedThisSession = true
+                capabilityIssue = CallCapability.NOTIFICATIONS
+            }
+        }
 
     private fun startImmediateCall() {
         val serviceIntent = Intent(
@@ -61,7 +91,7 @@ class MainActivity : ComponentActivity() {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
             !alarmManager.canScheduleExactAlarms()
         ) {
-            openExactAlarmSettings()
+            capabilityIssue = CallCapability.EXACT_ALARM
             return false
         }
 
@@ -101,20 +131,199 @@ class MainActivity : ComponentActivity() {
                 securityException
             )
 
-            openExactAlarmSettings()
+            capabilityIssue = CallCapability.EXACT_ALARM
             false
         }
     }
 
-    private fun openExactAlarmSettings() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+    private fun ensureCallCapabilities(
+        requireExactAlarm: Boolean,
+        onReady: () -> Unit
+    ) {
+        pendingCapabilityAction = onReady
+        pendingRequiresExactAlarm = requireExactAlarm
 
-        startActivity(
+        continuePendingCapabilityAction()
+    }
+
+    private fun continuePendingCapabilityAction() {
+        val missingCapability = firstMissingCapability(
+            requireExactAlarm = pendingRequiresExactAlarm
+        )
+
+        if (missingCapability != null) {
+            capabilityIssue = missingCapability
+            return
+        }
+
+        val action = pendingCapabilityAction
+
+        pendingCapabilityAction = null
+        pendingRequiresExactAlarm = false
+        capabilityIssue = null
+
+        action?.invoke()
+    }
+
+    private fun firstMissingCapability(
+        requireExactAlarm: Boolean
+    ): CallCapability? {
+        if (!hasNotificationCapability()) {
+            return CallCapability.NOTIFICATIONS
+        }
+
+        if (!hasFullScreenIntentCapability()) {
+            return CallCapability.FULL_SCREEN_INTENT
+        }
+
+        if (
+            requireExactAlarm &&
+            !hasExactAlarmCapability()
+        ) {
+            return CallCapability.EXACT_ALARM
+        }
+
+        return null
+    }
+
+    private fun hasNotificationCapability(): Boolean {
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return false
+        }
+
+        return NotificationManagerCompat
+            .from(this)
+            .areNotificationsEnabled()
+    }
+
+    private fun canRequestNotificationRuntimePermission(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED &&
+            !notificationPermissionRequestedThisSession
+    }
+
+    private fun hasFullScreenIntentCapability(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            return true
+        }
+
+        return getSystemService(NotificationManager::class.java)
+            .canUseFullScreenIntent()
+    }
+
+    private fun hasExactAlarmCapability(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            return true
+        }
+
+        return getSystemService(AlarmManager::class.java)
+            .canScheduleExactAlarms()
+    }
+
+    private fun handleCapabilityAction(
+        capability: CallCapability
+    ) {
+        when (capability) {
+            CallCapability.NOTIFICATIONS -> {
+                if (canRequestNotificationRuntimePermission()) {
+                    capabilityIssue = null
+                    notificationPermissionRequestedThisSession = true
+
+                    notificationPermissionLauncher.launch(
+                        Manifest.permission.POST_NOTIFICATIONS
+                    )
+                } else {
+                    openNotificationSettings()
+                }
+            }
+
+            CallCapability.FULL_SCREEN_INTENT -> {
+                openFullScreenIntentSettings()
+            }
+
+            CallCapability.EXACT_ALARM -> {
+                openExactAlarmSettings()
+            }
+        }
+    }
+
+    private fun openNotificationSettings() {
+        openCapabilitySettings(
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(
+                    Settings.EXTRA_APP_PACKAGE,
+                    packageName
+                )
+            }
+        )
+    }
+
+    private fun openFullScreenIntentSettings() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            continuePendingCapabilityAction()
+            return
+        }
+
+        openCapabilitySettings(
+            Intent(
+                Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+                Uri.parse("package:$packageName")
+            )
+        )
+    }
+
+    private fun openExactAlarmSettings() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            continuePendingCapabilityAction()
+            return
+        }
+
+        openCapabilitySettings(
             Intent(
                 Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
                 Uri.parse("package:$packageName")
             )
         )
+    }
+
+    private fun openCapabilitySettings(intent: Intent) {
+        capabilityIssue = null
+        waitingForCapabilitySettings = true
+
+        runCatching {
+            startActivity(intent)
+        }.onFailure {
+            waitingForCapabilitySettings = true
+
+            runCatching {
+                startActivity(
+                    Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:$packageName")
+                    )
+                )
+            }.onFailure {
+                waitingForCapabilitySettings = false
+                capabilityIssue = firstMissingCapability(
+                    requireExactAlarm = pendingRequiresExactAlarm
+                )
+            }
+        }
+    }
+
+    private fun cancelPendingCapabilityAction() {
+        capabilityIssue = null
+        pendingCapabilityAction = null
+        pendingRequiresExactAlarm = false
     }
 
     override fun attachBaseContext(newBase: Context) {
@@ -136,21 +345,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    3001
-                )
-            }
-        }
 
         enableEdgeToEdge()
 
@@ -181,10 +375,18 @@ class MainActivity : ComponentActivity() {
                         HomeScreen(
                             scheduledCallAtMillis = scheduledCallAtMillis,
                             onCallMeNow = {
-                                startImmediateCall()
+                                ensureCallCapabilities(
+                                    requireExactAlarm = false
+                                ) {
+                                    startImmediateCall()
+                                }
                             },
                             onScheduleCall = {
-                                currentScreen = MainScreen.SCHEDULE_CALL
+                                ensureCallCapabilities(
+                                    requireExactAlarm = true
+                                ) {
+                                    currentScreen = MainScreen.SCHEDULE_CALL
+                                }
                             },
                             onCallSetup = {
                                 currentScreen = MainScreen.CALL_SETUP
@@ -219,12 +421,30 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = MainScreen.HOME
                             },
                             onSchedule = { triggerTimeMillis ->
-                                if (scheduleCall(triggerTimeMillis)) {
-                                    currentScreen = MainScreen.HOME
+                                ensureCallCapabilities(
+                                    requireExactAlarm = true
+                                ) {
+                                    if (scheduleCall(triggerTimeMillis)) {
+                                        currentScreen = MainScreen.HOME
+                                    }
                                 }
                             }
                         )
                     }
+                }
+
+                capabilityIssue?.let { capability ->
+                    CallCapabilityDialog(
+                        capability = capability,
+                        canRequestNotificationPermission =
+                            canRequestNotificationRuntimePermission(),
+                        onConfirm = {
+                            handleCapabilityAction(capability)
+                        },
+                        onDismiss = {
+                            cancelPendingCapabilityAction()
+                        }
+                    )
                 }
             }
         }
@@ -236,9 +456,80 @@ class MainActivity : ComponentActivity() {
         if (::scheduledCallStore.isInitialized) {
             scheduledCallAtMillis = scheduledCallStore.load()
         }
+
+        if (waitingForCapabilitySettings) {
+            waitingForCapabilitySettings = false
+
+            if (pendingCapabilityAction != null) {
+                continuePendingCapabilityAction()
+            }
+        }
     }
 
     companion object {
         private const val SCHEDULED_CALL_REQUEST_CODE = 4001
     }
+}
+
+@Composable
+private fun CallCapabilityDialog(
+    capability: CallCapability,
+    canRequestNotificationPermission: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val title: String
+    val message: String
+    val confirmLabel: String
+
+    when (capability) {
+        CallCapability.NOTIFICATIONS -> {
+            title = "Notifications required"
+            message =
+                "ExitCall needs notifications to show incoming call controls reliably. No call will be started or scheduled until this is enabled."
+            confirmLabel = if (canRequestNotificationPermission) {
+                "Allow notifications"
+            } else {
+                "Open settings"
+            }
+        }
+
+        CallCapability.FULL_SCREEN_INTENT -> {
+            title = "Full-screen calls required"
+            message =
+                "Allow full-screen notifications so an ExitCall can appear over the lock screen when you need it."
+            confirmLabel = "Open settings"
+        }
+
+        CallCapability.EXACT_ALARM -> {
+            title = "Exact alarms required"
+            message =
+                "Allow exact alarms so scheduled calls can start at the time you choose."
+            confirmLabel = "Open settings"
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(title)
+        },
+        text = {
+            Text(message)
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm
+            ) {
+                Text(confirmLabel)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text("Not now")
+            }
+        }
+    )
 }
