@@ -233,14 +233,19 @@ fun CallSetupScreen(
                         )
                     )
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = ExitCallGreen,
                     contentColor = ExitCallBackground
                 )
             ) {
-                Text("Save call setup")
+                Text(
+                    text = "Save call setup",
+                    fontSize = 18.sp
+                )
             }
         }
     }

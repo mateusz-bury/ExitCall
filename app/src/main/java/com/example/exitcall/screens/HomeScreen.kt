@@ -120,7 +120,7 @@ fun HomeScreen(
             Text(
                 text = "Need an exit?",
                 color = ExitCallText,
-                fontSize = 22.sp
+                fontSize = 23.sp
             )
 
             Spacer(
@@ -131,7 +131,7 @@ fun HomeScreen(
                 onClick = onCallMeNow,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(58.dp),
+                    .height(65.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = ExitCallGreen,
@@ -140,7 +140,7 @@ fun HomeScreen(
             ) {
                 Text(
                     text = "Start call",
-                    fontSize = 17.sp
+                    fontSize = 18.sp,
                 )
             }
 
@@ -164,7 +164,8 @@ fun HomeScreen(
                 )
             ) {
                 Text(
-                    text = "Schedule a call"
+                    text = "Schedule a call",
+                    fontSize = 18.sp
                 )
             }
 
@@ -188,7 +189,8 @@ fun HomeScreen(
                 )
             ) {
                 Text(
-                    text = "Set up a call"
+                    text = "Set up a call",
+                    fontSize = 18.sp
                 )
             }
 

@@ -246,14 +246,19 @@ fun ScheduleCallScreen(
                         onSchedule(scheduledAtMillis)
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = buttonColors(
                     containerColor = ExitCallGreen,
                     contentColor = ExitCallBackground
                 )
             ) {
-                Text("Schedule")
+                Text(
+                    text = "Shedule a call",
+                    fontSize = 18.sp
+                )
             }
         }
     }
