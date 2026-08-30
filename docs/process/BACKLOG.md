@@ -6,16 +6,17 @@ GitHub Issues are the source of truth for actionable work. This file is the road
 
 Work in this order unless a blocker forces a change:
 
-1. **#8 — Complete permission/capability UX.** Test exact alarm, notifications and Full Screen Intent failures against the now-verified real call flow.
-2. **#9 — Run the end-to-end locked/unlocked regression checklist.**
-3. **#10 — Restore pending scheduled calls after device reboot.**
-4. **#11 — Replace `com.example.exitcall` with the permanent production application ID before public release.**
+1. **#24 + #38 — Review and verify the theme/repository cleanup PR.** Theme centralization and repository cleanup are implemented on `chore/theme-repository-cleanup`; merge after a quick build/device smoke test.
+2. **#8 — Complete permission/capability UX.** Test exact alarm, notifications and Full Screen Intent failures against the now-verified real call flow.
+3. **#9 — Run the end-to-end locked/unlocked regression checklist.**
+4. **#10 — Restore pending scheduled calls after device reboot.**
+5. **#11 — Replace `com.example.exitcall` with the permanent production application ID before public release.**
 
 Working rule: **one large task or at most two small tasks active at once**.
 
 Recommended immediate sequence:
 
-`#8 -> #9 -> #10 -> #11`
+`verify #24 + #38 -> #8 -> #9 -> #10 -> #11`
 
 ---
 
@@ -50,7 +51,7 @@ Recommended immediate sequence:
 - #21 Add speakerphone mode.
 - #22 Finish ActiveCallScreen controls and remove prototype placeholders.
 - #23 Implement Settings screen and global preferences.
-- #24 Centralize ExitCall theme. **Partially implemented:** central Material palette is now in `Color.kt`/`Theme.kt`; legacy screens still repeat local colors and need final device polish.
+- #24 Centralize ExitCall theme. **Implementation ready for verification:** Home, Call Setup, Scheduler, Incoming and Active call screens now use the centralized Material palette; call-flow-only colors are centralized in `Color.kt`. Final physical-device visual smoke test remains.
 - #53 Decide whether to show an optional missed-call notification after an unanswered timeout.
 - #54 ExitCall marker is implemented on incoming/active screens; keep open until demo/onboarding #29 teaches the marker rule.
 - #58 Make the unanswered-call timeout configurable in Settings: 5s / 10s / 20s, default 20s.
@@ -72,8 +73,8 @@ Recommended immediate sequence:
 - #35 Refactor navigation/state architecture after core MVP call flow stabilizes.
 - #36 Explore Google Phone / Samsung-style visual variants while keeping shared call logic.
 - #37 Design and validate monetization model.
-- #38 Repository cleanup. Current findings include tracked `.idea/`, hidden `.docs/` instead of standard `docs/`, no root README, package/path mismatches for screen files, an unused duplicate `MainScreen` in `HomeScreen`, stale imports and default example tests.
-- #39 Maintain architecture/release documentation. Specs v1.1-v1.3 and process/decision docs exist; root README, docs links and current architecture status still need cleanup.
+- #38 Repository cleanup. **Implementation ready for review:** tracked `.idea/` metadata and default example tests are removed, `.docs/` is moved to `docs/`, a root `README.md` is restored, screen source paths now match `com.example.exitcall.ui.screens`, and stale duplicate/unused screen code was cleaned.
+- #39 Maintain architecture/release documentation. Specs v1.1-v1.3 and process/decision docs now live under standard `docs/`; ongoing architecture/release updates remain tracked here.
 
 ## P4 — Icebox / future / exploratory
 
@@ -108,13 +109,13 @@ Recommended immediate sequence:
 
 These are not reasons to interrupt the active P1 sequence, but they should remain visible:
 
-- persisted CallConfig is now the shared source of truth for the real immediate and scheduled call flow and has passed physical verification.
+- persisted CallConfig is the shared source of truth for the real immediate and scheduled call flow and has passed physical verification.
 - real scheduler state is persisted and displayed consistently on Home and ScheduleCallScreen; the scheduled call clears the stored next-call value after firing.
 - scheduled alarms are still lost after a full device reboot until #10 adds BOOT_COMPLETED restoration; persisted UI state alone must not be treated as reboot support.
-- central Material theme now uses ExitCall colors, while several screens still use duplicated local constants.
-- `.docs/README.md` is stale and its relative links no longer match the new subfolder layout.
-- the repository has no root `README.md` at the moment.
-- `.idea/` is still tracked despite ignore rules.
+- theme colors are centralized; remaining visual work should be product polish rather than repeated screen-local palette definitions.
+- repository documentation now has a standard root `README.md` and `docs/` layout.
+- local IDE metadata is ignored and no longer tracked on the cleanup branch.
+- `CallScreen.kt` intentionally remains under `com.example.exitcall.screens`; UI composables live under the matching `com.example.exitcall.ui.screens` path.
 
 ## Explicit product decisions / not planned
 

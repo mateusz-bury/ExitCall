@@ -5,6 +5,8 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -13,33 +15,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Text
 import com.example.exitcall.model.CallConfig
+import com.example.exitcall.ui.theme.ExitCallAnswerGreen
+import com.example.exitcall.ui.theme.ExitCallIncomingBackground
+import com.example.exitcall.ui.theme.ExitCallSliderBackground
 import kotlin.math.roundToInt
-
-private val ExitCallGreen = Color(0xFFA8D5BA)
-private val ExitCallBackground = Color(0xFF050706)
-private val ExitCallSliderBackground = Color(0xFF292B26)
 
 @Composable
 fun IncomingCallScreen(
     config: CallConfig,
     onDecline: () -> Unit,
     onAnswer: () -> Unit
-    ) {
+) {
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ExitCallBackground)
+                .background(ExitCallIncomingBackground)
                 .safeDrawingPadding()
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -47,23 +46,22 @@ fun IncomingCallScreen(
             Spacer(
                 modifier = Modifier.height(130.dp)
             )
-            // AVATAR
+
             Box(
                 modifier = Modifier
                     .size(96.dp)
                     .background(
-                        color = ExitCallGreen,
+                        color = MaterialTheme.colorScheme.primary,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
-
                 Text(
                     text = config.callerName
                         .firstOrNull()
                         ?.uppercase()
                         ?: "?",
-                    color = ExitCallBackground,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 40.sp
                 )
             }
@@ -72,27 +70,22 @@ fun IncomingCallScreen(
                 modifier = Modifier.height(24.dp)
             )
 
-            // CALLER NAME
-
             Text(
                 text = config.callerName.ifBlank {
                     "Unknown"
                 },
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 42.sp
             )
 
-            // PHONE NUMBER
-
             if (config.phoneNumber.isNotBlank()) {
-
                 Spacer(
                     modifier = Modifier.height(12.dp)
                 )
 
                 Text(
                     text = config.phoneNumber,
-                    color = Color.LightGray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 18.sp
                 )
             }
@@ -110,9 +103,10 @@ fun IncomingCallScreen(
                 modifier = Modifier.height(16.dp)
             )
         }
+
         Text(
             text = "EC",
-            color = ExitCallGreen.copy(alpha = 0.4f),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
             fontSize = 13.sp,
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -124,12 +118,12 @@ fun IncomingCallScreen(
         )
     }
 }
+
 @Composable
 fun IncomingCallSlider(
     onDecline: () -> Unit,
     onAnswer: () -> Unit
 ) {
-
     var dragOffset by remember {
         mutableFloatStateOf(0f)
     }
@@ -141,11 +135,8 @@ fun IncomingCallSlider(
             .clip(
                 RoundedCornerShape(46.dp)
             )
-            .background(
-                ExitCallSliderBackground
-            )
+            .background(ExitCallSliderBackground)
     ) {
-
         val maxDragPx = with(
             LocalDensity.current
         ) {
@@ -153,40 +144,28 @@ fun IncomingCallSlider(
                 .toPx()
         }
 
-        val actionThreshold =
-            maxDragPx * 0.55f
+        val actionThreshold = maxDragPx * 0.55f
 
         Text(
             text = "Decline",
-            color = Color(0xFFFFB4AB),
+            color = MaterialTheme.colorScheme.error,
             modifier = Modifier
-                .align(
-                    Alignment.CenterStart
-                )
-                .padding(
-                    start = 24.dp
-                )
+                .align(Alignment.CenterStart)
+                .padding(start = 24.dp)
         )
 
         Text(
             text = "Answer",
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
-                .align(
-                    Alignment.CenterEnd
-                )
-                .padding(
-                    end = 24.dp
-                )
+                .align(Alignment.CenterEnd)
+                .padding(end = 24.dp)
         )
 
         Box(
             modifier = Modifier
-                .align(
-                    Alignment.Center
-                )
+                .align(Alignment.Center)
                 .offset {
-
                     IntOffset(
                         x = dragOffset.roundToInt(),
                         y = 0
@@ -194,13 +173,10 @@ fun IncomingCallSlider(
                 }
                 .size(76.dp)
                 .clip(CircleShape)
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.onBackground)
                 .pointerInput(maxDragPx) {
-
                     detectHorizontalDragGestures(
-
                         onHorizontalDrag = { _, dragAmount ->
-
                             dragOffset =
                                 (dragOffset + dragAmount)
                                     .coerceIn(
@@ -208,42 +184,33 @@ fun IncomingCallSlider(
                                         maxDragPx
                                     )
                         },
-
                         onDragEnd = {
-
                             when {
-
                                 dragOffset >= actionThreshold -> {
-
                                     dragOffset = 0f
                                     onAnswer()
                                 }
 
                                 dragOffset <= -actionThreshold -> {
-
                                     dragOffset = 0f
                                     onDecline()
                                 }
 
                                 else -> {
-
                                     dragOffset = 0f
                                 }
                             }
                         },
-
                         onDragCancel = {
-
                             dragOffset = 0f
                         }
                     )
                 },
             contentAlignment = Alignment.Center
         ) {
-
             Text(
                 text = "☎",
-                color = Color(0xFF4FC16E),
+                color = ExitCallAnswerGreen,
                 fontSize = 32.sp
             )
         }
