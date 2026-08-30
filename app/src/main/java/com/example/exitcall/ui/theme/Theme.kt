@@ -20,6 +20,9 @@ private val ExitCallColorScheme = darkColorScheme(
     surfaceVariant = ExitCallSurfaceVariant,
     onSurfaceVariant = ExitCallMuted,
 
+    outline = ExitCallOutline,
+    outlineVariant = ExitCallDivider,
+
     error = ExitCallError
 )
 
