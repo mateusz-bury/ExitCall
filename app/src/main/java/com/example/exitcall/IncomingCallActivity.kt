@@ -14,7 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
-import com.example.exitcall.model.CallConfig
+import com.example.exitcall.model.CallConfigStore
 import com.example.exitcall.screens.CallScreen
 import com.example.exitcall.ui.screens.ActiveCallScreen
 import com.example.exitcall.ui.screens.IncomingCallScreen
@@ -82,10 +82,15 @@ class IncomingCallActivity : ComponentActivity() {
             stopIncomingCallService()
         }
 
+        val config = CallConfigStore(this).load()
+
+        Log.d(
+            "ExitCall",
+            "Loaded call config for UI: caller=${config.callerName}, vibrate=${config.vibrate}"
+        )
+
         setContent {
             ExitCallTheme {
-                val config = CallConfig()
-
                 when (currentScreen) {
                     CallScreen.INCOMING_CALL -> {
                         IncomingCallScreen(
