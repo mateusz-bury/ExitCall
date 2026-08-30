@@ -1,6 +1,5 @@
 package com.example.exitcall.scheduler
 
-import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,7 +11,7 @@ class ScheduledCallRecoveryReceiver : BroadcastReceiver() {
 
         if (
             action != Intent.ACTION_BOOT_COMPLETED &&
-            action != AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED
+            action != ACTION_EXACT_ALARM_PERMISSION_GRANTED
         ) {
             return
         }
@@ -28,5 +27,7 @@ class ScheduledCallRecoveryReceiver : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "ExitCallRecovery"
+        private const val ACTION_EXACT_ALARM_PERMISSION_GRANTED =
+            "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"
     }
 }
