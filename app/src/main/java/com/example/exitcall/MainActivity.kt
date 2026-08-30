@@ -24,6 +24,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.exitcall.model.CallConfigStore
+import com.example.exitcall.model.ScheduledCallStore
 import com.example.exitcall.ui.screens.CallSetupScreen
 import com.example.exitcall.ui.screens.HomeScreen
 import com.example.exitcall.ui.screens.ScheduleCallScreen
@@ -36,6 +37,10 @@ class MainActivity : ComponentActivity() {
         CALL_SETUP,
         SCHEDULE_CALL
     }
+
+    private lateinit var scheduledCallStore: ScheduledCallStore
+
+    private var scheduledCallAtMillis by mutableStateOf<Long?>(null)
 
     private fun startImmediateCall() {
         val serviceIntent = Intent(
@@ -79,6 +84,9 @@ class MainActivity : ComponentActivity() {
                 triggerTimeMillis,
                 pendingIntent
             )
+
+            scheduledCallStore.save(triggerTimeMillis)
+            scheduledCallAtMillis = triggerTimeMillis
 
             Log.d(
                 "ExitCall",
@@ -147,6 +155,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val callConfigStore = CallConfigStore(this)
+        scheduledCallStore = ScheduledCallStore(this)
+        scheduledCallAtMillis = scheduledCallStore.load()
 
         setContent {
             ExitCallTheme {
@@ -169,6 +179,7 @@ class MainActivity : ComponentActivity() {
                 when (currentScreen) {
                     MainScreen.HOME -> {
                         HomeScreen(
+                            scheduledCallAtMillis = scheduledCallAtMillis,
                             onCallMeNow = {
                                 startImmediateCall()
                             },
@@ -203,6 +214,7 @@ class MainActivity : ComponentActivity() {
 
                     MainScreen.SCHEDULE_CALL -> {
                         ScheduleCallScreen(
+                            initialScheduledAtMillis = scheduledCallAtMillis,
                             onBack = {
                                 currentScreen = MainScreen.HOME
                             },
@@ -215,6 +227,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (::scheduledCallStore.isInitialized) {
+            scheduledCallAtMillis = scheduledCallStore.load()
         }
     }
 
