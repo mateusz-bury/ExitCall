@@ -6,18 +6,16 @@ GitHub Issues are the source of truth for actionable work. This file is the road
 
 Work in this order unless a blocker forces a change:
 
-1. **#6 — Verify saved CallConfig in the real call flow.** Implementation from PR #64 is merged: IncomingCallActivity and IncomingCallService now read the persisted setup. Next session: physically verify caller identity, ringtone and vibration for immediate and scheduled calls.
-2. **#4 — Finish verification of the real scheduler.** Exact Alarm scheduling is working physically. Pending branch adds persisted next-call state, restores the current timestamp in ScheduleCallScreen, displays it on Home and clears it after the alarm fires. Next session: run the scheduler state checklist and close #4 if clean.
-3. **#8 — Complete permission/capability UX.** Do this after #4/#6 are physically signed off so failures can be tested against the real flow.
-4. **#9 — Run the end-to-end locked/unlocked regression checklist.**
-5. **#10 — Restore pending scheduled calls after device reboot.**
-6. **#11 — Replace `com.example.exitcall` with the permanent production application ID before public release.**
+1. **#8 — Complete permission/capability UX.** Test exact alarm, notifications and Full Screen Intent failures against the now-verified real call flow.
+2. **#9 — Run the end-to-end locked/unlocked regression checklist.**
+3. **#10 — Restore pending scheduled calls after device reboot.**
+4. **#11 — Replace `com.example.exitcall` with the permanent production application ID before public release.**
 
 Working rule: **one large task or at most two small tasks active at once**.
 
 Recommended immediate sequence:
 
-`verify #6 + #4 -> #8 -> #9 -> #10 -> #11`
+`#8 -> #9 -> #10 -> #11`
 
 ---
 
@@ -25,12 +23,10 @@ Recommended immediate sequence:
 
 ### Active / next
 
-- #6 Make IncomingCallService and IncomingCallActivity use saved CallConfig, including configured ringtone/vibration/caller identity. **Implementation merged in PR #64; physical end-to-end verification pending.**
-- #4 Finish scheduler UI and exact-alarm integration. **Exact Alarm trigger physically works. Persisted next-call state and Home/Schedule display are implemented on `fix/scheduled-call-state`; physical verification pending.**
+- #8 Complete permission/capability UX for exact alarms, notifications and Full Screen Intent.
 
 ### Remaining P1
 
-- #8 Complete permission/capability UX for exact alarms, notifications and Full Screen Intent.
 - #9 Add end-to-end locked-device regression checklist.
 - #10 Restore scheduled calls after device reboot.
 - #11 Replace `com.example.exitcall` with the permanent production application ID before public release.
@@ -91,7 +87,9 @@ Recommended immediate sequence:
 - #1 Answer -> ActiveCallScreen works in the real service/activity flow and was physically verified.
 - #2 ActiveCallScreen -> Hang Up closes the call UI cleanly and was physically verified.
 - #3 CallConfig persistence survives app kill/relaunch and device restart; `CallConfigStore` is the durable configuration source.
+- #4 Real scheduler is implemented and physically verified: exact alarm trigger, persisted next-call state, Home display, scheduler restore and post-fire clearing all work.
 - #5 Immediate and scheduled triggers now converge on the same service/activity call pipeline; automatic debug scheduling and the duplicate MainActivity call path are gone.
+- #6 IncomingCallService and IncomingCallActivity use the saved CallConfig; caller identity, ringtone/vibration configuration and immediate/scheduled parity were physically verified.
 - #7 Locked-device Full Screen Intent and unlocked-device call-style notification paths support working Answer/Decline actions.
 - #27 Product wording standardized across Home, Call Setup and public documentation.
 - #44 Exact Alarm -> Receiver trigger works on a locked device.
@@ -110,9 +108,8 @@ Recommended immediate sequence:
 
 These are not reasons to interrupt the active P1 sequence, but they should remain visible:
 
-- PR #64 connected persisted CallConfig to IncomingCallActivity and IncomingCallService; physical verification of all configured fields is still pending.
-- Exact Alarm scheduling is now connected and physically confirmed to trigger a call.
-- `ScheduledCallStore` is being added as the source of truth for the pending next-call timestamp; Home and ScheduleCallScreen will read the same persisted value.
+- persisted CallConfig is now the shared source of truth for the real immediate and scheduled call flow and has passed physical verification.
+- real scheduler state is persisted and displayed consistently on Home and ScheduleCallScreen; the scheduled call clears the stored next-call value after firing.
 - scheduled alarms are still lost after a full device reboot until #10 adds BOOT_COMPLETED restoration; persisted UI state alone must not be treated as reboot support.
 - central Material theme now uses ExitCall colors, while several screens still use duplicated local constants.
 - `.docs/README.md` is stale and its relative links no longer match the new subfolder layout.
