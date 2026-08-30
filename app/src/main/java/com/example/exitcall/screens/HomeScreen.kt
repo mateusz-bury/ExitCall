@@ -155,11 +155,11 @@ fun HomeScreen(
                     .height(56.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = ExitCallText
+                    contentColor = ExitCallGreen
                 ),
                 border = ButtonDefaults.outlinedButtonBorder.copy(
                     brush = androidx.compose.ui.graphics.SolidColor(
-                        Color(0xFF3B443F)
+                        ExitCallGreen
                     )
                 )
             ) {
