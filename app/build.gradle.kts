@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.exitcall"
+    namespace = "com.mateuszbury.exitcall"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.example.exitcall"
+        applicationId = "com.mateuszbury.exitcall"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
