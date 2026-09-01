@@ -10,6 +10,7 @@ class ScheduledCallRecoveryReceiver : BroadcastReceiver() {
         val action = intent.action ?: return
 
         if (
+            action != Intent.ACTION_LOCKED_BOOT_COMPLETED &&
             action != Intent.ACTION_BOOT_COMPLETED &&
             action != ACTION_EXACT_ALARM_PERMISSION_GRANTED
         ) {
