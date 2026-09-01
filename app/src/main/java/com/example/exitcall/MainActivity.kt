@@ -1,9 +1,7 @@
 package com.example.exitcall
 
 import android.Manifest
-import android.app.AlarmManager
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,7 +10,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -31,6 +28,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.exitcall.model.CallConfigStore
 import com.example.exitcall.model.ScheduledCallStore
+import com.example.exitcall.scheduler.ScheduledCallScheduler
 import com.example.exitcall.ui.screens.CallSetupScreen
 import com.example.exitcall.ui.screens.HomeScreen
 import com.example.exitcall.ui.screens.ScheduleCallScreen
@@ -51,6 +49,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private lateinit var scheduledCallStore: ScheduledCallStore
+    private lateinit var scheduledCallScheduler: ScheduledCallScheduler
 
     private var scheduledCallAtMillis by mutableStateOf<Long?>(null)
     private var capabilityIssue by mutableStateOf<CallCapability?>(null)
@@ -85,54 +84,24 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun scheduleCall(triggerTimeMillis: Long): Boolean {
-        val alarmManager = getSystemService(AlarmManager::class.java)
-
-        if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            !alarmManager.canScheduleExactAlarms()
+        return when (
+            scheduledCallScheduler.schedule(triggerTimeMillis)
         ) {
-            capabilityIssue = CallCapability.EXACT_ALARM
-            return false
-        }
+            ScheduledCallScheduler.RegistrationResult.SCHEDULED -> {
+                scheduledCallAtMillis = triggerTimeMillis
+                true
+            }
 
-        val alarmIntent = Intent(
-            this,
-            CallAlarmReceiver::class.java
-        )
+            ScheduledCallScheduler.RegistrationResult.MISSING_EXACT_ALARM_PERMISSION -> {
+                capabilityIssue = CallCapability.EXACT_ALARM
+                false
+            }
 
-        val pendingIntent = PendingIntent.getBroadcast(
-            this,
-            SCHEDULED_CALL_REQUEST_CODE,
-            alarmIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or
-                PendingIntent.FLAG_IMMUTABLE
-        )
-
-        return try {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerTimeMillis,
-                pendingIntent
-            )
-
-            scheduledCallStore.save(triggerTimeMillis)
-            scheduledCallAtMillis = triggerTimeMillis
-
-            Log.d(
-                "ExitCall",
-                "Scheduled call registered for: $triggerTimeMillis"
-            )
-
-            true
-        } catch (securityException: SecurityException) {
-            Log.e(
-                "ExitCall",
-                "Exact alarm permission missing",
-                securityException
-            )
-
-            capabilityIssue = CallCapability.EXACT_ALARM
-            false
+            ScheduledCallScheduler.RegistrationResult.NO_PENDING_CALL,
+            ScheduledCallScheduler.RegistrationResult.TRIGGER_TIME_PASSED,
+            ScheduledCallScheduler.RegistrationResult.FAILED -> {
+                false
+            }
         }
     }
 
@@ -221,12 +190,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun hasExactAlarmCapability(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            return true
-        }
-
-        return getSystemService(AlarmManager::class.java)
-            .canScheduleExactAlarms()
+        return scheduledCallScheduler.canScheduleExactAlarms()
     }
 
     private fun handleCapabilityAction(
@@ -350,6 +314,8 @@ class MainActivity : ComponentActivity() {
 
         val callConfigStore = CallConfigStore(this)
         scheduledCallStore = ScheduledCallStore(this)
+        scheduledCallScheduler = ScheduledCallScheduler(this)
+        scheduledCallScheduler.restorePersistedCall()
         scheduledCallAtMillis = scheduledCallStore.load()
 
         setContent {
@@ -464,10 +430,6 @@ class MainActivity : ComponentActivity() {
                 continuePendingCapabilityAction()
             }
         }
-    }
-
-    companion object {
-        private const val SCHEDULED_CALL_REQUEST_CODE = 4001
     }
 }
 

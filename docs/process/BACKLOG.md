@@ -6,16 +6,17 @@ GitHub Issues are the source of truth for actionable work. This file is the road
 
 Work in this order unless a blocker forces a change:
 
-1. **#24 — Finish visual theme polish.** Theme centralization is merged and the app looks coherent overall. Remaining device observations: DatePicker/TimePicker still show some purple Material accents, and the filled `Start call` CTA needs a final color/layout decision.
-2. **#9 — Run the end-to-end locked/unlocked regression checklist.**
-3. **#10 — Restore pending scheduled calls after device reboot.**
-4. **#11 — Replace `com.example.exitcall` with the permanent production application ID before public release.**
+1. **#10 — Restore pending scheduled calls after device reboot.** Implementation is in progress; merge only after build/device verification and close only after a real reboot test.
+2. **#9 — Build the maintained MVP test plan and regression test-case suite.** Cover the complete P1 core flow so later architecture work has a repeatable safety net.
+3. **#11 — Replace `com.example.exitcall` with the permanent production application ID before public release.**
+4. **#35 — Run a controlled core architecture refactor.** Tighten responsibilities without rewriting working product behavior for sport.
+5. **Execute the #9 regression suite after #11/#35 and use it as the final P1 release gate.**
 
 Working rule: **one large task or at most two small tasks active at once**.
 
 Recommended immediate sequence:
 
-`polish #24 -> #9 -> #10 -> #11`
+`#10 -> #9 test plan/cases -> #11 -> #35 controlled refactor -> full #9 regression run -> P1 complete -> P2 polish`
 
 ---
 
@@ -23,18 +24,19 @@ Recommended immediate sequence:
 
 ### Active / next
 
-- #9 Add end-to-end locked-device regression checklist.
+- #10 Restore scheduled calls after device reboot.
 
 ### Remaining P1
 
-- #10 Restore scheduled calls after device reboot.
+- #9 Add and execute the maintained end-to-end MVP regression suite.
 - #11 Replace `com.example.exitcall` with the permanent production application ID before public release.
+- #35 Refactor core navigation/state/system responsibilities after the regression suite is defined; run the full suite again afterwards.
 
 ## P2 — MVP quality / important functionality
 
 ### Scheduler and configuration
 
-- #12 Add explicit edit/cancel controls for the pending scheduled call.
+- #12 Add explicit edit/cancel controls for the single pending scheduled call.
 - #13 Add Android system ringtone picker.
 - #14 Add privacy-friendly single contact picker; no bulk contact import and no random-contact feature.
 - #15 Add country-code support and phone-number formatting, extensible internationally.
@@ -49,7 +51,7 @@ Recommended immediate sequence:
 - #21 Add speakerphone mode.
 - #22 Finish ActiveCallScreen controls and remove prototype placeholders.
 - #23 Implement Settings screen and global preferences.
-- #24 Centralize ExitCall theme. **Core implementation merged and physically smoke-tested.** Remaining polish: remove purple Material accents from DatePicker/TimePicker and make a final visual decision for the filled `Start call` CTA.
+- #24 Centralize ExitCall theme. **Core implementation merged and physically smoke-tested.** Remaining P2 polish: remove purple Material accents from DatePicker/TimePicker and make a final visual decision for the filled `Start call` CTA.
 - #53 Decide whether to show an optional missed-call notification after an unanswered timeout.
 - #54 ExitCall marker is implemented on incoming/active screens; keep open until demo/onboarding #29 teaches the marker rule.
 - #58 Make the unanswered-call timeout configurable in Settings: 5s / 10s / 20s, default 20s.
@@ -68,7 +70,6 @@ Recommended immediate sequence:
 - #32 Add guided voice content in PL / EN / DE / ES.
 - #33 Explore lightweight post-call summary.
 - #34 Add configurable post-call exit behaviour, with return-to-Android remaining the default.
-- #35 Refactor navigation/state architecture after core MVP call flow stabilizes.
 - #36 Explore Google Phone / Samsung-style visual variants while keeping shared call logic.
 - #37 Design and validate monetization model.
 - #39 Maintain architecture/release documentation. Specs v1.1-v1.3 and process/decision docs live under standard `docs/`; ongoing architecture/release updates remain tracked here.
@@ -111,8 +112,9 @@ These are not reasons to interrupt the active P1 sequence, but they should remai
 - persisted CallConfig is the shared source of truth for the real immediate and scheduled call flow and has passed physical verification.
 - real scheduler state is persisted and displayed consistently on Home and ScheduleCallScreen; the scheduled call clears the stored next-call value after firing.
 - permission/capability gating for notifications, Full Screen Intent and exact alarms is merged and physically verified.
-- scheduled alarms are still lost after a full device reboot until #10 adds BOOT_COMPLETED restoration; persisted UI state alone must not be treated as reboot support.
-- theme colors are centralized; remaining visual work is product polish, especially DatePicker/TimePicker accents and the final `Start call` treatment.
+- #10 now has a shared `ScheduledCallScheduler` and manifest recovery receiver on its feature branch; real reboot verification is still required before marking reboot survival complete.
+- scheduler lifecycle/recovery is documented under `docs/architecture/SCHEDULER_LIFECYCLE.md`.
+- #24 visual details are intentionally deferred to the P2 polish phase rather than blocking the P1 reliability gate.
 - repository documentation has a standard root `README.md` and `docs/` layout.
 - local IDE metadata is ignored and no longer tracked.
 - `CallScreen.kt` intentionally remains under `com.example.exitcall.screens`; UI composables live under the matching `com.example.exitcall.ui.screens` path.
@@ -123,6 +125,7 @@ These are not reasons to interrupt the active P1 sequence, but they should remai
 - Do **not** add random-contact selection.
 - Do **not** intentionally bypass Android global vibration or Do Not Disturb behaviour.
 - Keep Call Setup separate from Settings.
+- Keep the MVP scheduler to one pending call at a time; multiple scheduled calls are unnecessary complexity unless future product evidence justifies them.
 - Default post-call behaviour is to leave the call flow and return to Android.
 - English is the source language for the initial product; broader localization is tracked separately.
 - Android comes first; iOS is a separate later native project if the product validates.
