@@ -2,6 +2,21 @@
 
 This document describes the maintained MVP scheduling path for ExitCall.
 
+## Validation status
+
+The reboot-recovery design described here was physically verified on the primary Motorola device on 2026-09-01.
+
+Verified behavior includes:
+
+- a future scheduled trigger survives device reboot,
+- scheduler recovery metadata survives in device-protected storage,
+- recovery re-registers exactly one future `RTC_WAKEUP` alarm,
+- the call fires at the original scheduled time without manual rescheduling,
+- exact-alarm permission restoration can recreate the same pending alarm,
+- the normal incoming-call lifecycle remains operational after recovery.
+
+The implementation is also verified on PR #70 under the permanent Android identity `com.mateuszbury.exitcall`.
+
 ## Scope
 
 The MVP supports one pending scheduled call at a time. Explicit edit/cancel UX remains tracked separately in issue #12.
@@ -82,6 +97,14 @@ When that broadcast arrives, ExitCall runs the same persisted-call recovery path
 - if the trigger is already past, it is cleared and not fired;
 - if exact-alarm capability is still unavailable when checked, the persisted timestamp is left intact so a later valid recovery attempt can still succeed.
 
+## Application identity boundary
+
+The production Android identity is `com.mateuszbury.exitcall`.
+
+Android treats the former development identity `com.example.exitcall` as a different application. Scheduler SharedPreferences, exact-alarm access and other app-scoped state are therefore not migrated across that application-ID change. This is intentional because the placeholder identity was replaced before the first public release.
+
+Within the production application identity, `ScheduledCallStore` retains its internal migration from legacy credential-protected schedule preferences to device-protected schedule preferences.
+
 ## Reliability invariants
 
 The scheduler should preserve these invariants:
@@ -94,20 +117,10 @@ The scheduler should preserve these invariants:
 6. Triggering the call consumes the persisted schedule.
 7. Normal scheduling, boot recovery, exact-alarm permission recovery and app-start fallback share the same exact-alarm registration code.
 8. Reboot recovery uses the normal persisted `CallConfig` source rather than duplicating caller/ringtone/vibration configuration.
+9. Production package identity changes must not silently create parallel scheduler paths or hard-coded references to the retired development package.
 
-## Manual verification for issue #10
+## Regression coverage
 
-Before closing issue #10, verify on the primary Android device:
+The maintained physical regression suite is tracked in issue #9. Scheduler-specific P0 coverage includes normal scheduled delivery, locked-screen delivery, process-death persistence, reboot survival, expired-schedule handling, post-trigger clearing and duplicate prevention.
 
-1. Install/run the current branch build and complete required capabilities.
-2. Schedule a call several minutes in the future and confirm Home shows the expected `Next call`.
-3. Reboot the device before the trigger time.
-4. Unlock the device normally; do not manually recreate the schedule.
-5. Confirm the incoming call starts at the originally selected time exactly once.
-6. Confirm the normal Answer / Decline flow still works.
-7. Confirm Home returns to `Not scheduled` after the recovered call fires.
-8. Hardening check: repeat while confirming `ExitCallRecovery` receives a locked-boot or normal-boot recovery action and that `dumpsys alarm` contains one ExitCall alarm after reboot.
-9. Optional permission check: schedule another future call, revoke exact-alarm access, grant it again before the trigger, and confirm the pending call is restored without creating a duplicate.
-10. OEM fallback check: if a device fails to restore the alarm from boot broadcast, launch ExitCall before the trigger and confirm app-start recovery restores exactly one pending alarm.
-
-The broader repeatable regression suite is tracked in issue #9 and should reference this lifecycle.
+During P2, run relevant scheduler cases after any change to scheduling, permissions, persistence, application startup or Android system integration. Run the full suite again before the MVP release candidate.
