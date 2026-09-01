@@ -10,10 +10,11 @@ The persisted trigger timestamp is the durable source of truth for whether a fut
 
 ## Components
 
-- `ScheduledCallStore` persists the future trigger timestamp.
+- `ScheduledCallStore` persists the future trigger timestamp in device-protected `SharedPreferences` so recovery metadata is available during Direct Boot.
 - `ScheduledCallScheduler` owns exact-alarm capability checks, `PendingIntent` creation and `AlarmManager` registration.
 - `CallAlarmReceiver` handles the actual alarm trigger, clears the persisted schedule and starts `IncomingCallService`.
-- `ScheduledCallRecoveryReceiver` restores a valid persisted call after device boot and after exact-alarm access is granted again.
+- `ScheduledCallRecoveryReceiver` restores a valid persisted call after locked boot, normal boot and after exact-alarm access is granted again.
+- `MainActivity` performs an idempotent recovery attempt on app startup as an OEM/device fallback.
 - `IncomingCallService` and the call Activity continue to read the normal persisted `CallConfig`; reboot recovery does not create a second configuration path.
 
 ## Normal scheduling
@@ -41,9 +42,11 @@ A scheduled call is therefore consumed once. The persisted timestamp must not re
 
 ## Device reboot recovery
 
-`AlarmManager` registrations do not survive a device reboot, so ExitCall declares `RECEIVE_BOOT_COMPLETED` and a manifest receiver for `BOOT_COMPLETED`.
+`AlarmManager` registrations do not survive a device reboot. ExitCall therefore declares `RECEIVE_BOOT_COMPLETED` and a Direct-Boot-aware manifest receiver for both `LOCKED_BOOT_COMPLETED` and `BOOT_COMPLETED`.
 
-On boot:
+The scheduled trigger timestamp is stored in device-protected storage so the recovery receiver can read it before the first post-reboot unlock.
+
+On either boot recovery broadcast:
 
 1. `ScheduledCallRecoveryReceiver` asks `ScheduledCallScheduler` to restore the persisted call.
 2. `ScheduledCallStore.load()` returns only a still-future trigger timestamp. Expired values are cleared and are not replayed.
@@ -51,13 +54,23 @@ On boot:
 4. If capability is available, the same `PendingIntent` and `setExactAndAllowWhileIdle()` registration path is used again.
 5. The existing persisted timestamp is retained; recovery does not create a second schedule record.
 
+The same `PendingIntent` identity is reused, so receiving both locked-boot and normal-boot recovery broadcasts remains idempotent rather than producing duplicate scheduled calls.
+
 There is deliberately no catch-up behavior for a call whose trigger time passed while the device was unavailable. A stale scheduled call is discarded rather than firing unexpectedly after boot.
 
 ### Direct Boot boundary
 
-The MVP uses the normal `BOOT_COMPLETED` path and the existing credential-protected `SharedPreferences` stores. It does not attempt to run the full ExitCall flow before the user has unlocked the device for the first time after a reboot.
+Issue #10 uses Direct Boot only for **scheduler recovery metadata and alarm re-registration**.
 
-Supporting a call before first unlock would require a deliberate Direct Boot design, device-protected persistence and compatible access to the call configuration. That is outside issue #10 rather than being silently implied by the current implementation.
+The full incoming-call pipeline is not moved into device-protected storage. `CallConfig`, ringtone configuration and the normal call service/activity path remain in their existing credential-protected design. The maintained MVP requirement is that a future scheduled call is restored across reboot and works after the user unlocks the device normally before its trigger time.
+
+A call whose trigger time occurs before the first unlock after reboot is not yet claimed as a supported MVP scenario and requires separate end-to-end validation before that guarantee can be made.
+
+## App-start recovery fallback
+
+`MainActivity` also calls `restorePersistedCall()` during startup. This is intentionally idempotent and uses the same `PendingIntent` identity as every other registration path.
+
+This fallback protects against devices or OEM software that fail to deliver the expected boot recovery broadcast while still preserving the persisted future schedule. Opening ExitCall can therefore repair a missing `AlarmManager` registration without creating a second schedule.
 
 ## Exact-alarm permission recovery
 
@@ -74,23 +87,27 @@ When that broadcast arrives, ExitCall runs the same persisted-call recovery path
 The scheduler should preserve these invariants:
 
 1. A newly scheduled timestamp is persisted only after `AlarmManager` registration succeeds.
-2. A valid persisted timestamp survives process death and normal post-unlock reboot recovery.
-3. Reboot recovery never creates a second `PendingIntent` identity for the same MVP scheduled call.
-4. Expired persisted schedules are cleared instead of replayed.
-5. Triggering the call consumes the persisted schedule.
-6. Normal scheduling and recovery share the same exact-alarm registration code.
-7. Reboot recovery uses the normal persisted `CallConfig` source rather than duplicating caller/ringtone/vibration configuration.
+2. A valid persisted timestamp survives process death and device reboot.
+3. Scheduler recovery metadata is available from device-protected storage during Direct Boot.
+4. Reboot recovery never creates a second `PendingIntent` identity for the same MVP scheduled call.
+5. Expired persisted schedules are cleared instead of replayed.
+6. Triggering the call consumes the persisted schedule.
+7. Normal scheduling, boot recovery, exact-alarm permission recovery and app-start fallback share the same exact-alarm registration code.
+8. Reboot recovery uses the normal persisted `CallConfig` source rather than duplicating caller/ringtone/vibration configuration.
 
 ## Manual verification for issue #10
 
 Before closing issue #10, verify on the primary Android device:
 
-1. Schedule a call several minutes in the future and confirm Home shows the expected `Next call`.
-2. Reboot the device before the trigger time.
-3. Unlock the device normally after reboot; do not manually recreate the schedule.
-4. Confirm the incoming call starts at the originally selected time.
-5. Confirm the normal Answer / Decline flow still works.
-6. Confirm Home returns to `Not scheduled` after the recovered call fires.
-7. Optional hardening check: schedule another future call, revoke exact-alarm access, grant it again before the trigger, and confirm the pending call is restored without creating a duplicate.
+1. Install/run the current branch build and complete required capabilities.
+2. Schedule a call several minutes in the future and confirm Home shows the expected `Next call`.
+3. Reboot the device before the trigger time.
+4. Unlock the device normally; do not manually recreate the schedule.
+5. Confirm the incoming call starts at the originally selected time exactly once.
+6. Confirm the normal Answer / Decline flow still works.
+7. Confirm Home returns to `Not scheduled` after the recovered call fires.
+8. Hardening check: repeat while confirming `ExitCallRecovery` receives a locked-boot or normal-boot recovery action and that `dumpsys alarm` contains one ExitCall alarm after reboot.
+9. Optional permission check: schedule another future call, revoke exact-alarm access, grant it again before the trigger, and confirm the pending call is restored without creating a duplicate.
+10. OEM fallback check: if a device fails to restore the alarm from boot broadcast, launch ExitCall before the trigger and confirm app-start recovery restores exactly one pending alarm.
 
-The broader repeatable regression suite is tracked in issue #9 and should reference this lifecycle once formal test cases are written.
+The broader repeatable regression suite is tracked in issue #9 and should reference this lifecycle.
