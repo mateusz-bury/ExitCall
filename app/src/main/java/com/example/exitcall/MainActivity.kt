@@ -315,6 +315,7 @@ class MainActivity : ComponentActivity() {
         val callConfigStore = CallConfigStore(this)
         scheduledCallStore = ScheduledCallStore(this)
         scheduledCallScheduler = ScheduledCallScheduler(this)
+        scheduledCallScheduler.restorePersistedCall()
         scheduledCallAtMillis = scheduledCallStore.load()
 
         setContent {
