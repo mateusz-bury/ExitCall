@@ -2,35 +2,50 @@
 
 GitHub Issues are the source of truth for actionable work. This file is the roadmap and priority map.
 
-## Current focus
+## Current phase
 
-Work in this order unless a blocker forces a change:
+**P1 implementation baseline is complete and physically verified.**
 
-1. **#10 — Restore pending scheduled calls after device reboot.** Implementation is in progress; merge only after build/device verification and close only after a real reboot test.
-2. **#9 — Build the maintained MVP test plan and regression test-case suite.** Cover the complete P1 core flow so later architecture work has a repeatable safety net.
-3. **#11 — Replace `com.example.exitcall` with the permanent production application ID before public release.**
-4. **#35 — Run a controlled core architecture refactor.** Tighten responsibilities without rewriting working product behavior for sport.
-5. **Execute the #9 regression suite after #11/#35 and use it as the final P1 release gate.**
+As of 2026-09-01:
+
+- #10 reboot recovery is merged, closed and physically verified on the primary Motorola device.
+- #11 production Android identity is implemented and physically verified on PR #70 with permanent ID `com.mateuszbury.exitcall`; only the final merge into `main` remains.
+- #9 regression suite is defined and remains the maintained release-quality safety net. It no longer blocks starting P2; run relevant subsets after high-risk changes and the full suite before the MVP release candidate.
+- #35 is reclassified as P2 architecture hardening rather than a gate before P2.
 
 Working rule: **one large task or at most two small tasks active at once**.
 
-Recommended immediate sequence:
+### Recommended P2 opening sequence
 
-`#10 -> #9 test plan/cases -> #11 -> #35 controlled refactor -> full #9 regression run -> P1 complete -> P2 polish`
+After merging PR #70 and closing #11:
+
+`#12 scheduler edit/cancel -> #13 ringtone picker -> #14 single contact picker -> #15 phone formatting/country codes`
+
+Then continue through the remaining P2 functionality in small, testable slices. Schedule #35 when there is a clean architecture window rather than interrupting a partially implemented feature.
 
 ---
 
-## P1 — MVP blockers / reliability-critical
+## P1 — MVP core baseline
 
-### Active / next
+### Status
 
-- #10 Restore scheduled calls after device reboot.
+**Complete / physically validated.**
 
-### Remaining P1
+P1 established the stable core needed to safely begin product-quality work:
 
-- #9 Add and execute the maintained end-to-end MVP regression suite.
-- #11 Replace `com.example.exitcall` with the permanent production application ID before public release.
-- #35 Refactor core navigation/state/system responsibilities after the regression suite is defined; run the full suite again afterwards.
+- persisted CallConfig and caller identity,
+- immediate and scheduled call convergence,
+- exact-alarm scheduling,
+- foreground service / notification / Full Screen Intent flow,
+- lock-screen Answer / Decline / Hang Up lifecycle,
+- capability/permission UX,
+- scheduler persistence and reboot recovery,
+- permanent Android application identity,
+- maintained physical regression suite definition.
+
+Administrative note: PR #70 is verified and pending final merge into `main`; #11 should be closed with that merge.
+
+---
 
 ## P2 — MVP quality / important functionality
 
@@ -56,11 +71,13 @@ Recommended immediate sequence:
 - #54 ExitCall marker is implemented on incoming/active screens; keep open until demo/onboarding #29 teaches the marker rule.
 - #58 Make the unanswered-call timeout configurable in Settings: 5s / 10s / 20s, default 20s.
 
-### Reliability / release quality
+### Architecture, reliability and release quality
 
+- #9 Maintain and execute the MVP regression suite. Use targeted subsets during P2 and run the full suite before the MVP release candidate.
 - #25 Add automated tests for scheduling, state and persistence.
 - #26 Build Android device/OEM compatibility test matrix.
 - #28 Review current Google Play/Android requirements for exact alarm, foreground service, notification and Full Screen Intent capabilities before store release.
+- #35 Run controlled core architecture hardening without blocking P2 feature work or rewriting stable behavior.
 
 ## P3 — Beta / product improvements
 
@@ -72,7 +89,7 @@ Recommended immediate sequence:
 - #34 Add configurable post-call exit behaviour, with return-to-Android remaining the default.
 - #36 Explore Google Phone / Samsung-style visual variants while keeping shared call logic.
 - #37 Design and validate monetization model.
-- #39 Maintain architecture/release documentation. Specs v1.1-v1.3 and process/decision docs live under standard `docs/`; ongoing architecture/release updates remain tracked here.
+- #39 Maintain architecture/release documentation. Specs v1.1-v1.3 and maintained process/decision docs live under `docs/`.
 
 ## P4 — Icebox / future / exploratory
 
@@ -87,10 +104,12 @@ Recommended immediate sequence:
 - #2 ActiveCallScreen -> Hang Up closes the call UI cleanly and was physically verified.
 - #3 CallConfig persistence survives app kill/relaunch and device restart; `CallConfigStore` is the durable configuration source.
 - #4 Real scheduler is implemented and physically verified: exact alarm trigger, persisted next-call state, Home display, scheduler restore and post-fire clearing all work.
-- #5 Immediate and scheduled triggers now converge on the same service/activity call pipeline; automatic debug scheduling and the duplicate MainActivity call path are gone.
+- #5 Immediate and scheduled triggers converge on the same service/activity call pipeline; automatic debug scheduling and the duplicate MainActivity call path are gone.
 - #6 IncomingCallService and IncomingCallActivity use the saved CallConfig; caller identity, ringtone/vibration configuration and immediate/scheduled parity were physically verified.
 - #7 Locked-device Full Screen Intent and unlocked-device call-style notification paths support working Answer/Decline actions.
 - #8 Permission/capability UX is implemented and physically verified: notifications, Full Screen Intent and exact-alarm gating handle grant, denial, settings return and `Not now` paths without false success or loops.
+- #10 Scheduled calls survive reboot through device-protected scheduler state, Direct-Boot-aware recovery and shared exact-alarm re-registration; physically verified on Motorola.
+- #11 Production Android identity is finalized as `com.mateuszbury.exitcall` and physically verified on PR #70; final merge/issue closure pending.
 - #27 Product wording standardized across Home, Call Setup and public documentation.
 - #38 Repository cleanup completed: `.idea` removed from tracking, `.docs` moved to `docs/`, root README restored, UI screen paths aligned with packages and default example tests removed.
 - #44 Exact Alarm -> Receiver trigger works on a locked device.
@@ -107,17 +126,17 @@ Recommended immediate sequence:
 
 ## Current repository observations
 
-These are not reasons to interrupt the active P1 sequence, but they should remain visible:
-
-- persisted CallConfig is the shared source of truth for the real immediate and scheduled call flow and has passed physical verification.
-- real scheduler state is persisted and displayed consistently on Home and ScheduleCallScreen; the scheduled call clears the stored next-call value after firing.
-- permission/capability gating for notifications, Full Screen Intent and exact alarms is merged and physically verified.
-- #10 now has a shared `ScheduledCallScheduler` and manifest recovery receiver on its feature branch; real reboot verification is still required before marking reboot survival complete.
-- scheduler lifecycle/recovery is documented under `docs/architecture/SCHEDULER_LIFECYCLE.md`.
-- #24 visual details are intentionally deferred to the P2 polish phase rather than blocking the P1 reliability gate.
-- repository documentation has a standard root `README.md` and `docs/` layout.
-- local IDE metadata is ignored and no longer tracked.
-- `CallScreen.kt` intentionally remains under `com.example.exitcall.screens`; UI composables live under the matching `com.example.exitcall.ui.screens` path.
+- Permanent Android identity is `com.mateuszbury.exitcall`; source packages, namespace and application ID are aligned on PR #70.
+- Persisted CallConfig is the shared source of truth for the real immediate and scheduled call flow and has passed physical verification.
+- Scheduled trigger metadata is stored in device-protected storage and reboot recovery is physically verified.
+- `ScheduledCallScheduler` owns normal and recovery exact-alarm registration; recovery uses a stable PendingIntent identity and remains idempotent.
+- `ScheduledCallRecoveryReceiver` handles `LOCKED_BOOT_COMPLETED`, `BOOT_COMPLETED` and exact-alarm permission restoration; `MainActivity` provides an app-start OEM fallback.
+- Permission/capability gating for notifications, Full Screen Intent and exact alarms is physically verified.
+- Scheduler lifecycle/recovery is documented under `docs/architecture/SCHEDULER_LIFECYCLE.md`.
+- #24 visual details remain intentionally deferred to P2 polish.
+- Repository documentation uses the standard root `README.md` and `docs/` layout.
+- Local IDE metadata is ignored and no longer tracked.
+- `CallScreen.kt` remains under `com.mateuszbury.exitcall.screens`; UI composables live under `com.mateuszbury.exitcall.ui.screens`.
 
 ## Explicit product decisions / not planned
 
