@@ -2,6 +2,18 @@
 
 This file records product and technical decisions that should remain stable unless new evidence justifies changing them.
 
+## Production Android identity
+
+Permanent Android application identity:
+
+`com.mateuszbury.exitcall`
+
+- Gradle `namespace` and `applicationId` should remain aligned to this value.
+- Kotlin source packages should use the same root namespace.
+- App-scoped action strings should use the production package identity rather than the former `com.example.exitcall` placeholder.
+- Treat this identity as permanent before the first public Play release. Changing it later would create a different Android application identity rather than a normal app update.
+- No migration is required from development builds using `com.example.exitcall`; those builds were never public production releases.
+
 ## Product language
 
 Use **ExitCall**, **scheduled incoming call** or **safety call** depending on context.
@@ -43,12 +55,35 @@ Immediate and scheduled calls should use the same pipeline and the same persiste
 
 The app must work when the device is locked without unexpectedly unlocking it.
 
-## Scheduling
+## Scheduling and reboot recovery
 
 - Use `AlarmManager` exact alarms for scheduled ExitCalls where the product requires precise timing.
 - Use Material/Android DatePicker and TimePicker for user input.
-- Persist the scheduled call so it can be restored after reboot.
+- Support one pending scheduled call in the MVP.
+- Persist scheduler recovery metadata separately from the operating-system alarm registration.
+- Store the pending trigger timestamp in device-protected storage so it is available to a Direct-Boot-aware recovery receiver.
+- Restore still-future calls after `LOCKED_BOOT_COMPLETED`, `BOOT_COMPLETED` and exact-alarm permission restoration through the same `ScheduledCallScheduler` registration path.
+- Reuse the same PendingIntent identity so repeated recovery is idempotent and does not create duplicate calls.
+- Keep an app-start recovery attempt as an OEM/device fallback.
+- Do not replay a call whose trigger time is already past.
+- Keep normal `CallConfig`, ringtone settings and the call service/activity path in the existing credential-protected design.
 - A pending incoming call must have a finite timeout so ringtone/vibration cannot run indefinitely.
+
+The reboot-recovery implementation was physically verified on the primary Motorola device on 2026-09-01.
+
+## P1 baseline and P2 transition
+
+The P1 implementation baseline is considered physically stable after verification of:
+
+- CallConfig persistence,
+- immediate and scheduled call convergence,
+- exact-alarm scheduling,
+- notification / Full Screen Intent capability flow,
+- lock-screen Answer / Decline / Hang Up lifecycle,
+- scheduler state persistence and reboot recovery,
+- permanent Android identity `com.mateuszbury.exitcall` on PR #70.
+
+P2 may begin after the final merge of PR #70. The regression suite in #9 remains the maintained safety net and final release-quality gate rather than a blocker to starting P2. Controlled architecture hardening in #35 is part of P2 and must preserve the verified P1 behavior.
 
 ## UI direction
 
@@ -98,5 +133,5 @@ Before implementation, decide whether the paid model is one-time purchase or sub
 
 - GitHub Issues are the source of truth for actionable tasks.
 - Keep one large task or at most two small tasks active at once.
-- New ideas go to Backlog/Icebox instead of interrupting current P1 work.
-- Avoid large architecture refactors until the core MVP call flow is stable.
+- New ideas go to Backlog/Icebox instead of interrupting the active milestone.
+- Prefer controlled refactors protected by targeted regression coverage over broad rewrites.
