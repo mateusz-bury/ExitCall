@@ -13,25 +13,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -45,9 +37,12 @@ import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import java.util.TimeZone
 
-@OptIn(ExperimentalMaterial3Api::class)
+private enum class SchedulePicker {
+    DATE,
+    TIME
+}
+
 @Composable
 private fun ScheduleOption(
     label: String,
@@ -107,7 +102,6 @@ private fun ScheduleOption(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleCallScreen(
     initialScheduledAtMillis: Long?,
@@ -126,12 +120,8 @@ fun ScheduleCallScreen(
         mutableLongStateOf(initialTime)
     }
 
-    var showDatePicker by remember {
-        mutableStateOf(false)
-    }
-
-    var showTimePicker by remember {
-        mutableStateOf(false)
+    var activePicker by remember {
+        mutableStateOf<SchedulePicker?>(null)
     }
 
     var validationError by remember {
@@ -177,7 +167,6 @@ fun ScheduleCallScreen(
             )
         }
     ) { innerPadding ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -198,7 +187,7 @@ fun ScheduleCallScreen(
                 value = dateFormatter.format(scheduledAtMillis),
                 description = "Choose the day when your ExitCall should start.",
                 onClick = {
-                    showDatePicker = true
+                    activePicker = SchedulePicker.DATE
                 }
             )
 
@@ -211,7 +200,7 @@ fun ScheduleCallScreen(
                 value = timeFormatter.format(scheduledAtMillis),
                 description = "Choose the exact time for the call to begin.",
                 onClick = {
-                    showTimePicker = true
+                    activePicker = SchedulePicker.TIME
                 }
             )
 
@@ -250,193 +239,42 @@ fun ScheduleCallScreen(
                 )
             ) {
                 Text(
-                    text = "Shedule a call",
+                    text = "Schedule a call",
                     fontSize = 18.sp
                 )
             }
         }
     }
 
-    if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis =
-                localDateAsUtcMillis(scheduledAtMillis)
-        )
-
-        DatePickerDialog(
-            onDismissRequest = {
-                showDatePicker = false
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        datePickerState.selectedDateMillis?.let {
-                            scheduledAtMillis =
-                                replaceDate(
-                                    baseMillis = scheduledAtMillis,
-                                    selectedDateUtcMillis = it
-                                )
-                        }
-
-                        showDatePicker = false
-                    }
-                ) {
-                    Text("OK")
+    when (activePicker) {
+        SchedulePicker.DATE -> {
+            ScheduleDatePickerDialog(
+                scheduledAtMillis = scheduledAtMillis,
+                onConfirm = { updatedScheduledAtMillis ->
+                    scheduledAtMillis = updatedScheduledAtMillis
+                    validationError = null
+                    activePicker = null
+                },
+                onDismiss = {
+                    activePicker = null
                 }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showDatePicker = false
-                    }
-                ) {
-                    Text("Cancel")
-                }
-            }
-        ) {
-            DatePicker(
-                state = datePickerState
             )
         }
-    }
 
-    if (showTimePicker) {
-        val calendar = remember(scheduledAtMillis) {
-            Calendar.getInstance().apply {
-                timeInMillis = scheduledAtMillis
-            }
+        SchedulePicker.TIME -> {
+            ScheduleTimePickerDialog(
+                scheduledAtMillis = scheduledAtMillis,
+                onConfirm = { updatedScheduledAtMillis ->
+                    scheduledAtMillis = updatedScheduledAtMillis
+                    validationError = null
+                    activePicker = null
+                },
+                onDismiss = {
+                    activePicker = null
+                }
+            )
         }
 
-        val timePickerState = rememberTimePickerState(
-            initialHour =
-                calendar.get(Calendar.HOUR_OF_DAY),
-            initialMinute =
-                calendar.get(Calendar.MINUTE),
-            is24Hour = true
-        )
-
-        AlertDialog(
-            onDismissRequest = {
-                showTimePicker = false
-            },
-            title = {
-                Text("Choose time")
-            },
-            text = {
-                TimePicker(
-                    state = timePickerState
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        scheduledAtMillis =
-                            replaceTime(
-                                baseMillis = scheduledAtMillis,
-                                hour = timePickerState.hour,
-                                minute = timePickerState.minute
-                            )
-
-                        showTimePicker = false
-                    }
-                ) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showTimePicker = false
-                    }
-                ) {
-                    Text("Cancel")
-                }
-            }
-        )
+        null -> Unit
     }
-}
-
-private fun replaceDate(
-    baseMillis: Long,
-    selectedDateUtcMillis: Long
-): Long {
-
-    val selectedDate = Calendar.getInstance(
-        TimeZone.getTimeZone("UTC")
-    ).apply {
-        timeInMillis = selectedDateUtcMillis
-    }
-
-    return Calendar.getInstance().apply {
-        timeInMillis = baseMillis
-
-        set(
-            Calendar.YEAR,
-            selectedDate.get(Calendar.YEAR)
-        )
-
-        set(
-            Calendar.MONTH,
-            selectedDate.get(Calendar.MONTH)
-        )
-
-        set(
-            Calendar.DAY_OF_MONTH,
-            selectedDate.get(Calendar.DAY_OF_MONTH)
-        )
-    }.timeInMillis
-}
-
-private fun replaceTime(
-    baseMillis: Long,
-    hour: Int,
-    minute: Int
-): Long {
-
-    return Calendar.getInstance().apply {
-        timeInMillis = baseMillis
-
-        set(
-            Calendar.HOUR_OF_DAY,
-            hour
-        )
-
-        set(
-            Calendar.MINUTE,
-            minute
-        )
-
-        set(
-            Calendar.SECOND,
-            0
-        )
-
-        set(
-            Calendar.MILLISECOND,
-            0
-        )
-    }.timeInMillis
-}
-
-private fun localDateAsUtcMillis(
-    localMillis: Long
-): Long {
-
-    val localCalendar =
-        Calendar.getInstance().apply {
-            timeInMillis = localMillis
-        }
-
-    return Calendar.getInstance(
-        TimeZone.getTimeZone("UTC")
-    ).apply {
-
-        clear()
-
-        set(
-            localCalendar.get(Calendar.YEAR),
-            localCalendar.get(Calendar.MONTH),
-            localCalendar.get(Calendar.DAY_OF_MONTH)
-        )
-    }.timeInMillis
 }

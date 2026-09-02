@@ -199,7 +199,10 @@ class MainActivity : ComponentActivity() {
         val initialCallConfig = callConfigStore.load()
 
         scheduledCallStore = ScheduledCallStore(this)
-        scheduledCallScheduler = ScheduledCallScheduler(this)
+        scheduledCallScheduler = ScheduledCallScheduler(
+            context = this,
+            scheduledCallStore = scheduledCallStore
+        )
         capabilityResolver = CallCapabilityResolver(
             context = this,
             scheduledCallScheduler = scheduledCallScheduler
