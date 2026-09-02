@@ -1,7 +1,6 @@
 package com.mateuszbury.exitcall.capability
 
 import android.Manifest
-import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -23,10 +22,6 @@ class CallCapabilityResolver(
     ): CallCapability? {
         if (!hasNotificationCapability()) {
             return CallCapability.NOTIFICATIONS
-        }
-
-        if (!hasFullScreenIntentCapability()) {
-            return CallCapability.FULL_SCREEN_INTENT
         }
 
         if (
@@ -108,15 +103,5 @@ class CallCapabilityResolver(
         return NotificationManagerCompat
             .from(appContext)
             .areNotificationsEnabled()
-    }
-
-    private fun hasFullScreenIntentCapability(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            return true
-        }
-
-        return appContext
-            .getSystemService(NotificationManager::class.java)
-            .canUseFullScreenIntent()
     }
 }
