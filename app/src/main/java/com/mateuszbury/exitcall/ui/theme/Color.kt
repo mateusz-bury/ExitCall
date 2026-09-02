@@ -7,8 +7,6 @@ val ExitCallSurface = Color(0xFF191D1A)
 val ExitCallSurfaceVariant = Color(0xFF252B27)
 
 val ExitCallGreen = Color(0xFFA8D5BA)
-val ExitCallGreenDark = Color(0xFF24352C)
-
 val ExitCallText = Color(0xFFF2F4F2)
 val ExitCallMuted = Color(0xFF9BA39E)
 
