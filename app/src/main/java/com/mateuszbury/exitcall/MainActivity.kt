@@ -82,6 +82,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun cancelScheduledCall() {
+        scheduledCallScheduler.cancel()
+        scheduledCallAtMillis = null
+    }
+
     private fun ensureCallCapabilities(
         requireExactAlarm: Boolean,
         onReady: () -> Unit
@@ -230,6 +235,9 @@ class MainActivity : ComponentActivity() {
                     },
                     onScheduleCall = { triggerTimeMillis ->
                         scheduleCall(triggerTimeMillis)
+                    },
+                    onCancelScheduledCall = {
+                        cancelScheduledCall()
                     },
                     onSaveCallConfig = { newConfig ->
                         callConfigStore.save(newConfig)
