@@ -10,7 +10,9 @@ import com.mateuszbury.exitcall.CallAlarmReceiver
 import com.mateuszbury.exitcall.model.ScheduledCallStore
 
 class ScheduledCallScheduler(
-    context: Context
+    context: Context,
+    private val scheduledCallStore: ScheduledCallStore =
+        ScheduledCallStore(context.applicationContext)
 ) {
     enum class RegistrationResult {
         SCHEDULED,
@@ -23,7 +25,6 @@ class ScheduledCallScheduler(
     private val appContext = context.applicationContext
     private val alarmManager =
         appContext.getSystemService(AlarmManager::class.java)
-    private val scheduledCallStore = ScheduledCallStore(appContext)
 
     fun schedule(
         triggerTimeMillis: Long

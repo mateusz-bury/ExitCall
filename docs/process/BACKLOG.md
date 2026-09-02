@@ -6,22 +6,33 @@ GitHub Issues are the source of truth for actionable work. This file is the road
 
 **P1 implementation baseline is complete and physically verified.**
 
-As of 2026-09-01:
+As of 2026-09-02:
 
 - #10 reboot recovery is merged, closed and physically verified on the primary Motorola device.
 - #11 production Android identity is implemented and physically verified on PR #70 with permanent ID `com.mateuszbury.exitcall`; only the final merge into `main` remains.
-- #9 regression suite is defined and remains the maintained release-quality safety net. It no longer blocks starting P2; run relevant subsets after high-risk changes and the full suite before the MVP release candidate.
-- #35 is reclassified as P2 architecture hardening rather than a gate before P2.
+- #9 regression suite is defined and remains the maintained release-quality safety net. Run targeted subsets after high-risk changes and the full suite before the MVP release candidate.
+- #35 is a short pre-P2 hardening pass focused only on reducing `MainActivity` responsibilities. It is split into two stacked, behavior-preserving PRs and should finish before P2 feature work begins.
 
 Working rule: **one large task or at most two small tasks active at once**.
 
+### Pre-P2 sequence
+
+`#70 production ID -> #71 capability extraction -> physical smoke test -> #72 Compose root extraction -> physical smoke test -> P2`
+
+Refactor boundaries:
+
+- PR #71 extracts Android capability/version/settings resolution and the capability dialog from `MainActivity`.
+- PR #72 extracts the small Compose root/navigation state machine from `MainActivity`.
+- Do not introduce Navigation Compose, ViewModel/DI infrastructure, scheduler rewrites or call-pipeline changes in this pass.
+- `IncomingCallService`, `IncomingCallActivity`, `CallAlarmReceiver`, scheduler recovery and persistence remain behaviorally unchanged.
+
 ### Recommended P2 opening sequence
 
-After merging PR #70 and closing #11:
+After #35 is physically verified and merged:
 
 `#12 scheduler edit/cancel -> #13 ringtone picker -> #14 single contact picker -> #15 phone formatting/country codes`
 
-Then continue through the remaining P2 functionality in small, testable slices. Schedule #35 when there is a clean architecture window rather than interrupting a partially implemented feature.
+Then continue through the remaining P2 functionality in small, testable slices.
 
 ---
 
@@ -44,6 +55,15 @@ P1 established the stable core needed to safely begin product-quality work:
 - maintained physical regression suite definition.
 
 Administrative note: PR #70 is verified and pending final merge into `main`; #11 should be closed with that merge.
+
+---
+
+## Pre-P2 — architecture hardening
+
+- #35 Light `MainActivity` refactor in two PRs.
+  - PR #71: extract capability/platform resolution and capability dialog.
+  - PR #72: extract Compose root and lightweight main-screen navigation state.
+  - Exit criterion: both branches build and the targeted physical smoke tests preserve the P1 behavior baseline.
 
 ---
 
@@ -77,7 +97,6 @@ Administrative note: PR #70 is verified and pending final merge into `main`; #11
 - #25 Add automated tests for scheduling, state and persistence.
 - #26 Build Android device/OEM compatibility test matrix.
 - #28 Review current Google Play/Android requirements for exact alarm, foreground service, notification and Full Screen Intent capabilities before store release.
-- #35 Run controlled core architecture hardening without blocking P2 feature work or rewriting stable behavior.
 
 ## P3 — Beta / product improvements
 
@@ -132,6 +151,7 @@ Administrative note: PR #70 is verified and pending final merge into `main`; #11
 - `ScheduledCallScheduler` owns normal and recovery exact-alarm registration; recovery uses a stable PendingIntent identity and remains idempotent.
 - `ScheduledCallRecoveryReceiver` handles `LOCKED_BOOT_COMPLETED`, `BOOT_COMPLETED` and exact-alarm permission restoration; `MainActivity` provides an app-start OEM fallback.
 - Permission/capability gating for notifications, Full Screen Intent and exact alarms is physically verified.
+- PR #71 and PR #72 are intentionally limited to `MainActivity` responsibility cleanup before P2.
 - Scheduler lifecycle/recovery is documented under `docs/architecture/SCHEDULER_LIFECYCLE.md`.
 - #24 visual details remain intentionally deferred to P2 polish.
 - Repository documentation uses the standard root `README.md` and `docs/` layout.

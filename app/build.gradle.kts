@@ -22,7 +22,7 @@ android {
     buildTypes {
         release {
             optimization {
-                enable = false
+                enable = true
             }
         }
     }
@@ -51,5 +51,4 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.core:core-splashscreen:1.2.0")
-    implementation("androidx.compose.material:material-icons-extended")
 }
