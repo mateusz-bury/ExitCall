@@ -16,6 +16,7 @@ fun CallCapabilityDialog(
     val title: String
     val message: String
     val confirmLabel: String
+    val dismissLabel: String
 
     when (capability) {
         CallCapability.NOTIFICATIONS -> {
@@ -27,13 +28,15 @@ fun CallCapabilityDialog(
             } else {
                 "Open settings"
             }
+            dismissLabel = "Not now"
         }
 
         CallCapability.FULL_SCREEN_INTENT -> {
-            title = "Full-screen calls required"
+            title = "Full-screen calls recommended"
             message =
-                "Allow full-screen notifications so an ExitCall can appear over the lock screen when you need it."
+                "Full-screen access lets an ExitCall appear over the lock screen. Without it, the call can still arrive as a high-priority notification with Answer and Decline controls."
             confirmLabel = "Open settings"
+            dismissLabel = "Continue without"
         }
 
         CallCapability.EXACT_ALARM -> {
@@ -41,6 +44,7 @@ fun CallCapabilityDialog(
             message =
                 "Allow exact alarms so scheduled calls can start at the time you choose."
             confirmLabel = "Open settings"
+            dismissLabel = "Not now"
         }
     }
 
@@ -63,7 +67,7 @@ fun CallCapabilityDialog(
             TextButton(
                 onClick = onDismiss
             ) {
-                Text("Not now")
+                Text(dismissLabel)
             }
         }
     )
