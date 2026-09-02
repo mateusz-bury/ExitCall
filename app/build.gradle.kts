@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.exitcall"
+    namespace = "com.mateuszbury.exitcall"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.example.exitcall"
+        applicationId = "com.mateuszbury.exitcall"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
@@ -22,7 +22,7 @@ android {
     buildTypes {
         release {
             optimization {
-                enable = false
+                enable = true
             }
         }
     }
@@ -51,5 +51,4 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.core:core-splashscreen:1.2.0")
-    implementation("androidx.compose.material:material-icons-extended")
 }
