@@ -6,13 +6,11 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -21,20 +19,11 @@ import com.mateuszbury.exitcall.capability.CallCapabilityResolver
 import com.mateuszbury.exitcall.model.CallConfigStore
 import com.mateuszbury.exitcall.model.ScheduledCallStore
 import com.mateuszbury.exitcall.scheduler.ScheduledCallScheduler
-import com.mateuszbury.exitcall.ui.components.CallCapabilityDialog
-import com.mateuszbury.exitcall.ui.screens.CallSetupScreen
-import com.mateuszbury.exitcall.ui.screens.HomeScreen
-import com.mateuszbury.exitcall.ui.screens.ScheduleCallScreen
+import com.mateuszbury.exitcall.ui.MainApp
 import com.mateuszbury.exitcall.ui.theme.ExitCallTheme
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
-    private enum class MainScreen {
-        HOME,
-        CALL_SETUP,
-        SCHEDULE_CALL
-    }
-
     private lateinit var scheduledCallStore: ScheduledCallStore
     private lateinit var scheduledCallScheduler: ScheduledCallScheduler
     private lateinit var capabilityResolver: CallCapabilityResolver
@@ -207,6 +196,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val callConfigStore = CallConfigStore(this)
+        val initialCallConfig = callConfigStore.load()
+
         scheduledCallStore = ScheduledCallStore(this)
         scheduledCallScheduler = ScheduledCallScheduler(this)
         capabilityResolver = CallCapabilityResolver(
@@ -219,98 +210,34 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ExitCallTheme {
-                var currentScreen by remember {
-                    mutableStateOf(MainScreen.HOME)
-                }
-
-                var callConfig by remember {
-                    mutableStateOf(
-                        callConfigStore.load()
-                    )
-                }
-
-                BackHandler(
-                    enabled = currentScreen != MainScreen.HOME
-                ) {
-                    currentScreen = MainScreen.HOME
-                }
-
-                when (currentScreen) {
-                    MainScreen.HOME -> {
-                        HomeScreen(
-                            scheduledCallAtMillis = scheduledCallAtMillis,
-                            onCallMeNow = {
-                                ensureCallCapabilities(
-                                    requireExactAlarm = false
-                                ) {
-                                    startImmediateCall()
-                                }
-                            },
-                            onScheduleCall = {
-                                ensureCallCapabilities(
-                                    requireExactAlarm = true
-                                ) {
-                                    currentScreen = MainScreen.SCHEDULE_CALL
-                                }
-                            },
-                            onCallSetup = {
-                                currentScreen = MainScreen.CALL_SETUP
-                            },
-                            onSettings = {
-                                // TODO settings
-                            }
+                MainApp(
+                    initialCallConfig = initialCallConfig,
+                    scheduledCallAtMillis = scheduledCallAtMillis,
+                    capabilityIssue = capabilityIssue,
+                    canRequestNotificationPermission =
+                        canRequestNotificationRuntimePermission(),
+                    onRequireCallCapabilities = { requireExactAlarm, onReady ->
+                        ensureCallCapabilities(
+                            requireExactAlarm = requireExactAlarm,
+                            onReady = onReady
                         )
+                    },
+                    onStartImmediateCall = {
+                        startImmediateCall()
+                    },
+                    onScheduleCall = { triggerTimeMillis ->
+                        scheduleCall(triggerTimeMillis)
+                    },
+                    onSaveCallConfig = { newConfig ->
+                        callConfigStore.save(newConfig)
+                    },
+                    onCapabilityConfirm = { capability ->
+                        handleCapabilityAction(capability)
+                    },
+                    onCapabilityDismiss = {
+                        cancelPendingCapabilityAction()
                     }
-
-                    MainScreen.CALL_SETUP -> {
-                        CallSetupScreen(
-                            initialConfig = callConfig,
-                            onChooseContact = {
-                                // TODO contact picker
-                            },
-                            onChooseRingtone = {
-                                // TODO system ringtone picker
-                            },
-                            onSave = { newConfig ->
-                                callConfigStore.save(newConfig)
-                                callConfig = newConfig
-                                currentScreen = MainScreen.HOME
-                            }
-                        )
-                    }
-
-                    MainScreen.SCHEDULE_CALL -> {
-                        ScheduleCallScreen(
-                            initialScheduledAtMillis = scheduledCallAtMillis,
-                            onBack = {
-                                currentScreen = MainScreen.HOME
-                            },
-                            onSchedule = { triggerTimeMillis ->
-                                ensureCallCapabilities(
-                                    requireExactAlarm = true
-                                ) {
-                                    if (scheduleCall(triggerTimeMillis)) {
-                                        currentScreen = MainScreen.HOME
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
-
-                capabilityIssue?.let { capability ->
-                    CallCapabilityDialog(
-                        capability = capability,
-                        canRequestNotificationPermission =
-                            canRequestNotificationRuntimePermission(),
-                        onConfirm = {
-                            handleCapabilityAction(capability)
-                        },
-                        onDismiss = {
-                            cancelPendingCapabilityAction()
-                        }
-                    )
-                }
+                )
             }
         }
     }
