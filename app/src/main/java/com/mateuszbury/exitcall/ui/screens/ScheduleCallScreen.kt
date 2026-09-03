@@ -263,27 +263,25 @@ fun ScheduleCallScreen(
                 )
             }
 
-            if (isEditingScheduledCall) {
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
 
-                Button(
-                    onClick = onCancelScheduledCall,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.background
-                    )
-                ) {
-                    Text(
-                        text = "Cancel scheduled call",
-                        fontSize = 18.sp
-                    )
-                }
+            Button(
+                onClick = onCancelScheduledCall,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.background
+                )
+            ) {
+                Text(
+                    text = "Cancel scheduled call",
+                    fontSize = 18.sp
+                )
             }
         }
     }
