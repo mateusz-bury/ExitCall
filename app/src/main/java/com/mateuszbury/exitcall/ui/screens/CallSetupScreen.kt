@@ -386,7 +386,7 @@ private fun readPickedPhoneContact(
     uri: Uri
 ): PickedContact? {
     val projection = arrayOf(
-        ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+        ContactsContract.Contacts.DISPLAY_NAME,
         ContactsContract.CommonDataKinds.Phone.NUMBER
     )
 
@@ -405,7 +405,7 @@ private fun readPickedPhoneContact(
                 }
 
                 val nameIndex = cursor.getColumnIndex(
-                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
+                    ContactsContract.Contacts.DISPLAY_NAME
                 )
                 val numberIndex = cursor.getColumnIndex(
                     ContactsContract.CommonDataKinds.Phone.NUMBER
