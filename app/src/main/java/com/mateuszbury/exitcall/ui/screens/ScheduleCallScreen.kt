@@ -268,6 +268,10 @@ fun ScheduleCallScreen(
                     modifier = Modifier.height(12.dp)
                 )
 
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
                 Button(
                     onClick = onCancelScheduledCall,
                     modifier = Modifier
@@ -284,7 +288,6 @@ fun ScheduleCallScreen(
                         fontSize = 18.sp
                     )
                 }
-
         }
     }
 
