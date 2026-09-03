@@ -1,10 +1,12 @@
 package com.mateuszbury.exitcall.ui.screens
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -19,10 +21,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mateuszbury.exitcall.model.CallConfig
 
+private data class PickedContact(
+    val displayName: String,
+    val phoneNumber: String
+)
+
 @Composable
 fun CallSetupScreen(
     initialConfig: CallConfig,
-    onChooseContact: () -> Unit,
     onSave: (CallConfig) -> Unit
 ) {
     val context = LocalContext.current
@@ -35,6 +41,10 @@ fun CallSetupScreen(
         mutableStateOf(initialConfig.phoneNumber)
     }
 
+    var contactPickerError by remember {
+        mutableStateOf<String?>(null)
+    }
+
     var ringtoneUri by remember {
         mutableStateOf(initialConfig.ringtoneUri)
     }
@@ -45,6 +55,38 @@ fun CallSetupScreen(
 
     var vibrate by remember {
         mutableStateOf(initialConfig.vibrate)
+    }
+
+    val contactPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != Activity.RESULT_OK) {
+            return@rememberLauncherForActivityResult
+        }
+
+        val selectedUri = result.data?.data
+
+        if (selectedUri == null) {
+            contactPickerError = "Unable to read the selected contact."
+            return@rememberLauncherForActivityResult
+        }
+
+        val pickedContact = readPickedPhoneContact(
+            context = context,
+            uri = selectedUri
+        )
+
+        if (pickedContact == null) {
+            contactPickerError = "This contact does not have a usable phone number."
+            return@rememberLauncherForActivityResult
+        }
+
+        if (pickedContact.displayName.isNotBlank()) {
+            callerName = pickedContact.displayName
+        }
+
+        phoneNumber = pickedContact.phoneNumber
+        contactPickerError = null
     }
 
     val ringtonePickerLauncher = rememberLauncherForActivityResult(
@@ -142,12 +184,37 @@ fun CallSetupScreen(
                     singleLine = true
                 )
 
+                contactPickerError?.let { error ->
+                    Spacer(
+                        modifier = Modifier.height(8.dp)
+                    )
+
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 13.sp
+                    )
+                }
+
                 Spacer(
                     modifier = Modifier.height(12.dp)
                 )
 
                 OutlinedButton(
-                    onClick = onChooseContact,
+                    onClick = {
+                        contactPickerError = null
+
+                        val pickerIntent = Intent(
+                            Intent.ACTION_PICK,
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+                        )
+
+                        runCatching {
+                            contactPickerLauncher.launch(pickerIntent)
+                        }.onFailure {
+                            contactPickerError = "Contact picker is not available on this device."
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
@@ -312,6 +379,66 @@ fun CallSetupScreen(
             }
         }
     }
+}
+
+private fun readPickedPhoneContact(
+    context: Context,
+    uri: Uri
+): PickedContact? {
+    val projection = arrayOf(
+        ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+        ContactsContract.CommonDataKinds.Phone.NUMBER
+    )
+
+    return runCatching {
+        context.contentResolver
+            .query(
+                uri,
+                projection,
+                null,
+                null,
+                null
+            )
+            ?.use { cursor ->
+                if (!cursor.moveToFirst()) {
+                    return@use null
+                }
+
+                val nameIndex = cursor.getColumnIndex(
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
+                )
+                val numberIndex = cursor.getColumnIndex(
+                    ContactsContract.CommonDataKinds.Phone.NUMBER
+                )
+
+                if (numberIndex < 0) {
+                    return@use null
+                }
+
+                val number = cursor
+                    .getString(numberIndex)
+                    ?.trim()
+                    .orEmpty()
+
+                if (number.isBlank()) {
+                    return@use null
+                }
+
+                val displayName = if (nameIndex >= 0) {
+                    cursor
+                        .getString(nameIndex)
+                        ?.trim()
+                        .orEmpty()
+                } else {
+                    ""
+                }
+
+                PickedContact(
+                    displayName = displayName,
+                    phoneNumber = number
+                )
+            }
+    }.getOrNull()
 }
 
 @Suppress("DEPRECATION")
