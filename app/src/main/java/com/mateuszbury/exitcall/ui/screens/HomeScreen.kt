@@ -19,7 +19,6 @@ fun HomeScreen(
     scheduledCallAtMillis: Long?,
     onCallMeNow: () -> Unit,
     onScheduleCall: () -> Unit,
-    onCancelScheduledCall: () -> Unit,
     onCallSetup: () -> Unit,
     onSettings: () -> Unit
 ) {
@@ -166,18 +165,6 @@ fun HomeScreen(
                     },
                     fontSize = 18.sp
                 )
-            }
-
-            if (scheduledCallAtMillis != null) {
-                TextButton(
-                    onClick = onCancelScheduledCall,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Cancel scheduled call",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
             }
 
             Spacer(
