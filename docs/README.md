@@ -17,12 +17,13 @@ Current merged baseline includes:
 - scheduler edit/reschedule/cancel management from #12 / PR #80,
 - Android system ringtone picker from #13 / PR #81.
 
-The next planned P2 configuration feature is #14, the privacy-friendly single-contact picker.
+The next planned P2 configuration feature is #14, the privacy-friendly single-contact picker. Phone-number normalization, formatting and Call Setup validation remain part of #15.
 
 The Markdown architecture/process documents below are the maintained living documentation. Versioned DOCX specifications are historical specification snapshots and are not the day-to-day source of truth for implementation status.
 
 ## Architecture and decisions
 
+- [`architecture/TECHNICAL_DOCUMENTATION.md`](architecture/TECHNICAL_DOCUMENTATION.md) - living technical documentation v1.4: component architecture, call pipeline, persistence, scheduler, Android capabilities, ringtone implementation, lifecycle and near-term technical roadmap
 - [`architecture/DECISIONS.md`](architecture/DECISIONS.md) - maintained product and technical decisions, including capability policy, scheduler behavior, ringtone/audio direction, onboarding, monetization and release boundaries
 - [`architecture/SCHEDULER_LIFECYCLE.md`](architecture/SCHEDULER_LIFECYCLE.md) - exact scheduling, edit/reschedule/cancel behavior, persistence, Direct Boot recovery, trigger lifecycle and scheduler invariants
 
