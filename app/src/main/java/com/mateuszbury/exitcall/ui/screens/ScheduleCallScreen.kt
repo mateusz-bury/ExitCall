@@ -15,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -102,12 +103,16 @@ private fun ScheduleOption(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleCallScreen(
     initialScheduledAtMillis: Long?,
     onBack: () -> Unit,
-    onSchedule: (Long) -> Unit
+    onSchedule: (Long) -> Unit,
+    onCancelScheduledCall: () -> Unit
 ) {
+    val isEditingScheduledCall = initialScheduledAtMillis != null
+
     val initialTime = remember(initialScheduledAtMillis) {
         initialScheduledAtMillis
             ?.takeIf { it > System.currentTimeMillis() }
@@ -147,7 +152,13 @@ fun ScheduleCallScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Schedule a call")
+                    Text(
+                        if (isEditingScheduledCall) {
+                            "Edit scheduled call"
+                        } else {
+                            "Schedule a call"
+                        }
+                    )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
@@ -177,7 +188,11 @@ fun ScheduleCallScreen(
             verticalArrangement = Arrangement.Top
         ) {
             Text(
-                text = "Choose when your ExitCall should start."
+                text = if (isEditingScheduledCall) {
+                    "Change when your ExitCall should start."
+                } else {
+                    "Choose when your ExitCall should start."
+                }
             )
 
             Spacer(
@@ -241,10 +256,38 @@ fun ScheduleCallScreen(
                 )
             ) {
                 Text(
-                    text = "Schedule a call",
+                    text = if (isEditingScheduledCall) {
+                        "Save changes"
+                    } else {
+                        "Schedule a call"
+                    },
                     fontSize = 18.sp
                 )
             }
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
+                Button(
+                    onClick = onCancelScheduledCall,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.background
+                    )
+                ) {
+                    Text(
+                        text = "Cancel scheduled call",
+                        fontSize = 18.sp
+                    )
+                }
         }
     }
 

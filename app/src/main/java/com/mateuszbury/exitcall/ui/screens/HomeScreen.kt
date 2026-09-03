@@ -158,7 +158,11 @@ fun HomeScreen(
                 )
             ) {
                 Text(
-                    text = "Schedule a call",
+                    text = if (scheduledCallAtMillis == null) {
+                        "Schedule a call"
+                    } else {
+                        "Edit scheduled call"
+                    },
                     fontSize = 18.sp
                 )
             }

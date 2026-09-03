@@ -31,6 +31,7 @@ fun MainApp(
     ) -> Unit,
     onStartImmediateCall: () -> Unit,
     onScheduleCall: (Long) -> Boolean,
+    onCancelScheduledCall: () -> Unit,
     onSaveCallConfig: (CallConfig) -> Unit,
     onCapabilityConfirm: (CallCapability) -> Unit,
     onCapabilityDismiss: () -> Unit
@@ -102,6 +103,10 @@ fun MainApp(
                             currentScreen = MainScreen.HOME
                         }
                     }
+                },
+                onCancelScheduledCall = {
+                    onCancelScheduledCall()
+                    currentScreen = MainScreen.HOME
                 }
             )
         }
