@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mateuszbury.exitcall.model.CallConfig
+import com.mateuszbury.exitcall.phone.PhoneNumberFormatter
 import com.mateuszbury.exitcall.ui.theme.ExitCallAnswerGreen
 import com.mateuszbury.exitcall.ui.theme.ExitCallIncomingBackground
 import com.mateuszbury.exitcall.ui.theme.ExitCallSliderBackground
@@ -84,7 +85,9 @@ fun IncomingCallScreen(
                 )
 
                 Text(
-                    text = config.phoneNumber,
+                    text = PhoneNumberFormatter.formatForDisplay(
+                        config.phoneNumber
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 18.sp
                 )
