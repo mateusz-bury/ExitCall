@@ -68,7 +68,7 @@ fun IncomingCallScreen(
             }
 
             Spacer(
-                modifier = Modifier.height(24.dp)
+                modifier = Modifier.height(32.dp)
             )
 
             Text(
@@ -77,13 +77,14 @@ fun IncomingCallScreen(
                 },
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 42.sp,
+                lineHeight = 50.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
 
             if (config.phoneNumber.isNotBlank()) {
                 Spacer(
-                    modifier = Modifier.height(12.dp)
+                    modifier = Modifier.height(16.dp)
                 )
 
                 Text(
