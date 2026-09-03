@@ -13,13 +13,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mateuszbury.exitcall.model.CallConfig
+import com.mateuszbury.exitcall.phone.PhoneNumberFormatter
 
 private data class PickedContact(
     val displayName: String,
@@ -38,7 +41,11 @@ fun CallSetupScreen(
     }
 
     var phoneNumber by remember {
-        mutableStateOf(initialConfig.phoneNumber)
+        mutableStateOf(
+            PhoneNumberFormatter.formatForDisplay(
+                initialConfig.phoneNumber
+            )
+        )
     }
 
     var contactPickerError by remember {
@@ -56,6 +63,8 @@ fun CallSetupScreen(
     var vibrate by remember {
         mutableStateOf(initialConfig.vibrate)
     }
+
+    val phoneValidation = PhoneNumberFormatter.validate(phoneNumber)
 
     val contactPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -85,7 +94,18 @@ fun CallSetupScreen(
             callerName = pickedContact.displayName
         }
 
-        phoneNumber = pickedContact.phoneNumber
+        val pickedPhoneValidation = PhoneNumberFormatter.validate(
+            pickedContact.phoneNumber
+        )
+
+        phoneNumber = if (pickedPhoneValidation.isValid) {
+            PhoneNumberFormatter.formatForDisplay(
+                pickedPhoneValidation.normalized
+            )
+        } else {
+            pickedContact.phoneNumber
+        }
+
         contactPickerError = null
     }
 
@@ -128,9 +148,7 @@ fun CallSetupScreen(
                 fontSize = 28.sp
             )
 
-            Spacer(
-                modifier = Modifier.height(6.dp)
-            )
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
                 text = "Choose how your incoming call should look and feel.",
@@ -138,9 +156,7 @@ fun CallSetupScreen(
                 fontSize = 14.sp
             )
 
-            Spacer(
-                modifier = Modifier.height(28.dp)
-            )
+            Spacer(modifier = Modifier.height(28.dp))
 
             SetupCard {
                 Text(
@@ -149,43 +165,44 @@ fun CallSetupScreen(
                     fontSize = 13.sp
                 )
 
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = callerName,
-                    onValueChange = {
-                        callerName = it
-                    },
-                    label = {
-                        Text("Caller name")
-                    },
+                    onValueChange = { callerName = it },
+                    label = { Text("Caller name") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
 
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = phoneNumber,
                     onValueChange = {
                         phoneNumber = it
+                        contactPickerError = null
                     },
-                    label = {
-                        Text("Phone number")
-                    },
+                    label = { Text("Phone number") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    isError = !phoneValidation.isValid,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone
+                    )
                 )
 
-                contactPickerError?.let { error ->
-                    Spacer(
-                        modifier = Modifier.height(8.dp)
+                if (!phoneValidation.isValid) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = phoneValidation.errorMessage.orEmpty(),
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 13.sp
                     )
+                }
 
+                contactPickerError?.let { error ->
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = error,
                         color = MaterialTheme.colorScheme.error,
@@ -193,9 +210,7 @@ fun CallSetupScreen(
                     )
                 }
 
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedButton(
                     onClick = {
@@ -208,7 +223,8 @@ fun CallSetupScreen(
                         runCatching {
                             contactPickerLauncher.launch(pickerIntent)
                         }.onFailure {
-                            contactPickerError = "Contact picker is not available on this device."
+                            contactPickerError =
+                                "Contact picker is not available on this device."
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -221,9 +237,7 @@ fun CallSetupScreen(
                 }
             }
 
-            Spacer(
-                modifier = Modifier.height(16.dp)
-            )
+            Spacer(modifier = Modifier.height(16.dp))
 
             SetupCard {
                 Text(
@@ -232,9 +246,7 @@ fun CallSetupScreen(
                     fontSize = 13.sp
                 )
 
-                Spacer(
-                    modifier = Modifier.height(16.dp)
-                )
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -246,7 +258,6 @@ fun CallSetupScreen(
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 16.sp
                         )
-
                         Text(
                             text = ringtoneName,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -287,7 +298,6 @@ fun CallSetupScreen(
                                     false
                                 )
                             }
-
                             ringtonePickerLauncher.launch(pickerIntent)
                         }
                     ) {
@@ -313,7 +323,6 @@ fun CallSetupScreen(
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 16.sp
                         )
-
                         Text(
                             text = "Use vibration during incoming call",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -323,9 +332,7 @@ fun CallSetupScreen(
 
                     Switch(
                         checked = vibrate,
-                        onCheckedChange = {
-                            vibrate = it
-                        },
+                        onCheckedChange = { vibrate = it },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                             checkedTrackColor = MaterialTheme.colorScheme.primary,
@@ -338,22 +345,25 @@ fun CallSetupScreen(
                 }
             }
 
-            Spacer(
-                modifier = Modifier.weight(1f)
-            )
+            Spacer(modifier = Modifier.weight(1f))
 
             Button(
                 onClick = {
+                    if (!phoneValidation.isValid) {
+                        return@Button
+                    }
+
                     onSave(
                         CallConfig(
                             callerName = callerName,
-                            phoneNumber = phoneNumber,
+                            phoneNumber = phoneValidation.normalized,
                             ringtoneUri = ringtoneUri,
                             ringtoneName = ringtoneName,
                             vibrate = vibrate
                         )
                     )
                 },
+                enabled = phoneValidation.isValid,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(58.dp),

@@ -45,7 +45,7 @@ class IncomingCallService : Service() {
     }
 
     companion object {
-        const val CHANNEL_ID = "incoming_call_channel"
+        const val CHANNEL_ID = "incoming_call_channel_v2"
         const val NOTIFICATION_ID = 1002
 
         const val ACTION_DECLINE =
@@ -339,7 +339,10 @@ class IncomingCallService : Service() {
                 CHANNEL_ID,
                 "Incoming calls",
                 NotificationManager.IMPORTANCE_HIGH
-            )
+            ).apply {
+                setSound(null, null)
+                enableVibration(false)
+            }
 
             val notificationManager =
                 getSystemService(
