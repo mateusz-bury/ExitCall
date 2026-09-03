@@ -186,7 +186,11 @@ fun ScheduleCallScreen(
             verticalArrangement = Arrangement.Top
         ) {
             Text(
-                text = "Choose when your ExitCall should start."
+                text = if (isEditingScheduledCall) {
+                    "Change when your ExitCall should start."
+                } else {
+                    "Choose when your ExitCall should start."
+                }
             )
 
             Spacer(
