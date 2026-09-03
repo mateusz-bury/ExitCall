@@ -1,170 +1,174 @@
 # ExitCall Backlog
 
-GitHub Issues are the source of truth for actionable work. This file is the roadmap and priority map.
+GitHub Issues are the source of truth for actionable work. This file is the maintained roadmap and priority map.
 
 ## Current phase
 
-**P1 implementation baseline is complete and physically verified.**
+**P2 product-quality work is active.**
 
-As of 2026-09-02:
+As of 2026-09-03:
 
-- #10 reboot recovery is merged, closed and physically verified on the primary Motorola device.
-- #11 production Android identity is implemented and physically verified on PR #70 with permanent ID `com.mateuszbury.exitcall`; only the final merge into `main` remains.
-- #9 regression suite is defined and remains the maintained release-quality safety net. Run targeted subsets after high-risk changes and the full suite before the MVP release candidate.
-- #35 is a short pre-P2 hardening pass focused only on reducing `MainActivity` responsibilities. It is split into two stacked, behavior-preserving PRs and should finish before P2 feature work begins.
+- P1 core is complete and physically validated on the primary Motorola device.
+- Permanent Android identity is `com.mateuszbury.exitcall`.
+- Reboot recovery is implemented and physically verified.
+- The pre-P2 `MainActivity` hardening work from PR #71 / #72 is merged.
+- PR #79 implements the final capability policy: Notifications are required, Full Screen Intent is recommended with CallStyle fallback, and exact-alarm access is required only for scheduling.
+- #12 scheduler edit/cancel is merged and closed via PR #80.
+- #13 Android system ringtone picker is physically verified, merged and closed via PR #81.
+- #9 remains the maintained regression safety net during P2 and the release-quality gate before the v1.0 release candidate.
 
 Working rule: **one large task or at most two small tasks active at once**.
 
-### Pre-P2 sequence
+## Active sequence
 
-`#70 production ID -> #71 capability extraction -> physical smoke test -> #72 Compose root extraction -> physical smoke test -> P2`
+Current recommended order:
 
-Refactor boundaries:
+`#14 single contact picker -> #15 phone formatting/country codes -> #16/#17 Incoming UI polish -> #18 Back handling`
 
-- PR #71 extracts Android capability/version/settings resolution and the capability dialog from `MainActivity`.
-- PR #72 extracts the small Compose root/navigation state machine from `MainActivity`.
-- Do not introduce Navigation Compose, ViewModel/DI infrastructure, scheduler rewrites or call-pipeline changes in this pass.
-- `IncomingCallService`, `IncomingCallActivity`, `CallAlarmReceiver`, scheduler recovery and persistence remain behaviorally unchanged.
-
-### Recommended P2 opening sequence
-
-After #35 is physically verified and merged:
-
-`#12 scheduler edit/cancel -> #13 ringtone picker -> #14 single contact picker -> #15 phone formatting/country codes`
-
-Then continue through the remaining P2 functionality in small, testable slices.
+After that, continue through Settings, audio, Active Call and release-quality work in small testable slices.
 
 ---
 
-## P1 — MVP core baseline
+## P1 — completed core baseline
 
-### Status
+Completed core behavior includes:
 
-**Complete / physically validated.**
-
-P1 established the stable core needed to safely begin product-quality work:
-
-- persisted CallConfig and caller identity,
-- immediate and scheduled call convergence,
-- exact-alarm scheduling,
-- foreground service / notification / Full Screen Intent flow,
-- lock-screen Answer / Decline / Hang Up lifecycle,
-- capability/permission UX,
+- persisted `CallConfig` and caller identity,
+- one shared immediate/scheduled call pipeline,
+- exact `AlarmManager` scheduling,
 - scheduler persistence and reboot recovery,
-- permanent Android application identity,
-- maintained physical regression suite definition.
+- notification / Full Screen Intent capability handling,
+- CallStyle notification fallback when FSI is unavailable,
+- lock-screen Answer / Decline / Hang Up lifecycle,
+- unanswered-call cleanup,
+- permanent production application ID,
+- maintained physical regression suite.
 
-Administrative note: PR #70 is verified and pending final merge into `main`; #11 should be closed with that merge.
+Key completed issues: #1, #2, #3, #4, #5, #6, #7, #8, #10, #11, #27, #38, #44-#52, #55, #59.
 
 ---
 
 ## Pre-P2 — architecture hardening
 
-- #35 Light `MainActivity` refactor in two PRs.
-  - PR #71: extract capability/platform resolution and capability dialog.
-  - PR #72: extract Compose root and lightweight main-screen navigation state.
-  - Exit criterion: both branches build and the targeted physical smoke tests preserve the P1 behavior baseline.
+- #35 Light `MainActivity` refactor.
+  - PR #71 extracted capability/platform resolution and the capability dialog.
+  - PR #72 extracted the Compose root and lightweight main-screen navigation state.
+  - PR #73 followed with scheduler picker composition/performance cleanup.
+  - No Navigation Compose, ViewModel/DI framework or second scheduler/call pipeline was introduced.
 
 ---
 
-## P2 — MVP quality / important functionality
+## P2 — product quality / important functionality
 
-### Scheduler and configuration
+### Scheduler and Call Setup
 
-- #12 Add explicit edit/cancel controls for the single pending scheduled call.
-- #13 Add Android system ringtone picker.
-- #14 Add privacy-friendly single contact picker; no bulk contact import and no random-contact feature.
-- #15 Add country-code support and phone-number formatting, extensible internationally.
+- [x] #12 Edit/reschedule/cancel the single pending scheduled call. Merged via PR #80.
+- [x] #13 Android system ringtone picker with persisted URI/name and system-default fallback. Merged via PR #81.
+- [ ] #14 Privacy-friendly single contact picker; no bulk address-book import.
+- [ ] #15 International phone-number/country-code formatting.
+- [ ] #76 Local custom voice recording and audio-file import; app recording M4A/AAC, import at least MP3 and M4A/AAC, local-only storage.
 
-### Incoming / active call UX
+### Incoming Call / Active Call
 
-- #16 Polish IncomingCallScreen layout/vertical positioning.
-- #17 Polish Answer/Decline slider visuals and interaction.
-- #18 Block Back navigation in the lock-screen incoming/active call flow.
-- #19 Respect system vibration/DND behaviour and the ExitCall vibration preference.
-- #20 Add Bluetooth and headset audio-route support.
-- #21 Add speakerphone mode.
-- #22 Finish ActiveCallScreen controls and remove prototype placeholders.
-- #23 Implement Settings screen and global preferences.
-- #24 Centralize ExitCall theme. **Core implementation merged and physically smoke-tested.** Remaining P2 polish: remove purple Material accents from DatePicker/TimePicker and make a final visual decision for the filled `Start call` CTA.
-- #53 Decide whether to show an optional missed-call notification after an unanswered timeout.
-- #54 ExitCall marker is implemented on incoming/active screens; keep open until demo/onboarding #29 teaches the marker rule.
-- #58 Make the unanswered-call timeout configurable in Settings: 5s / 10s / 20s, default 20s.
+- [ ] #16 Polish IncomingCallScreen layout and vertical positioning.
+- [ ] #17 Polish Answer/Decline slider visuals and interaction.
+- [ ] #18 Block Back navigation in lock-screen Incoming/Active flows.
+- [ ] #19 Respect ExitCall vibration setting and Android DND/system behavior.
+- [ ] #20 Bluetooth/headset audio-route support.
+- [ ] #22 Finish ActiveCallScreen controls and remove prototype placeholders.
+- [ ] #53 Configurable missed-call notification after unanswered timeout only.
+- [ ] #54 Keep the EC marker and integrate its explanation into onboarding/demo.
+- [ ] #58 Configurable unanswered-call timeout: 5s / 10s / 20s / Custom 5-60s, default 20s.
 
-### Architecture, reliability and release quality
+### Home / Settings
 
-- #9 Maintain and execute the MVP regression suite. Use targeted subsets during P2 and run the full suite before the MVP release candidate.
-- #25 Add automated tests for scheduling, state and persistence.
-- #26 Build Android device/OEM compatibility test matrix.
-- #28 Review current Google Play/Android requirements for exact alarm, foreground service, notification and Full Screen Intent capabilities before store release.
+- [ ] #23 Production Settings, Help and app information.
+- [ ] #30 Production Home dashboard: Next call, Caller, Sound, readiness and trial/Premium state.
+- #24 Theme centralization is already merged; remaining visual polish belongs to normal P2 UI work.
 
-## P3 — Beta / product improvements
+### Reliability / testing
 
-- #29 Build one ExitCall demo/onboarding call instead of slide onboarding; caller `ExitCall`, guided audio after Answer, teach the EC marker.
-- #30 Add real Home dashboard statistics/status data.
-- #31 Add language selection in Settings and move user-facing text toward Android string resources.
-- #32 Add guided voice content in PL / EN / DE / ES.
-- #33 Explore lightweight post-call summary.
-- #34 Add configurable post-call exit behaviour, with return-to-Android remaining the default.
-- #36 Explore Google Phone / Samsung-style visual variants while keeping shared call logic.
-- #37 Design and validate monetization model.
-- #39 Maintain architecture/release documentation. Specs v1.1-v1.3 and maintained process/decision docs live under `docs/`.
+- [ ] #9 Maintain and execute the physical regression suite during P2; full P0 gate before release candidate.
+- [ ] #25 Add a small automated safety net for scheduling, state and persistence.
+- [ ] #26 Build Android/OEM compatibility matrix.
 
-## P4 — Icebox / future / exploratory
+---
 
-- #40 Run lightweight marketing experiments after product validation: TikTok / Facebook / YouTube.
-- #41 Explore partner/distribution strategy for selected Asian markets.
-- #42 Explore native iOS version in Swift / SwiftUI after Android validation.
-- #43 Review ExitCall IP, branding/name protection and launch protection before wider public marketing.
+## P3 — onboarding, monetization and release
 
-## Completed / validated
+- [ ] #29 Mandatory first-run onboarding with one ExitCall demo, capability education and EC-marker rule.
+- [ ] #74 Local free-call trial: 2 configurable calls after demo; consume only on Answer or Decline; timeout/demo do not consume.
+- [ ] #75 Google Play Billing one-time Premium entitlement; Play purchase state is authoritative when available.
+- [ ] #77 Premium/paywall UX during onboarding and after trial exhaustion.
+- [ ] #28 Review current Google Play requirements for FSI, exact alarms, foreground service and notifications before submission.
+- [ ] #39 Maintain architecture/product/release documentation.
+- [ ] #78 Final Google Play release package and production-readiness gate.
+- [ ] #33 Lightweight post-call summary.
+- [ ] #34 Configurable post-call exit behavior; Return to Android remains default.
+- [ ] #36 Google Phone-like and Samsung-like presentation variants over one shared call engine.
 
-- #1 Answer -> ActiveCallScreen works in the real service/activity flow and was physically verified.
-- #2 ActiveCallScreen -> Hang Up closes the call UI cleanly and was physically verified.
-- #3 CallConfig persistence survives app kill/relaunch and device restart; `CallConfigStore` is the durable configuration source.
-- #4 Real scheduler is implemented and physically verified: exact alarm trigger, persisted next-call state, Home display, scheduler restore and post-fire clearing all work.
-- #5 Immediate and scheduled triggers converge on the same service/activity call pipeline; automatic debug scheduling and the duplicate MainActivity call path are gone.
-- #6 IncomingCallService and IncomingCallActivity use the saved CallConfig; caller identity, ringtone/vibration configuration and immediate/scheduled parity were physically verified.
-- #7 Locked-device Full Screen Intent and unlocked-device call-style notification paths support working Answer/Decline actions.
-- #8 Permission/capability UX is implemented and physically verified: notifications, Full Screen Intent and exact-alarm gating handle grant, denial, settings return and `Not now` paths without false success or loops.
-- #10 Scheduled calls survive reboot through device-protected scheduler state, Direct-Boot-aware recovery and shared exact-alarm re-registration; physically verified on Motorola.
-- #11 Production Android identity is finalized as `com.mateuszbury.exitcall` and physically verified on PR #70; final merge/issue closure pending.
-- #27 Product wording standardized across Home, Call Setup and public documentation.
-- #38 Repository cleanup completed: `.idea` removed from tracking, `.docs` moved to `docs/`, root README restored, UI screen paths aligned with packages and default example tests removed.
-- #44 Exact Alarm -> Receiver trigger works on a locked device.
-- #45 Foreground service plays ringtone and vibration on lock screen and cleans them up when stopped.
-- #46 Full Screen Intent wakes device and shows incoming call over lock screen.
-- #47 Decline stops the incoming call and leaves the device locked.
-- #48 Initial Home, Call Setup, Incoming Call and Active Call UI foundation implemented.
-- #49 Branding, icon and splash-screen groundwork implemented.
-- #50 Private GitHub repository and structured backlog/workflow created.
-- #51 Unanswered-call timeout and guaranteed service/UI cleanup implemented with a 20-second default.
-- #52 Stale IncomingCallScreen after Decline/Answer fixed.
-- #55 Duplicate incoming/active call flows fixed by unifying the launch pipeline.
-- #59 MainActivity and IncomingCallActivity locked to portrait and verified.
+---
 
-## Current repository observations
+## P4 — post-v1.0 / icebox
 
-- Permanent Android identity is `com.mateuszbury.exitcall`; source packages, namespace and application ID are aligned on PR #70.
-- Persisted CallConfig is the shared source of truth for the real immediate and scheduled call flow and has passed physical verification.
-- Scheduled trigger metadata is stored in device-protected storage and reboot recovery is physically verified.
-- `ScheduledCallScheduler` owns normal and recovery exact-alarm registration; recovery uses a stable PendingIntent identity and remains idempotent.
-- `ScheduledCallRecoveryReceiver` handles `LOCKED_BOOT_COMPLETED`, `BOOT_COMPLETED` and exact-alarm permission restoration; `MainActivity` provides an app-start OEM fallback.
-- Permission/capability gating for notifications, Full Screen Intent and exact alarms is physically verified.
-- PR #71 and PR #72 are intentionally limited to `MainActivity` responsibility cleanup before P2.
-- Scheduler lifecycle/recovery is documented under `docs/architecture/SCHEDULER_LIFECYCLE.md`.
-- #24 visual details remain intentionally deferred to P2 polish.
-- Repository documentation uses the standard root `README.md` and `docs/` layout.
-- Local IDE metadata is ignored and no longer tracked.
-- `CallScreen.kt` remains under `com.mateuszbury.exitcall.screens`; UI composables live under `com.mateuszbury.exitcall.ui.screens`.
+- #21 Explore real speakerphone routing only if product need is demonstrated.
+- #31 Localization framework and language selection.
+- #32 Localized guided voice content.
+- #40 Lightweight marketing experiments after product validation.
+- #41 Selected Asian-market partner/distribution research.
+- #42 Native iOS evaluation in Swift / SwiftUI after Android validation.
+- #43 IP, branding and launch-protection review.
 
-## Explicit product decisions / not planned
+---
 
-- Do **not** bulk-import the address book. Use a single system contact picker on demand.
+## Recently completed
+
+### #12 — scheduled-call management
+
+PR #80 added explicit edit/reschedule/cancel behavior for the single pending call:
+
+- Home displays the persisted trigger time and changes its CTA to `Edit scheduled call` when appropriate.
+- Schedule screen loads the existing date/time for editing.
+- Rescheduling replaces the existing alarm using the same pending-call identity.
+- `Cancel scheduled call` is presented on the Schedule screen as a destructive action.
+- Cancel removes the AlarmManager `PendingIntent`, clears persisted schedule state and returns Home to `Not scheduled`.
+
+### #13 — ringtone picker
+
+PR #81 connected Call Setup to Android's system ringtone picker:
+
+- selected ringtone URI and display name are stored in `CallConfig`,
+- selection persists through `CallConfigStore`,
+- immediate and scheduled calls use the same ringtone source,
+- picker cancellation preserves the previous value,
+- missing/unavailable saved ringtone falls back to the Android system default,
+- normal Answer / Decline / timeout cleanup still stops ringtone playback.
+
+---
+
+## Current architecture observations
+
+- Production package identity is `com.mateuszbury.exitcall`.
+- `CallConfigStore` is the durable source of truth for caller identity, ringtone URI/name and vibration preference.
+- `ScheduledCallStore` is the durable source of truth for the single future trigger timestamp.
+- `ScheduledCallScheduler` owns exact-alarm registration, replacement, cancellation and recovery.
+- Normal scheduling, reboot recovery, exact-alarm permission recovery and app-start recovery reuse one scheduled-call `PendingIntent` identity.
+- Notifications are required for call delivery.
+- Full Screen Intent improves lock-screen presentation but is not a hard requirement; high-priority CallStyle notification is the fallback.
+- Exact-alarm access is required only for exact future scheduling, not for immediate calls.
+- Immediate and scheduled ExitCalls converge on the same service/activity lifecycle.
+- Markdown under `docs/` is the maintained living documentation; versioned DOCX files are specification snapshots.
+
+## Explicit product decisions
+
+- Do **not** bulk-import contacts; use a single system contact picker on demand.
 - Do **not** add random-contact selection.
-- Do **not** intentionally bypass Android global vibration or Do Not Disturb behaviour.
+- Do **not** intentionally bypass Android DND/global vibration policy.
 - Keep Call Setup separate from Settings.
-- Keep the MVP scheduler to one pending call at a time; multiple scheduled calls are unnecessary complexity unless future product evidence justifies them.
-- Default post-call behaviour is to leave the call flow and return to Android.
-- English is the source language for the initial product; broader localization is tracked separately.
-- Android comes first; iOS is a separate later native project if the product validates.
+- Keep one pending scheduled call in v1.0.
+- v1.0 UI is English-only; additional UI/audio localization is post-v1.0.
+- Onboarding includes 1 demo + 2 free configurable calls, then a one-time Premium unlock.
+- Demo and unanswered timeout do not consume a free call; Answer or Decline consumes exactly one.
+- Custom user audio remains local to the device.
+- Default post-call behavior is Return to Android.
+- Android ships first; iOS is a separate later platform project if product validation justifies it.
