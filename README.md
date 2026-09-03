@@ -1,20 +1,34 @@
 # ExitCall
 
-ExitCall is an Android app that provides a realistic simulated incoming-call experience to help a user leave an awkward or uncomfortable situation naturally.
+ExitCall is an Android safety app that provides a user-configured incoming-call experience to help someone leave an awkward or uncomfortable situation naturally.
 
-## Current MVP state
+## Current v1.0 state
 
-The core Android flow is working on a physical device:
+The core Android flow is working on physical hardware and P2 product-quality work is active.
 
-- immediate calls use the foreground-service / activity pipeline,
-- scheduled calls use exact `AlarmManager` alarms,
-- the lock-screen flow uses a high-priority call notification and Full Screen Intent,
-- Answer, Decline, Hang Up and unanswered timeout cleanup are implemented,
-- Call Setup persists caller name, phone number, ringtone and vibration preferences,
-- scheduled-call state persists in the app and is shown on Home and in the scheduler,
-- immediate and scheduled calls use the same saved call configuration.
+Current merged baseline includes:
 
-Device-reboot restoration for pending scheduled alarms is tracked separately.
+- immediate calls through the shared foreground-service / Activity pipeline,
+- scheduled calls through exact `AlarmManager` alarms,
+- persisted scheduler state with edit, reschedule and explicit cancel support,
+- device-reboot recovery for pending future schedules,
+- high-priority CallStyle notifications,
+- Full Screen Intent presentation when available,
+- usable CallStyle notification fallback when FSI is unavailable,
+- Notifications as a hard requirement for call delivery,
+- exact-alarm capability required only for scheduled calls,
+- working Answer, Decline, Hang Up and unanswered-timeout cleanup,
+- persisted caller name, phone number, ringtone URI/name and vibration preference,
+- Android system ringtone picker with system-default fallback,
+- one shared saved `CallConfig` used by immediate and scheduled calls,
+- production Android identity `com.mateuszbury.exitcall`.
+
+Recently completed P2 slices:
+
+- #12 scheduled-call edit/reschedule/cancel, merged in PR #80,
+- #13 Android system ringtone picker, physically verified and merged in PR #81.
+
+Next planned configuration slice: #14 privacy-friendly single-contact picker.
 
 ## Stack
 
@@ -23,15 +37,17 @@ Device-reboot restoration for pending scheduled alarms is tracked separately.
 - Android AlarmManager
 - BroadcastReceiver
 - Foreground Service
-- Notifications / Full Screen Intent
+- CallStyle Notifications / Full Screen Intent
 
 ## Repository layout
 
 - `app/` - Android application source
-- `docs/` - architecture, workflow, backlog and MVP specifications
+- `docs/architecture/` - maintained architecture and product/technical decisions
+- `docs/process/` - backlog and project workflow
+- `docs/specifications/` - historical versioned specification snapshots
 
 ## Documentation
 
 See [`docs/README.md`](docs/README.md) for the documentation index.
 
-GitHub Issues are the source of truth for actionable work. The maintained priority map is in [`docs/process/BACKLOG.md`](docs/process/BACKLOG.md).
+GitHub Issues are the source of truth for actionable work. The maintained roadmap is in [`docs/process/BACKLOG.md`](docs/process/BACKLOG.md).
