@@ -109,6 +109,8 @@ fun ScheduleCallScreen(
     onSchedule: (Long) -> Unit,
     onCancelScheduledCall: () -> Unit
 ) {
+    val isEditingScheduledCall = initialScheduledAtMillis != null
+
     val initialTime = remember(initialScheduledAtMillis) {
         initialScheduledAtMillis
             ?.takeIf { it > System.currentTimeMillis() }
@@ -148,7 +150,13 @@ fun ScheduleCallScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Schedule a call")
+                    Text(
+                        if (isEditingScheduledCall) {
+                            "Edit scheduled call"
+                        } else {
+                            "Schedule a call"
+                        }
+                    )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
@@ -242,12 +250,16 @@ fun ScheduleCallScreen(
                 )
             ) {
                 Text(
-                    text = "Schedule a call",
+                    text = if (isEditingScheduledCall) {
+                        "Save changes"
+                    } else {
+                        "Schedule a call"
+                    },
                     fontSize = 18.sp
                 )
             }
 
-            if (initialScheduledAtMillis != null) {
+            if (isEditingScheduledCall) {
                 Spacer(
                     modifier = Modifier.height(12.dp)
                 )
