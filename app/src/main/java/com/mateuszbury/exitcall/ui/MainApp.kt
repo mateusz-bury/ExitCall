@@ -80,9 +80,6 @@ fun MainApp(
                 onChooseContact = {
                     // TODO contact picker
                 },
-                onChooseRingtone = {
-                    // TODO system ringtone picker
-                },
                 onSave = { newConfig ->
                     onSaveCallConfig(newConfig)
                     callConfig = newConfig

@@ -1,5 +1,12 @@
 package com.mateuszbury.exitcall.ui.screens
 
+import android.app.Activity
+import android.content.Intent
+import android.media.RingtoneManager
+import android.net.Uri
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -7,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mateuszbury.exitcall.model.CallConfig
@@ -15,9 +23,9 @@ import com.mateuszbury.exitcall.model.CallConfig
 fun CallSetupScreen(
     initialConfig: CallConfig,
     onChooseContact: () -> Unit,
-    onChooseRingtone: () -> Unit,
     onSave: (CallConfig) -> Unit
 ) {
+    val context = LocalContext.current
 
     var callerName by remember {
         mutableStateOf(initialConfig.callerName)
@@ -27,8 +35,38 @@ fun CallSetupScreen(
         mutableStateOf(initialConfig.phoneNumber)
     }
 
+    var ringtoneUri by remember {
+        mutableStateOf(initialConfig.ringtoneUri)
+    }
+
+    var ringtoneName by remember {
+        mutableStateOf(initialConfig.ringtoneName)
+    }
+
     var vibrate by remember {
         mutableStateOf(initialConfig.vibrate)
+    }
+
+    val ringtonePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != Activity.RESULT_OK) {
+            return@rememberLauncherForActivityResult
+        }
+
+        val pickedUri = getPickedRingtoneUri(result.data)
+
+        if (pickedUri == null) {
+            ringtoneUri = null
+            ringtoneName = "System default"
+            return@rememberLauncherForActivityResult
+        }
+
+        ringtoneUri = pickedUri.toString()
+        ringtoneName = RingtoneManager
+            .getRingtone(context, pickedUri)
+            ?.getTitle(context)
+            ?: "Selected ringtone"
     }
 
     Box(
@@ -150,14 +188,48 @@ fun CallSetupScreen(
                         )
 
                         Text(
-                            text = initialConfig.ringtoneName,
+                            text = ringtoneName,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp
                         )
                     }
 
                     TextButton(
-                        onClick = onChooseRingtone
+                        onClick = {
+                            val existingUri = ringtoneUri
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let(Uri::parse)
+                                ?: RingtoneManager.getDefaultUri(
+                                    RingtoneManager.TYPE_RINGTONE
+                                )
+
+                            val pickerIntent = Intent(
+                                RingtoneManager.ACTION_RINGTONE_PICKER
+                            ).apply {
+                                putExtra(
+                                    RingtoneManager.EXTRA_RINGTONE_TYPE,
+                                    RingtoneManager.TYPE_RINGTONE
+                                )
+                                putExtra(
+                                    RingtoneManager.EXTRA_RINGTONE_TITLE,
+                                    "Choose ringtone"
+                                )
+                                putExtra(
+                                    RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
+                                    existingUri
+                                )
+                                putExtra(
+                                    RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT,
+                                    true
+                                )
+                                putExtra(
+                                    RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT,
+                                    false
+                                )
+                            }
+
+                            ringtonePickerLauncher.launch(pickerIntent)
+                        }
                     ) {
                         Text(
                             text = "Change",
@@ -214,13 +286,12 @@ fun CallSetupScreen(
 
             Button(
                 onClick = {
-
                     onSave(
                         CallConfig(
                             callerName = callerName,
                             phoneNumber = phoneNumber,
-                            ringtoneUri = initialConfig.ringtoneUri,
-                            ringtoneName = initialConfig.ringtoneName,
+                            ringtoneUri = ringtoneUri,
+                            ringtoneName = ringtoneName,
                             vibrate = vibrate
                         )
                     )
@@ -240,6 +311,20 @@ fun CallSetupScreen(
                 )
             }
         }
+    }
+}
+
+@Suppress("DEPRECATION")
+private fun getPickedRingtoneUri(intent: Intent?): Uri? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        intent?.getParcelableExtra(
+            RingtoneManager.EXTRA_RINGTONE_PICKED_URI,
+            Uri::class.java
+        )
+    } else {
+        intent?.getParcelableExtra(
+            RingtoneManager.EXTRA_RINGTONE_PICKED_URI
+        )
     }
 }
 
