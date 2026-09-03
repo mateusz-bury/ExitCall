@@ -77,9 +77,6 @@ fun MainApp(
         MainScreen.CALL_SETUP -> {
             CallSetupScreen(
                 initialConfig = callConfig,
-                onChooseContact = {
-                    // TODO contact picker
-                },
                 onSave = { newConfig ->
                     onSaveCallConfig(newConfig)
                     callConfig = newConfig

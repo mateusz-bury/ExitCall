@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mateuszbury.exitcall.model.CallConfig
@@ -96,7 +97,9 @@ fun ActiveCallScreen(
             Text(
                 text = config.callerName,
                 color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 34.sp
+                fontSize = 34.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(28.dp))
