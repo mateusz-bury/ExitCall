@@ -65,7 +65,6 @@ fun MainApp(
                         currentScreen = MainScreen.SCHEDULE_CALL
                     }
                 },
-                onCancelScheduledCall = onCancelScheduledCall,
                 onCallSetup = {
                     currentScreen = MainScreen.CALL_SETUP
                 },
@@ -104,6 +103,10 @@ fun MainApp(
                             currentScreen = MainScreen.HOME
                         }
                     }
+                },
+                onCancelScheduledCall = {
+                    onCancelScheduledCall()
+                    currentScreen = MainScreen.HOME
                 }
             )
         }
