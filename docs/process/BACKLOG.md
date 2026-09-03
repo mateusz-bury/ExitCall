@@ -8,13 +8,17 @@ GitHub Issues are the source of truth for actionable work. This file is the main
 
 As of 2026-09-03:
 
-- P1 core is complete and physically validated on the primary Motorola device.
+- P1 implementation baseline is complete on `main`, but the Done/acceptance audit reopened a few verification/integration issues that were closed too early.
 - Permanent Android identity is `com.mateuszbury.exitcall`.
 - Reboot recovery is implemented and physically verified.
 - The pre-P2 `MainActivity` hardening work from PR #71 / #72 is merged.
 - PR #79 implements the final capability policy: Notifications are required, Full Screen Intent is recommended with CallStyle fallback, and exact-alarm access is required only for scheduling.
 - #12 scheduler edit/cancel is merged and closed via PR #80.
 - #13 Android system ringtone picker is physically verified, merged and closed via PR #81.
+- #14 single-contact picker is active on PR #82.
+- #15 phone validation/formatting is stacked on #14 on PR #83.
+- #8, #51 and #59 were reopened for explicit verification instead of being left falsely complete.
+- #54 was reopened because onboarding/demo and visual-variant integration are still part of its original acceptance scope.
 - #9 remains the maintained regression safety net during P2 and the release-quality gate before the v1.0 release candidate.
 
 Working rule: **one large task or at most two small tasks active at once**.
@@ -23,13 +27,13 @@ Working rule: **one large task or at most two small tasks active at once**.
 
 Current recommended order:
 
-`#14 single contact picker -> #15 phone formatting/country codes -> #16/#17 Incoming UI polish -> #18 Back handling`
+`#14 single contact picker -> #15 phone validation/formatting -> #16/#17 Incoming UI polish -> #18 Back handling`
 
-After that, continue through Settings, audio, Active Call and release-quality work in small testable slices.
+Targeted verification for reopened #8 / #51 / #59 can be folded into normal physical regression sessions rather than interrupting the active feature sequence.
 
 ---
 
-## P1 — completed core baseline
+## P1 — completed implementation baseline
 
 Completed core behavior includes:
 
@@ -40,11 +44,20 @@ Completed core behavior includes:
 - notification / Full Screen Intent capability handling,
 - CallStyle notification fallback when FSI is unavailable,
 - lock-screen Answer / Decline / Hang Up lifecycle,
-- unanswered-call cleanup,
+- unanswered-call cleanup implementation,
+- portrait-only Activity configuration,
 - permanent production application ID,
 - maintained physical regression suite.
 
-Key completed issues: #1, #2, #3, #4, #5, #6, #7, #8, #10, #11, #27, #38, #44-#52, #55, #59.
+Key completed issues: #1, #2, #3, #4, #5, #6, #7, #10, #11, #27, #38, #44-#50, #52 and #55.
+
+### Reopened verification/follow-up issues
+
+- [ ] #8 Final capability UX/policy: implementation is present; onboarding wording, TC-039 cleanup and targeted physical verification remain.
+- [ ] #51 Unanswered timeout: 20-second cleanup implementation is present; targeted locked/unlocked/FSI-fallback verification remains.
+- [ ] #59 Portrait lock: manifest implementation is present; targeted physical rotation verification remains.
+
+These issues are not considered Done until their remaining acceptance criteria are explicitly verified.
 
 ---
 
@@ -64,8 +77,8 @@ Key completed issues: #1, #2, #3, #4, #5, #6, #7, #8, #10, #11, #27, #38, #44-#5
 
 - [x] #12 Edit/reschedule/cancel the single pending scheduled call. Merged via PR #80.
 - [x] #13 Android system ringtone picker with persisted URI/name and system-default fallback. Merged via PR #81.
-- [ ] #14 Privacy-friendly single contact picker; no bulk address-book import.
-- [ ] #15 International phone-number/country-code formatting.
+- [ ] #14 Privacy-friendly person-first single-contact picker; Android owns the contact list, no bulk address-book import. Active on PR #82.
+- [ ] #15 International phone-number validation, normalization and formatting. Active on stacked PR #83.
 - [ ] #76 Local custom voice recording and audio-file import; app recording M4A/AAC, import at least MP3 and M4A/AAC, local-only storage.
 
 ### Incoming Call / Active Call
@@ -77,7 +90,7 @@ Key completed issues: #1, #2, #3, #4, #5, #6, #7, #8, #10, #11, #27, #38, #44-#5
 - [ ] #20 Bluetooth/headset audio-route support.
 - [ ] #22 Finish ActiveCallScreen controls and remove prototype placeholders.
 - [ ] #53 Configurable missed-call notification after unanswered timeout only.
-- [ ] #54 Keep the EC marker and integrate its explanation into onboarding/demo.
+- [ ] #54 Keep the EC marker and integrate its explanation into onboarding/demo; current marker implementation is complete, but #29/#36 integration and final regression remain.
 - [ ] #58 Configurable unanswered-call timeout: 5s / 10s / 20s / Custom 5-60s, default 20s.
 
 ### Home / Settings
@@ -89,6 +102,7 @@ Key completed issues: #1, #2, #3, #4, #5, #6, #7, #8, #10, #11, #27, #38, #44-#5
 ### Reliability / testing
 
 - [ ] #9 Maintain and execute the physical regression suite during P2; full P0 gate before release candidate.
+- [ ] Update stale TC-039 wording in #9 to the final FSI-fallback policy before the #8 verification pass.
 - [ ] #25 Add a small automated safety net for scheduling, state and persistence.
 - [ ] #26 Build Android/OEM compatibility matrix.
 
@@ -106,6 +120,8 @@ Key completed issues: #1, #2, #3, #4, #5, #6, #7, #8, #10, #11, #27, #38, #44-#5
 - [ ] #33 Lightweight post-call summary.
 - [ ] #34 Configurable post-call exit behavior; Return to Android remains default.
 - [ ] #36 Google Phone-like and Samsung-like presentation variants over one shared call engine.
+
+#37 monetization-model decision is complete; delivery remains in #74 / #75 / #77 and related release work.
 
 ---
 
@@ -161,7 +177,7 @@ PR #81 connected Call Setup to Android's system ringtone picker:
 
 ## Explicit product decisions
 
-- Do **not** bulk-import contacts; use a single system contact picker on demand.
+- Do **not** bulk-import contacts; use Android's person-first system contact picker on demand and read only the selected person's required data.
 - Do **not** add random-contact selection.
 - Do **not** intentionally bypass Android DND/global vibration policy.
 - Keep Call Setup separate from Settings.
