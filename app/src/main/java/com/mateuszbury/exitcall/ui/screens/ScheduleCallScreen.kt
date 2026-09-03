@@ -106,7 +106,8 @@ private fun ScheduleOption(
 fun ScheduleCallScreen(
     initialScheduledAtMillis: Long?,
     onBack: () -> Unit,
-    onSchedule: (Long) -> Unit
+    onSchedule: (Long) -> Unit,
+    onCancelScheduledCall: () -> Unit
 ) {
     val initialTime = remember(initialScheduledAtMillis) {
         initialScheduledAtMillis
@@ -244,6 +245,29 @@ fun ScheduleCallScreen(
                     text = "Schedule a call",
                     fontSize = 18.sp
                 )
+            }
+
+            if (initialScheduledAtMillis != null) {
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+
+                Button(
+                    onClick = onCancelScheduledCall,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.background
+                    )
+                ) {
+                    Text(
+                        text = "Cancel scheduled call",
+                        fontSize = 18.sp
+                    )
+                }
             }
         }
     }
