@@ -21,9 +21,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mateuszbury.exitcall.model.CallConfig
 
+private data class PickedPhone(
+    val number: String,
+    val label: String
+)
+
 private data class PickedContact(
     val displayName: String,
-    val phoneNumber: String
+    val phoneNumbers: List<PickedPhone>
 )
 
 @Composable
@@ -45,6 +50,10 @@ fun CallSetupScreen(
         mutableStateOf<String?>(null)
     }
 
+    var pendingPhoneChoice by remember {
+        mutableStateOf<PickedContact?>(null)
+    }
+
     var ringtoneUri by remember {
         mutableStateOf(initialConfig.ringtoneUri)
     }
@@ -57,36 +66,45 @@ fun CallSetupScreen(
         mutableStateOf(initialConfig.vibrate)
     }
 
+    fun applyPickedPhone(
+        contact: PickedContact,
+        phone: PickedPhone
+    ) {
+        if (contact.displayName.isNotBlank()) {
+            callerName = contact.displayName
+        }
+
+        phoneNumber = phone.number
+        contactPickerError = null
+        pendingPhoneChoice = null
+    }
+
     val contactPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode != Activity.RESULT_OK) {
-            return@rememberLauncherForActivityResult
-        }
-
-        val selectedUri = result.data?.data
-
+        contract = ActivityResultContracts.PickContact()
+    ) { selectedUri ->
         if (selectedUri == null) {
-            contactPickerError = "Unable to read the selected contact."
             return@rememberLauncherForActivityResult
         }
 
-        val pickedContact = readPickedPhoneContact(
+        val pickedContact = readPickedContact(
             context = context,
             uri = selectedUri
         )
 
-        if (pickedContact == null) {
+        if (pickedContact == null || pickedContact.phoneNumbers.isEmpty()) {
             contactPickerError = "This contact does not have a usable phone number."
             return@rememberLauncherForActivityResult
         }
 
-        if (pickedContact.displayName.isNotBlank()) {
-            callerName = pickedContact.displayName
+        if (pickedContact.phoneNumbers.size == 1) {
+            applyPickedPhone(
+                contact = pickedContact,
+                phone = pickedContact.phoneNumbers.first()
+            )
+        } else {
+            pendingPhoneChoice = pickedContact
+            contactPickerError = null
         }
-
-        phoneNumber = pickedContact.phoneNumber
-        contactPickerError = null
     }
 
     val ringtonePickerLauncher = rememberLauncherForActivityResult(
@@ -116,14 +134,12 @@ fun CallSetupScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .safeDrawingPadding()
                 .padding(20.dp)
         ) {
-
             Text(
                 text = "Set up a call",
                 color = MaterialTheme.colorScheme.onBackground,
@@ -145,7 +161,6 @@ fun CallSetupScreen(
             )
 
             SetupCard {
-
                 Text(
                     text = "Caller",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -204,13 +219,8 @@ fun CallSetupScreen(
                     onClick = {
                         contactPickerError = null
 
-                        val pickerIntent = Intent(
-                            Intent.ACTION_PICK,
-                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI
-                        )
-
                         runCatching {
-                            contactPickerLauncher.launch(pickerIntent)
+                            contactPickerLauncher.launch(null)
                         }.onFailure {
                             contactPickerError = "Contact picker is not available on this device."
                         }
@@ -230,7 +240,6 @@ fun CallSetupScreen(
             )
 
             SetupCard {
-
                 Text(
                     text = "Call behavior",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -245,9 +254,7 @@ fun CallSetupScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-
                     Column {
-
                         Text(
                             text = "Ringtone",
                             color = MaterialTheme.colorScheme.onSurface,
@@ -314,9 +321,7 @@ fun CallSetupScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-
                     Column {
-
                         Text(
                             text = "Vibrate",
                             color = MaterialTheme.colorScheme.onSurface,
@@ -379,65 +384,181 @@ fun CallSetupScreen(
             }
         }
     }
+
+    pendingPhoneChoice?.let { contact ->
+        AlertDialog(
+            onDismissRequest = {
+                pendingPhoneChoice = null
+            },
+            title = {
+                Text("Choose phone number")
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    contact.phoneNumbers.forEach { phone ->
+                        TextButton(
+                            onClick = {
+                                applyPickedPhone(
+                                    contact = contact,
+                                    phone = phone
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = phone.label,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = phone.number,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        pendingPhoneChoice = null
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
-private fun readPickedPhoneContact(
+private fun readPickedContact(
     context: Context,
     uri: Uri
 ): PickedContact? {
-    val projection = arrayOf(
-        ContactsContract.Contacts.DISPLAY_NAME,
-        ContactsContract.CommonDataKinds.Phone.NUMBER
-    )
-
     return runCatching {
-        context.contentResolver
+        val displayName = context.contentResolver
             .query(
                 uri,
-                projection,
+                arrayOf(ContactsContract.Contacts.DISPLAY_NAME),
                 null,
                 null,
                 null
             )
             ?.use { cursor ->
                 if (!cursor.moveToFirst()) {
-                    return@use null
+                    return@use ""
                 }
 
                 val nameIndex = cursor.getColumnIndex(
                     ContactsContract.Contacts.DISPLAY_NAME
                 )
-                val numberIndex = cursor.getColumnIndex(
-                    ContactsContract.CommonDataKinds.Phone.NUMBER
-                )
 
-                if (numberIndex < 0) {
-                    return@use null
-                }
-
-                val number = cursor
-                    .getString(numberIndex)
-                    ?.trim()
-                    .orEmpty()
-
-                if (number.isBlank()) {
-                    return@use null
-                }
-
-                val displayName = if (nameIndex >= 0) {
-                    cursor
-                        .getString(nameIndex)
-                        ?.trim()
-                        .orEmpty()
+                if (nameIndex >= 0) {
+                    cursor.getString(nameIndex)?.trim().orEmpty()
                 } else {
                     ""
                 }
-
-                PickedContact(
-                    displayName = displayName,
-                    phoneNumber = number
-                )
             }
+            .orEmpty()
+
+        val entityUri = Uri.withAppendedPath(
+            uri,
+            ContactsContract.Contacts.Entity.CONTENT_DIRECTORY
+        )
+
+        val phoneNumbers = linkedMapOf<String, PickedPhone>()
+
+        context.contentResolver
+            .query(
+                entityUri,
+                arrayOf(
+                    ContactsContract.Data.MIMETYPE,
+                    ContactsContract.CommonDataKinds.Phone.NUMBER,
+                    ContactsContract.CommonDataKinds.Phone.TYPE,
+                    ContactsContract.CommonDataKinds.Phone.LABEL
+                ),
+                null,
+                null,
+                null
+            )
+            ?.use { cursor ->
+                val mimeIndex = cursor.getColumnIndex(
+                    ContactsContract.Data.MIMETYPE
+                )
+                val numberIndex = cursor.getColumnIndex(
+                    ContactsContract.CommonDataKinds.Phone.NUMBER
+                )
+                val typeIndex = cursor.getColumnIndex(
+                    ContactsContract.CommonDataKinds.Phone.TYPE
+                )
+                val labelIndex = cursor.getColumnIndex(
+                    ContactsContract.CommonDataKinds.Phone.LABEL
+                )
+
+                while (cursor.moveToNext()) {
+                    if (
+                        mimeIndex < 0 ||
+                        numberIndex < 0 ||
+                        cursor.getString(mimeIndex) !=
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
+                    ) {
+                        continue
+                    }
+
+                    val number = cursor
+                        .getString(numberIndex)
+                        ?.trim()
+                        .orEmpty()
+
+                    if (number.isBlank()) {
+                        continue
+                    }
+
+                    val type = if (typeIndex >= 0) {
+                        cursor.getInt(typeIndex)
+                    } else {
+                        ContactsContract.CommonDataKinds.Phone.TYPE_OTHER
+                    }
+
+                    val customLabel = if (labelIndex >= 0) {
+                        cursor.getString(labelIndex)
+                    } else {
+                        null
+                    }
+
+                    val label = ContactsContract.CommonDataKinds.Phone
+                        .getTypeLabel(
+                            context.resources,
+                            type,
+                            customLabel
+                        )
+                        .toString()
+
+                    val deduplicationKey = number.filter(Char::isDigit)
+
+                    if (deduplicationKey.isNotBlank()) {
+                        phoneNumbers.putIfAbsent(
+                            deduplicationKey,
+                            PickedPhone(
+                                number = number,
+                                label = label
+                            )
+                        )
+                    }
+                }
+            }
+
+        PickedContact(
+            displayName = displayName,
+            phoneNumbers = phoneNumbers.values.toList()
+        )
     }.getOrNull()
 }
 
@@ -459,7 +580,6 @@ private fun getPickedRingtoneUri(intent: Intent?): Uri? {
 private fun SetupCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
