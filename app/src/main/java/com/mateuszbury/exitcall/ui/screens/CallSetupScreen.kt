@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.phone.PhoneNumberFormatter
+import com.mateuszbury.exitcall.ui.components.ExitCallTopBar
 
 private data class PickedContact(
     val displayName: String,
@@ -32,6 +33,7 @@ private data class PickedContact(
 fun CallSetupScreen(
     initialConfig: CallConfig,
     appSettings: AppSettings,
+    onBack: () -> Unit,
     onSave: (CallConfig) -> Unit
 ) {
     val context = LocalContext.current
@@ -97,25 +99,21 @@ fun CallSetupScreen(
         contactPickerError = null
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            ExitCallTopBar(
+                title = "Set up a call",
+                onBack = onBack
+            )
+        }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(20.dp)
+                .padding(innerPadding)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            Text(
-                text = "Set up a call",
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 28.sp
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
             Text(
                 text = "Choose who should call you.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
