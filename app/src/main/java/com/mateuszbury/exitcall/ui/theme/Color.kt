@@ -14,11 +14,12 @@ val ExitCallError = Color(0xFFFFB4AB)
 val ExitCallOutline = Color(0xFF3B443F)
 val ExitCallDivider = Color(0xFF2A302C)
 
-// Call-flow-specific colors that do not map cleanly to generic Material roles.
-val ExitCallIncomingBackground = Color(0xFF050706)
-val ExitCallActiveBackground = Color(0xFF05070B)
-val ExitCallSliderBackground = Color(0xFF292B26)
-val ExitCallCallControlSurface = Color(0xFF111827)
-val ExitCallCallActionSurface = Color(0xFF1E293B)
-val ExitCallAnswerGreen = Color(0xFF4FC16E)
-val ExitCallHangUp = Color(0xFFFF4D73)
+// Call-flow aliases intentionally reuse the main ExitCall palette so the
+// call surfaces feel like part of the same product rather than a separate UI.
+val ExitCallIncomingBackground = ExitCallBackground
+val ExitCallActiveBackground = ExitCallBackground
+val ExitCallSliderBackground = ExitCallSurfaceVariant
+val ExitCallCallControlSurface = ExitCallSurface
+val ExitCallCallActionSurface = ExitCallSurfaceVariant
+val ExitCallAnswerGreen = ExitCallGreen
+val ExitCallHangUp = Color(0xFFFF5C5C)
