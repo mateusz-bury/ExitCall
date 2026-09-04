@@ -3,8 +3,8 @@ package com.mateuszbury.exitcall.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,10 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mateuszbury.exitcall.R
 import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.phone.PhoneNumberFormatter
 import com.mateuszbury.exitcall.ui.theme.ExitCallAnswerGreen
@@ -35,58 +37,30 @@ fun IncomingCallScreen(
     onAnswer: () -> Unit
 ) {
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(ExitCallIncomingBackground)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ExitCallIncomingBackground)
                 .safeDrawingPadding()
-                .padding(24.dp),
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(
-                modifier = Modifier.height(130.dp)
-            )
-
-            Box(
-                modifier = Modifier
-                    .size(96.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = config.callerName
-                        .firstOrNull()
-                        ?.uppercase()
-                        ?: "?",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 40.sp
-                )
-            }
-
-            Spacer(
-                modifier = Modifier.height(32.dp)
-            )
+            Spacer(modifier = Modifier.height(148.dp))
 
             Text(
-                text = config.callerName.ifBlank {
-                    "Unknown"
-                },
+                text = config.callerName.ifBlank { "Unknown" },
                 color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 42.sp,
-                lineHeight = 50.sp,
+                fontSize = 44.sp,
+                lineHeight = 52.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
 
             if (config.phoneNumber.isNotBlank()) {
-                Spacer(
-                    modifier = Modifier.height(16.dp)
-                )
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
                     text = PhoneNumberFormatter.formatForDisplay(
@@ -99,18 +73,14 @@ fun IncomingCallScreen(
                 )
             }
 
-            Spacer(
-                modifier = Modifier.weight(1f)
-            )
+            Spacer(modifier = Modifier.weight(1f))
 
             IncomingCallSlider(
                 onDecline = onDecline,
                 onAnswer = onAnswer
             )
 
-            Spacer(
-                modifier = Modifier.height(16.dp)
-            )
+            Spacer(modifier = Modifier.height(20.dp))
         }
 
         Text(
@@ -140,35 +110,32 @@ fun IncomingCallSlider(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(92.dp)
-            .clip(
-                RoundedCornerShape(46.dp)
-            )
+            .height(94.dp)
+            .clip(RoundedCornerShape(47.dp))
             .background(ExitCallSliderBackground)
     ) {
-        val maxDragPx = with(
-            LocalDensity.current
-        ) {
-            ((maxWidth - 76.dp) / 2 - 8.dp)
-                .toPx()
+        val knobWidth = 82.dp
+        val maxDragPx = with(LocalDensity.current) {
+            ((maxWidth - knobWidth) / 2 - 8.dp).toPx()
         }
-
         val actionThreshold = maxDragPx * 0.55f
 
         Text(
             text = "Decline",
             color = MaterialTheme.colorScheme.error,
+            fontSize = 17.sp,
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = 24.dp)
+                .padding(start = 26.dp)
         )
 
         Text(
             text = "Answer",
             color = MaterialTheme.colorScheme.onBackground,
+            fontSize = 17.sp,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 24.dp)
+                .padding(end = 26.dp)
         )
 
         Box(
@@ -180,8 +147,11 @@ fun IncomingCallSlider(
                         y = 0
                     )
                 }
-                .size(76.dp)
-                .clip(CircleShape)
+                .size(
+                    width = knobWidth,
+                    height = 78.dp
+                )
+                .clip(RoundedCornerShape(26.dp))
                 .background(MaterialTheme.colorScheme.onBackground)
                 .pointerInput(maxDragPx) {
                     detectHorizontalDragGestures(
@@ -217,10 +187,11 @@ fun IncomingCallSlider(
                 },
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "☎",
-                color = ExitCallAnswerGreen,
-                fontSize = 32.sp
+            Icon(
+                painter = painterResource(R.drawable.ic_call),
+                contentDescription = null,
+                tint = ExitCallAnswerGreen,
+                modifier = Modifier.size(32.dp)
             )
         }
     }
