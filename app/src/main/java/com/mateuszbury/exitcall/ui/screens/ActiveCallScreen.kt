@@ -211,9 +211,12 @@ fun ActiveCallScreen(
                         )
                         CallActionItem(
                             label = "Mute",
-                            iconRes = R.drawable.ic_mic,
+                            iconRes = if (muteEnabled) {
+                                R.drawable.ic_mic_off
+                            } else {
+                                R.drawable.ic_mic
+                            },
                             selected = muteEnabled,
-                            showMuteSlash = muteEnabled,
                             onClick = {
                                 muteEnabled = !muteEnabled
                             },
@@ -442,8 +445,7 @@ fun CallActionItem(
     iconRes: Int,
     selected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    showMuteSlash: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     val iconTint = if (selected) {
         MaterialTheme.colorScheme.onPrimary
@@ -475,16 +477,6 @@ fun CallActionItem(
                 tint = iconTint,
                 modifier = Modifier.size(30.dp)
             )
-
-            if (showMuteSlash) {
-                Spacer(
-                    modifier = Modifier
-                        .width(38.dp)
-                        .height(2.5.dp)
-                        .rotate(-45f)
-                        .background(iconTint, RoundedCornerShape(2.dp))
-                )
-            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
