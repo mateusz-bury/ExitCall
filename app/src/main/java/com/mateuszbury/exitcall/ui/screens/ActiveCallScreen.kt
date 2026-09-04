@@ -6,8 +6,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,10 +18,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mateuszbury.exitcall.R
 import com.mateuszbury.exitcall.model.CallConfig
+import com.mateuszbury.exitcall.phone.PhoneNumberFormatter
 import com.mateuszbury.exitcall.ui.theme.ExitCallActiveBackground
 import com.mateuszbury.exitcall.ui.theme.ExitCallCallActionSurface
 import com.mateuszbury.exitcall.ui.theme.ExitCallCallControlSurface
@@ -55,19 +59,47 @@ fun ActiveCallScreen(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .safeDrawingPadding()
-                .padding(
-                    top = 40.dp,
-                    start = 24.dp,
-                    end = 24.dp,
-                    bottom = 24.dp
-                ),
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(56.dp))
+
+            Text(
+                text = callTime,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 18.sp
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            Text(
+                text = config.callerName.ifBlank { "Unknown" },
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 40.sp,
+                lineHeight = 48.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            if (config.phoneNumber.isNotBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "Mobile  ${PhoneNumberFormatter.formatForDisplay(config.phoneNumber)}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 17.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            Spacer(modifier = Modifier.height(64.dp))
+
             Box(
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(156.dp)
                     .background(
                         color = MaterialTheme.colorScheme.primary,
                         shape = CircleShape
@@ -80,74 +112,78 @@ fun ActiveCallScreen(
                         ?.uppercase()
                         ?: "?",
                     color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 32.sp
+                    fontSize = 68.sp
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 32.dp,
+                        topEnd = 32.dp
+                    )
+                )
+                .background(ExitCallCallControlSurface)
+                .navigationBarsPadding()
+                .padding(
+                    start = 18.dp,
+                    top = 28.dp,
+                    end = 18.dp,
+                    bottom = 20.dp
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                CallActionItem(
+                    label = "Keypad",
+                    iconRes = R.drawable.ic_dialpad,
+                    modifier = Modifier.weight(1f)
+                )
+                CallActionItem(
+                    label = "Mute",
+                    iconRes = R.drawable.ic_mic,
+                    modifier = Modifier.weight(1f)
+                )
+                CallActionItem(
+                    label = "Speaker",
+                    iconRes = R.drawable.ic_volume_up,
+                    modifier = Modifier.weight(1f)
+                )
+                CallActionItem(
+                    label = "More",
+                    iconRes = R.drawable.ic_more_vert,
+                    modifier = Modifier.weight(1f)
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = callTime,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 16.sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = config.callerName,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 34.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-
             Spacer(modifier = Modifier.height(28.dp))
 
-            OutlinedButton(
-                onClick = { }
-            ) {
-                Text("Audio Emoji")
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Column(
+            Button(
+                onClick = onHangUp,
+                shape = RoundedCornerShape(38.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ExitCallHangUp,
+                    contentColor = MaterialTheme.colorScheme.onBackground
+                ),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 28.dp,
-                            topEnd = 28.dp
-                        )
-                    )
-                    .background(ExitCallCallControlSurface)
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .width(190.dp)
+                    .height(76.dp),
+                contentPadding = PaddingValues(0.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    CallActionItem("Keypad")
-                    CallActionItem("Mute")
-                    CallActionItem("Speaker")
-                    CallActionItem("More")
-                }
-
-                Spacer(modifier = Modifier.height(28.dp))
-
-                Button(
-                    onClick = onHangUp,
-                    shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = ExitCallHangUp
-                    ),
-                    modifier = Modifier.size(72.dp),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Text("📞")
-                }
+                Icon(
+                    painter = painterResource(R.drawable.ic_call),
+                    contentDescription = "Hang up",
+                    modifier = Modifier
+                        .size(30.dp)
+                        .rotate(135f)
+                )
             }
         }
 
@@ -167,23 +203,29 @@ fun ActiveCallScreen(
 }
 
 @Composable
-fun CallActionItem(label: String) {
+fun CallActionItem(
+    label: String,
+    iconRes: Int,
+    modifier: Modifier = Modifier
+) {
     Column(
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
-                .size(52.dp)
+                .size(70.dp)
                 .background(
                     color = ExitCallCallActionSurface,
                     shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "•",
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 24.sp
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = label,
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.size(30.dp)
             )
         }
 
@@ -192,7 +234,7 @@ fun CallActionItem(label: String) {
         Text(
             text = label,
             color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 14.sp
+            fontSize = 13.sp
         )
     }
 }
