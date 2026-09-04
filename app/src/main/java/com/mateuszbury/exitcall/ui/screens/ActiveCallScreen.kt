@@ -2,6 +2,7 @@ package com.mateuszbury.exitcall.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,6 +73,13 @@ fun ActiveCallScreen(
     }
     var keypadInput by remember {
         mutableStateOf("")
+    }
+
+    val outsideTapInteractionSource = remember {
+        MutableInteractionSource()
+    }
+    val panelInteractionSource = remember {
+        MutableInteractionSource()
     }
 
     LaunchedEffect(Unit) {
@@ -150,6 +158,20 @@ fun ActiveCallScreen(
             }
         }
 
+        if (keypadVisible || moreVisible) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = outsideTapInteractionSource,
+                        indication = null
+                    ) {
+                        keypadVisible = false
+                        moreVisible = false
+                    }
+            )
+        }
+
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -161,6 +183,11 @@ fun ActiveCallScreen(
                     )
                 )
                 .background(ExitCallCallControlSurface)
+                .clickable(
+                    interactionSource = panelInteractionSource,
+                    indication = null,
+                    onClick = {}
+                )
                 .navigationBarsPadding()
                 .padding(
                     start = 18.dp,
