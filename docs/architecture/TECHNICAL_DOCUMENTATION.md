@@ -1,39 +1,43 @@
-# ExitCall Technical Documentation v1.4
+# ExitCall Technical Documentation v1.5
 
 **Status:** living technical documentation  
-**Baseline date:** 2026-09-03  
+**Baseline date:** 2026-09-04  
 **Platform:** Android  
 **Production application ID:** `com.mateuszbury.exitcall`
 
-This document describes the current technical architecture and verified v1.0 implementation baseline of ExitCall. It is maintained together with the codebase and should be updated when architecture, Android capability handling, persistence, scheduling, call delivery or other cross-cutting behavior changes materially.
+This document describes the current v1.0 implementation baseline and architecture after the P2 Settings, lifecycle and call-screen polish work merged in PRs #84-#87.
 
-The versioned DOCX files under `docs/specifications/` remain historical specification snapshots. This Markdown document is the current technical source of truth.
+Versioned DOCX files under `docs/specifications/` remain historical specification snapshots. This Markdown document is the current technical source of truth.
 
 ---
 
 ## 1. Technical scope
 
-ExitCall is a native Android application that lets the user configure and start an incoming-call experience immediately or schedule one for a precise future time.
+ExitCall is a native Android application that lets a user configure an incoming-call experience, start it immediately or schedule one precise future call.
 
-The current implementation covers:
+Current merged implementation covers:
 
-- persistent caller configuration,
+- persisted caller identity and phone number,
+- privacy-friendly Android single-phone contact selection,
+- phone-number validation/normalization/formatting,
 - immediate call start,
 - exact future scheduling,
-- edit/reschedule/cancel of the single pending scheduled call,
-- process-death and device-reboot scheduler recovery,
+- edit/reschedule/cancel of one pending scheduled call,
+- process-death and reboot scheduler recovery,
 - high-priority CallStyle notification delivery,
-- Full Screen Intent presentation where Android permits it,
-- CallStyle notification fallback when Full Screen Intent is unavailable,
+- Full Screen Intent where Android permits it,
+- CallStyle fallback when FSI is unavailable,
 - lock-screen presentation,
-- Answer / Decline / Hang Up lifecycle,
-- unanswered-call timeout and cleanup,
-- Android system ringtone selection,
-- ringtone fallback to the Android system default,
-- user vibration preference,
-- portrait-only primary and call-flow Activities.
+- Answer / Decline / Android-Back / Hang Up lifecycle,
+- configurable unanswered timeout 5–60 seconds,
+- production Settings foundation,
+- global ringtone/vibration/ring-duration persistence,
+- scheduled snapshots of alert settings,
+- system ringtone picker with default fallback,
+- centralized theme and polished Incoming/Active call surfaces,
+- consistent main-app back navigation/header presentation.
 
-The current P2 implementation sequence continues with contact selection and international phone-number handling.
+Important incomplete v1.0 areas include Active Call secondary-control behavior (#22), Settings help/information completion (#23), missed-call notification (#53), custom local audio (#76), Home dashboard (#30), onboarding/monetization/release work and broader regression/OEM verification.
 
 ---
 
@@ -50,49 +54,56 @@ The current P2 implementation sequence continues with contact selection and inte
 - NotificationCompat CallStyle
 - Full Screen Intent
 - SharedPreferences
-- Device Protected Storage for scheduler recovery metadata
+- Device Protected Storage for scheduled metadata/recovery
 
-No backend, remote database, cloud synchronization or account system is required by the current baseline.
+No backend, remote database, cloud synchronization or user account backend is required by the current baseline.
 
 ---
 
 ## 3. High-level architecture
 
-ExitCall deliberately uses a compact native Android architecture. The application is still small enough that introducing a DI framework, Navigation Compose or a large presentation architecture would add more complexity than value.
-
-The main boundaries are:
+ExitCall intentionally keeps a compact native Android architecture. The project does not currently need Navigation Compose, a DI framework or a second call engine.
 
 ```text
 Compose UI
     |
     v
-MainApp / Activities
+MainApp / MainActivity
     |
-    +--> CallConfigStore
-    |
-    +--> CallCapabilityResolver
-    |
-    +--> ScheduledCallScheduler --> AlarmManager
-    |                              |
-    |                              v
-    |                        CallAlarmReceiver
-    |                              |
-    v                              v
-IncomingCallService <--------------+
-    |
-    +--> CallStyle notification
-    +--> ringtone
-    +--> vibration
-    +--> Full Screen Intent / notification fallback
-    |
-    v
-IncomingCallActivity
-    |
-    +--> IncomingCallScreen
-    +--> ActiveCallScreen
+    +--> CallConfigStore --------------------+
+    |                                       |
+    +--> AppSettingsStore ----------------+  |
+    |                                    |  |
+    +--> CallCapabilityResolver          |  |
+    |                                    |  |
+    +--> ScheduledCallScheduler          |  |
+             |                           |  |
+             v                           |  |
+         AlarmManager                    |  |
+             |                           |  |
+             v                           |  |
+       CallAlarmReceiver                 |  |
+             | settings snapshot         |  |
+             +---------------------------+  |
+                                            |
+                                            v
+                                   IncomingCallService
+                                            |
+                   +------------------------+------------------+
+                   |                        |                  |
+                   v                        v                  v
+             CallStyle notif.          ringtone           vibration
+                   |
+                   v
+           IncomingCallActivity
+                   |
+             +-----+------+
+             |            |
+             v            v
+      IncomingCallScreen  ActiveCallScreen
 ```
 
-Immediate and scheduled calls intentionally converge on the same `IncomingCallService -> IncomingCallActivity` delivery path.
+Immediate and scheduled calls converge on the same `IncomingCallService -> IncomingCallActivity` lifecycle.
 
 ---
 
@@ -105,139 +116,213 @@ Primary source root:
 ### Root Android components
 
 - `MainActivity.kt`  
-  Android lifecycle owner for the main application surface. Coordinates capability checks, scheduling, scheduler recovery and starting the foreground call service.
+  Main-process lifecycle/platform coordinator. Owns capability gating, scheduler operations/recovery, app-settings state and immediate foreground-service start.
 
 - `IncomingCallService.kt`  
-  Foreground service responsible for incoming-call notification delivery, ringtone, vibration, timeout and cleanup.
+  Foreground service responsible for CallStyle delivery, ringtone, vibration, configurable unanswered timeout and shared incoming-call cleanup.
 
 - `IncomingCallActivity.kt`  
-  Lock-screen-capable Activity that owns the incoming-to-active call UI transition.
+  Lock-screen-capable call Activity. Owns incoming-to-active transition, incoming Back/decline behavior and call-surface system-bar presentation.
 
 - `CallAlarmReceiver.kt`  
-  Receives the exact scheduled alarm, consumes persisted scheduled state and starts the normal call-delivery pipeline.
+  Receives the scheduled alarm, loads the scheduled settings snapshot, consumes scheduled metadata and starts the normal call-delivery pipeline.
 
 ### `capability/`
 
 - `CallCapability.kt`
 - `CallCapabilityResolver.kt`
 
-Contains Android/version-specific capability resolution and settings routing for Notifications, Full Screen Intent and exact alarms.
+Centralizes Android/version-specific checks and settings routing for Notifications, Full Screen Intent and exact alarms.
 
 ### `model/`
 
 - `CallConfig.kt`
 - `CallConfigStore.kt`
+- `AppSettings.kt`
+- `AppSettingsStore.kt`
 - `ScheduledCallStore.kt`
 
-Contains persistent configuration and scheduler state.
+### `phone/`
+
+- shared phone-number formatter/validator used by manual entry and contact-picked values.
 
 ### `scheduler/`
 
 - `ScheduledCallScheduler.kt`
 - `ScheduledCallRecoveryReceiver.kt`
 
-Owns exact-alarm registration, replacement, cancellation and recovery after reboot or exact-alarm permission restoration.
+Owns exact registration, replacement, cancellation and recovery.
 
 ### `ui/`
 
 - `MainApp.kt`
+- `components/ExitCallTopBar.kt`
 - `components/`
 - `screens/`
 - `theme/`
 
-Contains the Compose application root, reusable UI, application screens and centralized Material theme.
-
-### Current Compose screens
-
-- `HomeScreen`
-- `CallSetupScreen`
-- `ScheduleCallScreen`
-- `ScheduleDatePickerDialog`
-- `ScheduleTimePickerDialog`
-- `IncomingCallScreen`
-- `ActiveCallScreen`
+Current screens include Home, Call Setup, Schedule, Settings, Incoming Call and Active Call plus isolated date/time picker dialogs.
 
 ---
 
-## 5. Main application flow
+## 5. Sources of truth
 
-`MainActivity` owns Android lifecycle and platform orchestration. Compose screen state is delegated to `MainApp`.
+The current architecture intentionally separates three persistence concerns.
 
-`MainApp` currently uses a lightweight internal screen state:
+### 5.1 `CallConfigStore`
+
+Current product source of truth for caller presentation:
+
+- caller name,
+- phone number.
+
+`CallConfig` still contains legacy ringtone/vibration fields because `AppSettingsStore` performs one-time migration from older installations. New code should not reintroduce these legacy fields as the global settings source.
+
+### 5.2 `AppSettingsStore`
+
+Global call settings source of truth:
+
+- ringtone URI,
+- ringtone display name,
+- vibration enabled/disabled,
+- ring duration seconds.
+
+`RingDuration` rules:
+
+- minimum: 5 s,
+- maximum: 60 s,
+- default: 20 s,
+- presets: 5 / 10 / 20 s.
+
+`AppSettingsStore` migrates ringtone/vibration once from legacy `CallConfigStore` state and then owns future changes.
+
+### 5.3 `ScheduledCallStore`
+
+Device-protected scheduled state:
+
+- future trigger timestamp,
+- scheduled `AppSettings` snapshot: ringtone URI/name, vibration and ring duration.
+
+A scheduled call therefore has intentional snapshot semantics for alert behavior while caller identity remains current-at-delivery.
+
+---
+
+## 6. Main application navigation
+
+`MainActivity` owns Android lifecycle/platform orchestration. `MainApp` owns the lightweight Compose screen state.
 
 ```text
 HOME
   |-- Set up a call --> CALL_SETUP
-  |-- Schedule ------> SCHEDULE_CALL
-  |-- Start call ----> Android capability gate -> IncomingCallService
+  |-- Schedule/Edit --> SCHEDULE_CALL
+  |-- Settings ------> SETTINGS
+  |-- Start call ----> capability gate -> IncomingCallService
 ```
 
-This is intentional. Navigation Compose is not currently required for the small three-screen main-process flow.
+Navigation conventions after PR #86:
 
-`BackHandler` in `MainApp` returns secondary main-app screens to Home.
+- Home exposes Settings as a gear icon.
+- Call Setup, Schedule and Settings share `ExitCallTopBar` and the same back-arrow asset/placement.
+- Android Back on secondary main-app screens returns Home.
 
-The separate incoming/active call Activity is not part of this main-screen state machine.
-
----
-
-## 6. Call configuration model
-
-`CallConfig` is the user-configurable source model for the current call presentation.
-
-Current persisted fields include:
-
-- caller name,
-- phone number,
-- ringtone URI,
-- ringtone display name,
-- vibration enabled/disabled.
-
-`CallConfigStore` is the durable local source of truth.
-
-Both immediate and scheduled calls read the latest stored `CallConfig` at call-delivery time. A scheduled alarm does not carry a duplicate snapshot of caller configuration. This prevents two competing configuration sources.
-
-### Planned extension
-
-Issue #14 will populate caller identity through a privacy-friendly single-contact picker.
-
-Issue #15 will own phone-number normalization, country-code support, formatting and validation. Phone-number validation is therefore intentionally not implemented as a separate architectural path.
+The separate Incoming/Active call Activity is outside this main-process screen state machine.
 
 ---
 
-## 7. Ringtone selection and playback
+## 7. Caller identity and contact selection
 
-The ringtone picker is implemented directly in `CallSetupScreen` using `rememberLauncherForActivityResult` with Android's system `RingtoneManager.ACTION_RINGTONE_PICKER`.
+Call Setup edits caller name and phone number only.
 
-Behavior:
+PR #82 uses Android's system phone-data picker:
 
-1. The currently stored ringtone URI is passed as the existing selection.
-2. If no custom ringtone is stored, Android's default ringtone URI is preselected.
-3. Silent selection is disabled for the current v1.0 setup flow.
-4. On successful selection, the URI and human-readable title are stored in `CallConfig`.
-5. Cancelling the Android picker leaves the previous value unchanged.
-6. The saved configuration persists through `CallConfigStore`.
+- `Intent.ACTION_PICK`,
+- `ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE`,
+- no broad `READ_CONTACTS`,
+- ExitCall reads only the returned selected row,
+- picker cancellation preserves previous values,
+- selected values are persisted only when Call Setup is saved.
 
-`IncomingCallService` loads the saved ringtone URI when a call starts.
+This avoids address-book enumeration and OEM-specific duplicated custom contact lists inside ExitCall.
+
+---
+
+## 8. Phone-number validation and formatting
+
+PR #83 introduced one shared validation/normalization path.
+
+Rules include:
+
+- blank number is allowed,
+- common visual separators are accepted while editing,
+- `+` is valid only as a leading international prefix,
+- `00` international prefix normalizes to `+`,
+- unsupported letters/characters are rejected,
+- E.164 15-digit maximum is enforced,
+- a conservative minimum digit count rejects obviously unusable input,
+- Polish `+48`/9-digit values receive readable display grouping,
+- incoming call surfaces use the same formatter.
+
+Call Setup disables Save for invalid non-blank phone values.
+
+---
+
+## 9. Production Settings architecture
+
+PR #84 introduced the Settings foundation.
+
+### Live settings
+
+- Ringtone: Android system ringtone picker.
+- Vibration: persisted global switch.
+- Ring duration: 5 / 10 / 20 s presets + validated Custom 5–60 s.
+
+### Live device readiness
+
+- Notifications,
+- Exact alarms,
+- Full-screen calls.
+
+Each supported capability row can route to the relevant Android setting and state refreshes after returning to the app.
+
+### Explicit placeholders
+
+Later features are shown as disabled/`Coming soon` rows rather than empty navigation targets. These include voice/audio route, language/theme, after-call behavior, purchase restore, local-data management, tutorial/help and information rows where the owning feature is not yet implemented.
+
+### Version display
+
+Settings reads the installed version from `BuildConfig.VERSION_NAME` rather than hardcoding display text. The app module must keep Android `BuildConfig` generation enabled when this path is present.
+
+---
+
+## 10. Ringtone and vibration ownership
+
+The system ringtone picker now lives in Settings, not Call Setup.
+
+Selection flow:
+
+1. open Android `RingtoneManager.ACTION_RINGTONE_PICKER`,
+2. preselect stored URI or Android default,
+3. silent selection is disabled,
+4. store URI + display title in `AppSettingsStore`,
+5. cancelling preserves the previous selection.
 
 Playback fallback:
 
 ```text
-saved ringtone URI
-        |
-        | unavailable / null
-        v
+configured AppSettings ringtone URI
+          |
+          | null / unavailable
+          v
 Android system default ringtone
 ```
 
-The service uses ringtone audio attributes with `USAGE_NOTIFICATION_RINGTONE` and loops playback on supported Android versions.
+Vibration is controlled by `AppSettings.vibrate`.
 
-Answer, Decline, timeout and service destruction all stop ringtone playback through the shared cleanup path.
+ExitCall does not intentionally override Android DND/global sound policy.
 
 ---
 
-## 8. Immediate call pipeline
-
-The immediate path is:
+## 11. Immediate call pipeline
 
 ```text
 Home: Start call
@@ -245,19 +330,20 @@ Home: Start call
     v
 MainActivity.ensureCallCapabilities(requireExactAlarm = false)
     |
-    +--> Notifications missing -> permission/settings UX -> stop until resolved
-    |
-    +--> FSI unavailable -> allowed; notification fallback remains valid
-    |
-    v
-ContextCompat.startForegroundService(IncomingCallService)
+    +--> Notifications missing -> capability UX -> stop until resolved
+    +--> FSI missing -> allowed; CallStyle fallback remains valid
     |
     v
-CallStyle notification + ringtone + vibration
+startForegroundService(IncomingCallService)
+    |
+    +--> current caller identity from CallConfigStore
+    +--> current global settings from AppSettingsStore
+    |
+    v
+CallStyle notification + ringtone + vibration + configured timeout
     |
     +--> Full Screen Intent where available
-    |
-    +--> high-priority CallStyle notification fallback
+    +--> high-priority CallStyle fallback otherwise
     |
     v
 IncomingCallActivity
@@ -267,91 +353,48 @@ Immediate calls never depend on exact-alarm permission.
 
 ---
 
-## 9. Scheduled call pipeline
-
-The scheduled path is:
+## 12. Scheduled call pipeline
 
 ```text
-Home: Schedule / Edit scheduled call
+Home: Schedule / Edit
     |
     v
 ScheduleCallScreen
     |
-    +--> Material DatePicker
-    +--> Material TimePicker
+    v
+capability gate: Notifications + Exact Alarm
     |
     v
-MainActivity capability gate
-    |
-    +--> Notifications required
-    +--> FSI recommended, fallback allowed
-    +--> exact-alarm capability required
-    |
-    v
-ScheduledCallScheduler.schedule(timestamp)
+ScheduledCallScheduler.schedule(trigger, current AppSettings)
     |
     v
 AlarmManager.setExactAndAllowWhileIdle(...)
     |
     v
-ScheduledCallStore persists timestamp
+ScheduledCallStore.save(trigger + AppSettings snapshot)
     |
     v
 CallAlarmReceiver
     |
+    +--> load snapshot
+    +--> clear pending scheduled metadata
+    |
     v
-IncomingCallService
+IncomingCallService(snapshot)
 ```
 
-The application supports one pending scheduled call in v1.0.
+At delivery:
+
+- caller name/phone are read from current `CallConfigStore`,
+- ringtone/vibration/timeout use the captured scheduled `AppSettings` snapshot.
+
+Editing/rescheduling captures a new snapshot.
+
+See `SCHEDULER_LIFECYCLE.md` for complete invariants and recovery behavior.
 
 ---
 
-## 10. Scheduled-call edit, reschedule and cancel
-
-PR #80 / issue #12 added explicit management of the single pending call.
-
-### Edit / reschedule
-
-- Home displays the persisted next-call timestamp.
-- When a schedule exists, the Home action changes to `Edit scheduled call`.
-- `ScheduleCallScreen` receives the stored timestamp as its initial value.
-- Saving a different future time reuses the same scheduled-call `PendingIntent` identity.
-- The new exact alarm replaces the previous alarm instead of creating another independent scheduled call.
-
-### Cancel
-
-`ScheduledCallScheduler.cancel()`:
-
-1. resolves the existing scheduled-call `PendingIntent`,
-2. cancels it in `AlarmManager`,
-3. cancels the `PendingIntent` itself,
-4. clears `ScheduledCallStore`.
-
-The Schedule screen exposes `Cancel scheduled call` as a destructive UI action and returns the application to Home after cancellation.
-
-This preserves the invariant that the durable scheduler state and Android alarm registration represent the same single pending call.
-
----
-
-## 11. Scheduler persistence
-
-`ScheduledCallStore` is the durable source of truth for the pending trigger timestamp.
-
-The timestamp is stored separately from normal `CallConfig` because scheduler recovery has different Android boot-time requirements.
-
-Important invariant:
-
-- the timestamp is persisted only after a successful alarm registration,
-- firing the scheduled alarm consumes and clears the stored timestamp,
-- cancellation clears both Android alarm registration and stored scheduler state,
-- expired timestamps are not replayed.
-
----
-
-## 12. Device reboot recovery
-
-Android removes normal AlarmManager registrations when the device reboots. ExitCall therefore restores still-future scheduled calls.
+## 13. Reboot and exact-alarm recovery
 
 `ScheduledCallRecoveryReceiver` is Direct-Boot-aware and listens for:
 
@@ -359,192 +402,163 @@ Android removes normal AlarmManager registrations when the device reboots. ExitC
 - `BOOT_COMPLETED`,
 - `SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED`.
 
-Scheduler recovery metadata is stored in Device Protected Storage so it can be read before normal credential-protected application storage is available.
+Recovery reuses the same scheduler registration path and same scheduled-call `PendingIntent` identity.
 
-Recovery path:
+Behavior:
 
-```text
-boot / permission restoration
-    |
-    v
-ScheduledCallRecoveryReceiver
-    |
-    v
-ScheduledCallScheduler.restorePersistedCall()
-    |
-    +--> no future timestamp -> nothing to restore
-    +--> expired timestamp -> clear it
-    +--> exact-alarm unavailable -> retain valid persisted state
-    |
-    v
-re-register same PendingIntent identity
-```
+- future state + exact access -> re-register once,
+- future state + no exact access -> keep persisted state for later recovery,
+- expired state -> clear and never replay late,
+- app startup also performs an idempotent restore attempt as an OEM fallback.
 
-`MainActivity` also runs an idempotent restore attempt during startup as an OEM/device fallback.
-
-The reboot-recovery path has been physically verified on the primary Motorola device.
+Trigger and settings snapshot live in device-protected storage so recovery does not lose scheduled alert semantics.
 
 ---
 
-## 13. Android capability policy
+## 14. Android capability policy
 
 ### Notifications
 
-Notifications are a hard requirement for successful ExitCall delivery.
-
-If notification capability is unavailable, Start/Schedule does not silently start ringtone or vibration as a substitute.
+Hard requirement. No call pipeline starts successfully without them.
 
 ### Full Screen Intent
 
-Full Screen Intent is preferred for the strongest lock-screen presentation but is not a hard requirement.
-
-If Android does not permit FSI, the foreground service still produces a high-priority incoming CallStyle notification with Answer and Decline actions.
+Recommended but not mandatory. When denied/unavailable, the CallStyle notification remains the fallback path.
 
 ### Exact alarms
 
-Exact-alarm capability is required only for exact future scheduling.
+Required only for exact future scheduling. Immediate calls remain independent.
 
-It must not block an immediate `Start call` action.
-
-### Capability orchestration
-
-`CallCapabilityResolver` centralizes:
-
-- version-specific checks,
-- first missing required capability,
-- Android settings intents,
-- app-details fallback routing.
-
-`MainActivity` owns the pending user action and rechecks capabilities after returning from Android settings.
-
-This prevents capability UI from creating a second call/scheduler execution path.
+`CallCapabilityResolver` centralizes checks and Android settings intents. `MainActivity` owns pending user actions and rechecks after settings return.
 
 ---
 
-## 14. Foreground service and notification delivery
+## 15. Foreground service and CallStyle notification
 
-`IncomingCallService` is declared as a foreground service with `mediaPlayback` type.
+`IncomingCallService` is the single incoming alert owner.
 
-On creation it:
+At call start it:
 
-1. creates/ensures the high-importance notification channel,
-2. loads the latest `CallConfig`,
-3. creates full-screen, Answer and Decline PendingIntents,
-4. starts itself in the foreground with `NotificationCompat.CallStyle.forIncomingCall`,
-5. starts ringtone,
-6. starts vibration if enabled,
-7. starts the unanswered-call timeout.
+1. creates/ensures the incoming notification channel,
+2. loads caller identity,
+3. resolves scheduled snapshot or current `AppSettings`,
+4. calculates `unansweredTimeoutMs`,
+5. builds full-screen/Answer/Decline PendingIntents,
+6. starts foreground CallStyle notification,
+7. starts ringtone,
+8. starts vibration when enabled,
+9. starts timeout callback.
 
-Current notification constants:
+Current constants:
 
-- channel: `incoming_call_channel`
-- notification ID: `1002`
+- channel: `incoming_call_channel_v2`,
+- notification ID: `1002`.
 
-The notification is categorized as a call, high priority and ongoing while the incoming call is active.
+The v2 notification channel is intentionally high-importance but has channel sound disabled and channel vibration disabled. This prevents Android notification audio from competing with the selected ExitCall ringtone/vibration managed by the service.
 
 ---
 
-## 15. Incoming call lifecycle
+## 16. Shared incoming-call termination lifecycle
 
-`IncomingCallActivity` is:
+PR #85 unified the incoming termination contract.
 
-- `singleTop`,
-- portrait-only,
-- configured to show when locked,
-- configured to turn the screen on.
+`IncomingCallService.finishIncomingCall(reason)` is guarded by `isEnding` and:
 
-It loads `CallConfig` from the same persistent store used by the service.
+1. removes timeout callback,
+2. broadcasts app-scoped `ACTION_CALL_FINISHED`,
+3. stops ringtone/vibration,
+4. removes foreground notification,
+5. stops the service.
 
-### Incoming state
+This path is used for timeout and notification Decline.
 
-`IncomingCallScreen` supports:
-
-- Answer,
-- Decline.
-
-Answer:
+### Incoming screen Answer
 
 ```text
 stop IncomingCallService
--> stop ringtone/vibration/notification
--> switch Activity state to ActiveCallScreen
+-> stop alerting/notification
+-> switch Activity state to ACTIVE_CALL
 ```
 
-Decline or Android Back while the incoming screen is visible:
+### Incoming screen Decline / Android Back
 
 ```text
 stop IncomingCallService
--> stop ringtone/vibration/notification
 -> finish IncomingCallActivity
 ```
 
-Decline from the CallStyle notification is handled by the service. The shared app-scoped call-finished signal closes an open incoming-call Activity after service cleanup begins.
+The Activity also listens for `ACTION_CALL_FINISHED` and closes only while still in Incoming state. A late incoming termination signal therefore cannot close an already active call.
 
 ### Notification Answer
 
-The Answer notification action starts/reuses `IncomingCallActivity` with `EXTRA_START_ACTIVE = true`.
-
-Because the Activity is `singleTop` and uses `CLEAR_TOP | SINGLE_TOP` launch flags, `onNewIntent()` can transition the existing Activity to active-call state rather than creating duplicate Active Call instances.
-
-This is the maintained duplicate-call prevention mechanism introduced after the earlier double-flow defect.
+Answer starts/reuses `IncomingCallActivity` with `EXTRA_START_ACTIVE = true` and `CLEAR_TOP | SINGLE_TOP` semantics. This remains the duplicate-Active-call prevention mechanism.
 
 ---
 
-## 16. Active call lifecycle
+## 17. Active Call lifecycle and UI
 
 After Answer, `IncomingCallActivity` renders `ActiveCallScreen`.
 
-The incoming foreground service is no longer responsible for ringtone/vibration once the call is active.
+Current behavior:
 
-Hang Up finishes `IncomingCallActivity`, returning the user out of the call flow.
+- timer increments locally once per second,
+- caller name/phone and avatar remain visible,
+- Hang Up finishes the Activity,
+- Android Back follows current default Return-to-Android behavior,
+- no incoming service alerting remains active after Answer.
 
-Current product default is Return to Android after the call flow. More configurable post-call behavior remains later work.
+PR #87 established the current visual baseline:
 
----
+- timer -> caller name -> phone hierarchy,
+- large caller initial/avatar,
+- rounded bottom control sheet,
+- proper vector icons for Keypad/Mute/Speaker/More,
+- wide red Hang Up control,
+- `Audio Emoji` removed,
+- shared ExitCall theme colors,
+- dark system navigation bar,
+- discreet `EC` marker preserved.
 
-## 17. Unanswered timeout and cleanup
-
-The current default unanswered timeout is:
-
-`20 seconds`
-
-`IncomingCallService` owns this timer on the main Looper.
-
-On timeout:
-
-1. an app-scoped call-finished broadcast is sent,
-2. ringtone is stopped,
-3. vibration is cancelled,
-4. foreground notification is removed,
-5. service stops,
-6. an open incoming-call Activity closes if it is still in incoming state.
-
-The same call-finished signal is emitted for Decline from the notification. The Activity handles it only while still on the incoming screen, so a late termination signal cannot close an already active call.
-
-The cleanup path is guarded by `isEnding` and callback removal so late or duplicate termination events do not continue the incoming-call lifecycle.
-
-Future timeout configurability is tracked separately.
+Keypad/Mute/Speaker/More are still intentionally non-interactive until #22 is completed. They must not ship as dead controls.
 
 ---
 
-## 18. Vibration behavior
+## 18. Incoming Call UI
 
-`CallConfig.vibrate` controls whether ExitCall starts vibration for the incoming state.
+PR #87 also polished `IncomingCallScreen`:
 
-The service uses:
+- removed the prototype oversized avatar from Incoming,
+- centered caller name and optional number in the upper portion,
+- kept lower space clear for the answer control,
+- replaced Unicode handset with a vector call icon,
+- retained left Decline / right Answer horizontal drag semantics,
+- retained a threshold so partial drags return to center,
+- aligned slider/handle colors and rounded geometry with the ExitCall theme.
 
-- `VibratorManager` on Android 12+,
-- legacy `Vibrator` access on older supported versions,
-- `VibrationEffect.createWaveform` on Android 8+,
-- ringtone vibration usage attributes on Android 13+.
-
-The application should respect Android's system-level vibration and Do Not Disturb behavior. It must not intentionally bypass those policies.
+The `EC` marker remains top-right and unobtrusive.
 
 ---
 
-## 19. Manifest and Android components
+## 19. Theme and system bars
 
-Current declared permissions:
+Centralized Material 3 theme direction:
+
+- matte/dark background,
+- restrained dark surface hierarchy,
+- sage/pastel green primary accent,
+- clear red destructive Hang Up treatment,
+- light foreground text,
+- explicit `EC` call marker.
+
+Call-flow colors alias the main ExitCall palette rather than maintaining a separate blue/black sub-theme.
+
+`IncomingCallActivity` explicitly aligns the Android navigation bar with the dark call UI and disables light navigation-bar icon mode for the call surface where supported.
+
+---
+
+## 20. Manifest / Android components
+
+Current declared permissions include:
 
 - `VIBRATE`
 - `SCHEDULE_EXACT_ALARM`
@@ -554,7 +568,7 @@ Current declared permissions:
 - `USE_FULL_SCREEN_INTENT`
 - `POST_NOTIFICATIONS`
 
-Declared runtime components:
+Runtime components:
 
 - `MainActivity`
 - `IncomingCallActivity`
@@ -562,164 +576,85 @@ Declared runtime components:
 - `CallAlarmReceiver`
 - `ScheduledCallRecoveryReceiver`
 
-`ScheduledCallRecoveryReceiver` is `directBootAware`.
+`ScheduledCallRecoveryReceiver` is Direct-Boot-aware.
 
-`IncomingCallActivity` and `MainActivity` are portrait-locked in the current baseline.
-
----
-
-## 20. UI architecture and theme
-
-The UI is implemented with Jetpack Compose and centralized Material 3 colors.
-
-Current direction:
-
-- dark/matte background,
-- sage/pastel green primary accent,
-- restrained surface hierarchy,
-- explicit ExitCall marker on call screens,
-- destructive actions use the theme error role.
-
-Heavy Material date/time picker composition was extracted into dedicated files so the normal Schedule screen remains lightweight.
-
-The current application source language is English and `MainActivity.attachBaseContext()` enforces an English locale for the v1.0 baseline.
-
-Localization is planned after the English-first v1.0 work is stable.
+`MainActivity` and `IncomingCallActivity` are portrait-locked.
 
 ---
 
-## 21. Error handling and fallback rules
+## 21. Reliability invariants
 
-The current implementation follows these rules:
+The current architecture should preserve these invariants:
 
-- missing notifications -> do not start successful call delivery,
-- missing FSI -> use CallStyle notification fallback,
-- missing exact-alarm capability -> do not create false scheduled state,
-- past schedule -> reject scheduling,
-- missing saved ringtone -> Android default ringtone,
-- cancelled ringtone picker -> preserve previous value,
-- expired persisted schedule -> clear, do not replay late,
-- reboot recovery -> reuse existing scheduled-call identity,
-- repeated incoming-call termination -> idempotent cleanup.
-
----
-
-## 22. Persistence boundaries
-
-### Credential-protected application configuration
-
-`CallConfigStore`
-
-Stores user call configuration such as caller identity, ringtone and vibration.
-
-### Device-protected scheduler metadata
-
-`ScheduledCallStore`
-
-Stores only scheduler recovery information needed to re-register a future exact alarm across boot.
-
-This split is deliberate. The full call configuration is not duplicated into the Direct Boot storage path.
+1. Immediate and scheduled calls share one service/activity call engine.
+2. Notifications are required; FSI is not.
+3. Exact-alarm access is required only for scheduling.
+4. One pending scheduled call exists in v1.0.
+5. Scheduled state is persisted only after successful alarm registration.
+6. Rescheduling replaces the previous alarm and settings snapshot.
+7. Cancellation clears OS alarm + all scheduled metadata.
+8. Expired schedules never replay late.
+9. Caller identity has one current source of truth in `CallConfigStore`.
+10. Global ringtone/vibration/ring duration have one source of truth in `AppSettingsStore`.
+11. Pending scheduled calls preserve their captured alert-settings snapshot.
+12. CallStyle notification channel does not create competing ringtone/vibration alerting.
+13. Incoming termination is centralized/idempotent.
+14. A late incoming finish event cannot kill an Active Call.
+15. UI variants/polish must not fork call business logic.
 
 ---
 
-## 23. Privacy and data locality
+## 22. Testing state
 
-The current architecture is local-first.
+Physical-device testing remains essential because ExitCall depends heavily on Android/OEM behavior around alarms, notifications, FSI, lock screen and system bars.
 
-- Call configuration is stored locally.
-- Scheduler metadata is stored locally.
-- No bulk address-book import is planned.
-- #14 will use a one-contact system picker on demand.
-- User-generated custom audio planned for later v1.0 work is intended to remain local to the device.
+Current test assets:
 
-The application should request only Android capabilities that map to implemented user-facing behavior.
+- maintained physical regression suite in #9,
+- phone-number unit tests from #15,
+- ring-duration validation/fallback unit tests from #58,
+- reboot/scheduler physical verification on primary Motorola hardware,
+- targeted physical smoke review for recent lifecycle/Settings/call-UI work.
 
----
+#9 needs a maintenance pass because several exclusions and assumptions became stale after #13/#14/#15/#58 and the final FSI policy.
 
-## 24. Current architectural invariants
+#25 remains open for broader automated coverage of persistence/scheduler/state.
 
-The following should remain true unless an explicit architecture decision changes them:
-
-1. Immediate and scheduled calls use one shared call-delivery pipeline.
-2. `CallConfigStore` is the single configuration source of truth.
-3. `ScheduledCallStore` is the single persisted future-trigger source of truth.
-4. The MVP supports one pending scheduled call.
-5. Scheduling, rescheduling, cancellation and recovery reuse one scheduled-call PendingIntent identity.
-6. Notifications are required for call delivery.
-7. Full Screen Intent is optional from a functional perspective because CallStyle fallback exists.
-8. Exact alarms are required only for precise scheduled calls.
-9. The call service owns incoming ringtone/vibration/notification cleanup.
-10. Answer does not create a second parallel Active Call screen.
-11. Normal configuration stays outside the Direct Boot scheduler-recovery store.
-12. No bulk contact import is introduced.
+#26 remains open for an explicit OEM/device compatibility matrix.
 
 ---
 
-## 25. Near-term technical roadmap
+## 23. Privacy boundaries
 
-### #14 — single contact picker
+Current baseline:
 
-Expected technical boundary:
-
-- Android system picker,
-- one contact per explicit user action,
-- no bulk Contacts Provider synchronization,
-- update caller name and selected phone number in `CallSetupScreen` / `CallConfig`,
-- safe handling for cancellation and contacts without a usable number.
-
-### #15 — phone-number handling
-
-This issue will include the phone-number validator requested for Call Setup.
-
-Expected scope:
-
-- validation of manually entered numbers,
-- validation/normalization of contact-picked numbers,
-- international `+` country prefixes,
-- preservation of valid country codes,
-- consistent display formatting,
-- error state in Call Setup for invalid values,
-- prevent invalid phone-number configuration from being saved as if valid,
-- formatting logic must remain extensible beyond Poland.
-
-Validation and formatting should share one coherent normalization layer rather than separate ad-hoc UI regexes.
+- no backend/cloud account required,
+- no bulk contacts access,
+- contact picker reads only the selected phone-data row,
+- caller configuration is local,
+- app settings are local,
+- scheduler metadata is local,
+- future custom voice/audio under #76 remains local to device,
+- no user recording is uploaded externally.
 
 ---
 
-## 26. Testing strategy
+## 24. Current technical frontier
 
-The maintained physical regression suite is tracked in GitHub issue #9.
+Recommended next technical/feature work:
 
-High-risk technical changes should trigger targeted physical coverage for the affected area.
+1. #22 implement intentional behavior for Keypad/Mute/Speaker/More without changing the call engine.
+2. #53 add missed-call notification and Settings toggle on timeout only.
+3. #76 add local custom recording/import/playback with lifecycle-safe cleanup.
+4. #30 replace Home placeholders with real configuration/readiness state.
+5. Maintain #9 regression alongside each change.
 
-Core regression areas include:
-
-- immediate call exactly once,
-- scheduled call exactly once,
-- Answer / Decline / Hang Up,
-- timeout cleanup,
-- lock-screen delivery,
-- FSI unavailable fallback,
-- notifications denied,
-- exact-alarm denied/granted,
-- schedule edit/reschedule/cancel,
-- persistence after process death,
-- reboot recovery,
-- selected ringtone playback and fallback.
-
-A full release-quality regression remains required before the v1.0 release candidate.
+Settings/help completion (#23) should consume functionality from owning issues rather than duplicating their state or logic.
 
 ---
 
-## 27. Documentation ownership
+## 25. Documentation rule
 
-The maintained documentation hierarchy is:
+GitHub Issues define actionable scope/acceptance criteria. Maintained Markdown under `docs/` defines current architecture, decisions and roadmap context. Versioned DOCX files are historical snapshots unless explicitly refreshed.
 
-- `docs/architecture/TECHNICAL_DOCUMENTATION.md` — current implementation architecture and technical behavior,
-- `docs/architecture/DECISIONS.md` — stable product/technical decisions,
-- `docs/architecture/SCHEDULER_LIFECYCLE.md` — detailed scheduler/recovery behavior,
-- `docs/process/BACKLOG.md` — roadmap and current phase,
-- GitHub Issues — actionable work and acceptance criteria,
-- `docs/specifications/*.docx` — historical versioned specification snapshots.
-
-When code and documentation disagree, the discrepancy should be resolved in the same development cycle rather than allowing chat history to become the de facto architecture record.
+Material architecture/product changes should update code/issue scope and living documentation in the same workstream.
