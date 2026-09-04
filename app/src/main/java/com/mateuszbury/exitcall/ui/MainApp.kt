@@ -7,24 +7,30 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.mateuszbury.exitcall.capability.CallCapability
+import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.ui.components.CallCapabilityDialog
 import com.mateuszbury.exitcall.ui.screens.CallSetupScreen
 import com.mateuszbury.exitcall.ui.screens.HomeScreen
 import com.mateuszbury.exitcall.ui.screens.ScheduleCallScreen
+import com.mateuszbury.exitcall.ui.screens.SettingsScreen
 
 private enum class MainScreen {
     HOME,
     CALL_SETUP,
-    SCHEDULE_CALL
+    SCHEDULE_CALL,
+    SETTINGS
 }
 
 @Composable
 fun MainApp(
     initialCallConfig: CallConfig,
+    initialAppSettings: AppSettings,
     scheduledCallAtMillis: Long?,
     capabilityIssue: CallCapability?,
+    capabilityAvailability: Map<CallCapability, Boolean>,
     canRequestNotificationPermission: Boolean,
+    appVersionName: String,
     onRequireCallCapabilities: (
         requireExactAlarm: Boolean,
         onReady: () -> Unit
@@ -33,6 +39,8 @@ fun MainApp(
     onScheduleCall: (Long) -> Boolean,
     onCancelScheduledCall: () -> Unit,
     onSaveCallConfig: (CallConfig) -> Unit,
+    onSaveAppSettings: (AppSettings) -> Unit,
+    onOpenCapabilitySettings: (CallCapability) -> Unit,
     onCapabilityConfirm: (CallCapability) -> Unit,
     onCapabilityDismiss: () -> Unit
 ) {
@@ -42,6 +50,10 @@ fun MainApp(
 
     var callConfig by remember {
         mutableStateOf(initialCallConfig)
+    }
+
+    var appSettings by remember {
+        mutableStateOf(initialAppSettings)
     }
 
     BackHandler(
@@ -69,7 +81,7 @@ fun MainApp(
                     currentScreen = MainScreen.CALL_SETUP
                 },
                 onSettings = {
-                    // TODO settings
+                    currentScreen = MainScreen.SETTINGS
                 }
             )
         }
@@ -77,6 +89,7 @@ fun MainApp(
         MainScreen.CALL_SETUP -> {
             CallSetupScreen(
                 initialConfig = callConfig,
+                appSettings = appSettings,
                 onSave = { newConfig ->
                     onSaveCallConfig(newConfig)
                     callConfig = newConfig
@@ -100,6 +113,22 @@ fun MainApp(
                 },
                 onCancelScheduledCall = {
                     onCancelScheduledCall()
+                    currentScreen = MainScreen.HOME
+                }
+            )
+        }
+
+        MainScreen.SETTINGS -> {
+            SettingsScreen(
+                settings = appSettings,
+                capabilityAvailability = capabilityAvailability,
+                appVersionName = appVersionName,
+                onSettingsChange = { newSettings ->
+                    onSaveAppSettings(newSettings)
+                    appSettings = newSettings
+                },
+                onOpenCapabilitySettings = onOpenCapabilitySettings,
+                onBack = {
                     currentScreen = MainScreen.HOME
                 }
             )

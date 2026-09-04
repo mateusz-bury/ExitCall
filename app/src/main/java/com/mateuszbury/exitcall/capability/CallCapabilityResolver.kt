@@ -1,6 +1,7 @@
 package com.mateuszbury.exitcall.capability
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -20,18 +21,27 @@ class CallCapabilityResolver(
     fun firstMissingCapability(
         requireExactAlarm: Boolean
     ): CallCapability? {
-        if (!hasNotificationCapability()) {
+        if (!isCapabilityAvailable(CallCapability.NOTIFICATIONS)) {
             return CallCapability.NOTIFICATIONS
         }
 
         if (
             requireExactAlarm &&
-            !scheduledCallScheduler.canScheduleExactAlarms()
+            !isCapabilityAvailable(CallCapability.EXACT_ALARM)
         ) {
             return CallCapability.EXACT_ALARM
         }
 
         return null
+    }
+
+    fun isCapabilityAvailable(capability: CallCapability): Boolean {
+        return when (capability) {
+            CallCapability.NOTIFICATIONS -> hasNotificationCapability()
+            CallCapability.EXACT_ALARM ->
+                scheduledCallScheduler.canScheduleExactAlarms()
+            CallCapability.FULL_SCREEN_INTENT -> hasFullScreenIntentCapability()
+        }
     }
 
     fun canRequestNotificationRuntimePermission(
@@ -103,5 +113,15 @@ class CallCapabilityResolver(
         return NotificationManagerCompat
             .from(appContext)
             .areNotificationsEnabled()
+    }
+
+    private fun hasFullScreenIntentCapability(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            return true
+        }
+
+        return appContext
+            .getSystemService(NotificationManager::class.java)
+            .canUseFullScreenIntent()
     }
 }

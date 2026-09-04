@@ -21,9 +21,20 @@ class ScheduledCallStore(
         migrateLegacyScheduleIfNeeded()
     }
 
-    fun save(triggerTimeMillis: Long) {
+    fun save(
+        triggerTimeMillis: Long,
+        settingsSnapshot: AppSettings
+    ) {
         preferences.edit()
             .putLong(KEY_TRIGGER_TIME, triggerTimeMillis)
+            .putBoolean(KEY_HAS_SETTINGS_SNAPSHOT, true)
+            .putString(KEY_RINGTONE_URI, settingsSnapshot.ringtoneUri)
+            .putString(KEY_RINGTONE_NAME, settingsSnapshot.ringtoneName)
+            .putBoolean(KEY_VIBRATE, settingsSnapshot.vibrate)
+            .putInt(
+                KEY_RING_DURATION_SECONDS,
+                settingsSnapshot.ringDurationSeconds
+            )
             .apply()
     }
 
@@ -45,9 +56,43 @@ class ScheduledCallStore(
         return triggerTimeMillis
     }
 
+    fun loadSettingsSnapshot(): AppSettings? {
+        if (!preferences.getBoolean(KEY_HAS_SETTINGS_SNAPSHOT, false)) {
+            return null
+        }
+
+        val defaults = AppSettings()
+
+        return AppSettings(
+            ringtoneUri = preferences.getString(
+                KEY_RINGTONE_URI,
+                defaults.ringtoneUri
+            ),
+            ringtoneName = preferences.getString(
+                KEY_RINGTONE_NAME,
+                defaults.ringtoneName
+            ) ?: defaults.ringtoneName,
+            vibrate = preferences.getBoolean(
+                KEY_VIBRATE,
+                defaults.vibrate
+            ),
+            ringDurationSeconds = RingDuration.validatedOrDefault(
+                preferences.getInt(
+                    KEY_RING_DURATION_SECONDS,
+                    defaults.ringDurationSeconds
+                )
+            )
+        )
+    }
+
     fun clear() {
         preferences.edit()
             .remove(KEY_TRIGGER_TIME)
+            .remove(KEY_HAS_SETTINGS_SNAPSHOT)
+            .remove(KEY_RINGTONE_URI)
+            .remove(KEY_RINGTONE_NAME)
+            .remove(KEY_VIBRATE)
+            .remove(KEY_RING_DURATION_SECONDS)
             .apply()
     }
 
@@ -92,6 +137,14 @@ class ScheduledCallStore(
 
         private const val KEY_TRIGGER_TIME =
             "trigger_time_millis"
+
+        private const val KEY_HAS_SETTINGS_SNAPSHOT =
+            "has_settings_snapshot"
+        private const val KEY_RINGTONE_URI = "settings_ringtone_uri"
+        private const val KEY_RINGTONE_NAME = "settings_ringtone_name"
+        private const val KEY_VIBRATE = "settings_vibrate"
+        private const val KEY_RING_DURATION_SECONDS =
+            "settings_ring_duration_seconds"
 
         private const val NO_SCHEDULED_CALL = -1L
     }
