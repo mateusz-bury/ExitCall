@@ -90,6 +90,9 @@ fun MainApp(
             CallSetupScreen(
                 initialConfig = callConfig,
                 appSettings = appSettings,
+                onBack = {
+                    currentScreen = MainScreen.HOME
+                },
                 onSave = { newConfig ->
                     onSaveCallConfig(newConfig)
                     callConfig = newConfig
