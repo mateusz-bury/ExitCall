@@ -470,12 +470,15 @@ stop IncomingCallService
 -> switch Activity state to ActiveCallScreen
 ```
 
-Decline:
+Decline or Android Back while the incoming screen is visible:
 
 ```text
 stop IncomingCallService
+-> stop ringtone/vibration/notification
 -> finish IncomingCallActivity
 ```
+
+Decline from the CallStyle notification is handled by the service. The shared app-scoped call-finished signal closes an open incoming-call Activity after service cleanup begins.
 
 ### Notification Answer
 
@@ -509,12 +512,14 @@ The current default unanswered timeout is:
 
 On timeout:
 
-1. an app-scoped timeout broadcast is sent,
+1. an app-scoped call-finished broadcast is sent,
 2. ringtone is stopped,
 3. vibration is cancelled,
 4. foreground notification is removed,
 5. service stops,
 6. an open incoming-call Activity closes if it is still in incoming state.
+
+The same call-finished signal is emitted for Decline from the notification. The Activity handles it only while still on the incoming screen, so a late termination signal cannot close an already active call.
 
 The cleanup path is guarded by `isEnding` and callback removal so late or duplicate termination events do not continue the incoming-call lifecycle.
 
