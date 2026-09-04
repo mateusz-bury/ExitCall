@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -212,7 +211,7 @@ fun ActiveCallScreen(
                         )
                         CallActionItem(
                             label = "Mute",
-                            iconRes = R.drawable.ic_mic,
+                            iconRes = R.drawable.ic_mic_off,
                             selected = muteEnabled,
                             onClick = {
                                 muteEnabled = !muteEnabled
