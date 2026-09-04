@@ -22,4 +22,4 @@ val ExitCallSliderBackground = ExitCallSurfaceVariant
 val ExitCallCallControlSurface = ExitCallSurface
 val ExitCallCallActionSurface = ExitCallSurfaceVariant
 val ExitCallAnswerGreen = ExitCallGreen
-val ExitCallHangUp = ExitCallError
+val ExitCallHangUp = Color(0xFFFF5C5C)
