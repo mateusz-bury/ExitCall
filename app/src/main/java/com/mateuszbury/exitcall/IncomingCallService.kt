@@ -21,20 +21,25 @@ import android.os.VibratorManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
+import com.mateuszbury.exitcall.model.AppSettings
+import com.mateuszbury.exitcall.model.AppSettingsStore
 import com.mateuszbury.exitcall.model.CallConfigStore
+import com.mateuszbury.exitcall.model.RingDuration
 
 class IncomingCallService : Service() {
 
     private var ringtone: Ringtone? = null
     private var vibrator: Vibrator? = null
     private var isEnding = false
+    private var callStarted = false
+    private var unansweredTimeoutMs = 0L
 
     private val timeoutHandler = Handler(Looper.getMainLooper())
 
     private val timeoutRunnable = Runnable {
         Log.d(
             "ExitCall",
-            "Incoming call timed out after ${UNANSWERED_TIMEOUT_MS / 1000} seconds"
+            "Incoming call timed out after ${unansweredTimeoutMs / 1000} seconds"
         )
 
         sendBroadcast(
@@ -54,31 +59,86 @@ class IncomingCallService : Service() {
         const val ACTION_TIMEOUT =
             "com.mateuszbury.exitcall.ACTION_TIMEOUT"
 
-        const val UNANSWERED_TIMEOUT_MS = 20_000L
+        private const val EXTRA_HAS_SETTINGS_SNAPSHOT =
+            "extra_has_settings_snapshot"
+        private const val EXTRA_RINGTONE_URI = "extra_ringtone_uri"
+        private const val EXTRA_RINGTONE_NAME = "extra_ringtone_name"
+        private const val EXTRA_VIBRATE = "extra_vibrate"
+        private const val EXTRA_RING_DURATION_SECONDS =
+            "extra_ring_duration_seconds"
+
+        fun putSettingsSnapshot(
+            intent: Intent,
+            settings: AppSettings
+        ) {
+            intent
+                .putExtra(EXTRA_HAS_SETTINGS_SNAPSHOT, true)
+                .putExtra(EXTRA_RINGTONE_URI, settings.ringtoneUri)
+                .putExtra(EXTRA_RINGTONE_NAME, settings.ringtoneName)
+                .putExtra(EXTRA_VIBRATE, settings.vibrate)
+                .putExtra(
+                    EXTRA_RING_DURATION_SECONDS,
+                    settings.ringDurationSeconds
+                )
+        }
     }
 
     override fun onCreate() {
         super.onCreate()
 
         createNotificationChannel()
+    }
 
-        val config = CallConfigStore(this).load()
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int
+    ): Int {
+        if (intent?.action == ACTION_DECLINE) {
+            Log.d(
+                "ExitCall",
+                "Decline pressed from notification"
+            )
+
+            finishIncomingCall("decline")
+
+            return START_NOT_STICKY
+        }
+
+        if (!callStarted) {
+            callStarted = true
+
+            val config = CallConfigStore(this).load()
+            val settings = settingsFromIntent(intent)
+                ?: AppSettingsStore(this).load()
+
+            startIncomingCall(
+                callerName = config.callerName,
+                settings = settings
+            )
+        }
+
+        return START_NOT_STICKY
+    }
+
+    private fun startIncomingCall(
+        callerName: String,
+        settings: AppSettings
+    ) {
+        unansweredTimeoutMs = settings.ringDurationSeconds * 1_000L
 
         Log.d(
             "ExitCall",
-            "Loaded call config for service: caller=${config.callerName}, ringtone=${config.ringtoneName}, vibrate=${config.vibrate}"
+            "Loaded call settings: caller=$callerName, ringtone=${settings.ringtoneName}, vibrate=${settings.vibrate}, timeout=${settings.ringDurationSeconds}s"
         )
 
         val notificationManager =
             getSystemService(NotificationManager::class.java)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            val canUseFullScreenIntent =
-                notificationManager.canUseFullScreenIntent()
-
             Log.d(
                 "ExitCall",
-                "Can use full screen intent: $canUseFullScreenIntent"
+                "Can use full screen intent: ${notificationManager.canUseFullScreenIntent()}"
             )
         }
 
@@ -136,11 +196,7 @@ class IncomingCallService : Service() {
         )
 
         val caller = Person.Builder()
-            .setName(
-                config.callerName.ifBlank {
-                    "Unknown"
-                }
-            )
+            .setName(callerName.ifBlank { "Unknown" })
             .setImportant(true)
             .build()
 
@@ -170,30 +226,42 @@ class IncomingCallService : Service() {
             notification
         )
 
-        startRingtone(config.ringtoneUri)
-        startVibration(config.vibrate)
+        startRingtone(settings.ringtoneUri)
+        startVibration(settings.vibrate)
 
         timeoutHandler.postDelayed(
             timeoutRunnable,
-            UNANSWERED_TIMEOUT_MS
+            unansweredTimeoutMs
         )
     }
 
-    override fun onStartCommand(
-        intent: Intent?,
-        flags: Int,
-        startId: Int
-    ): Int {
-        if (intent?.action == ACTION_DECLINE) {
-            Log.d(
-                "ExitCall",
-                "Decline pressed from notification"
-            )
-
-            finishIncomingCall("decline")
+    private fun settingsFromIntent(intent: Intent?): AppSettings? {
+        if (
+            intent?.getBooleanExtra(
+                EXTRA_HAS_SETTINGS_SNAPSHOT,
+                false
+            ) != true
+        ) {
+            return null
         }
 
-        return START_NOT_STICKY
+        val defaults = AppSettings()
+
+        return AppSettings(
+            ringtoneUri = intent.getStringExtra(EXTRA_RINGTONE_URI),
+            ringtoneName = intent.getStringExtra(EXTRA_RINGTONE_NAME)
+                ?: defaults.ringtoneName,
+            vibrate = intent.getBooleanExtra(
+                EXTRA_VIBRATE,
+                defaults.vibrate
+            ),
+            ringDurationSeconds = RingDuration.validatedOrDefault(
+                intent.getIntExtra(
+                    EXTRA_RING_DURATION_SECONDS,
+                    defaults.ringDurationSeconds
+                )
+            )
+        )
     }
 
     private fun finishIncomingCall(reason: String) {
@@ -268,7 +336,7 @@ class IncomingCallService : Service() {
         if (!enabled) {
             Log.d(
                 "ExitCall",
-                "Vibration disabled by call config"
+                "Vibration disabled by app settings"
             )
             return
         }

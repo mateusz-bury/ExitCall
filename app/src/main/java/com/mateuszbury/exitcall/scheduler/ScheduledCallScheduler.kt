@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import com.mateuszbury.exitcall.CallAlarmReceiver
+import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.ScheduledCallStore
 
 class ScheduledCallScheduler(
@@ -27,11 +28,13 @@ class ScheduledCallScheduler(
         appContext.getSystemService(AlarmManager::class.java)
 
     fun schedule(
-        triggerTimeMillis: Long
+        triggerTimeMillis: Long,
+        settingsSnapshot: AppSettings
     ): RegistrationResult {
         return register(
             triggerTimeMillis = triggerTimeMillis,
-            persistOnSuccess = true
+            persistOnSuccess = true,
+            settingsSnapshot = settingsSnapshot
         )
     }
 
@@ -41,7 +44,8 @@ class ScheduledCallScheduler(
 
         return register(
             triggerTimeMillis = triggerTimeMillis,
-            persistOnSuccess = false
+            persistOnSuccess = false,
+            settingsSnapshot = null
         )
     }
 
@@ -82,7 +86,8 @@ class ScheduledCallScheduler(
 
     private fun register(
         triggerTimeMillis: Long,
-        persistOnSuccess: Boolean
+        persistOnSuccess: Boolean,
+        settingsSnapshot: AppSettings?
     ): RegistrationResult {
         if (triggerTimeMillis <= System.currentTimeMillis()) {
             if (!persistOnSuccess) {
@@ -127,7 +132,11 @@ class ScheduledCallScheduler(
             )
 
             if (persistOnSuccess) {
-                scheduledCallStore.save(triggerTimeMillis)
+                requireNotNull(settingsSnapshot)
+                scheduledCallStore.save(
+                    triggerTimeMillis = triggerTimeMillis,
+                    settingsSnapshot = settingsSnapshot
+                )
             }
 
             Log.i(

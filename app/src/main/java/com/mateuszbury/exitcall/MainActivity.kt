@@ -16,6 +16,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.mateuszbury.exitcall.capability.CallCapability
 import com.mateuszbury.exitcall.capability.CallCapabilityResolver
+import com.mateuszbury.exitcall.model.AppSettings
+import com.mateuszbury.exitcall.model.AppSettingsStore
 import com.mateuszbury.exitcall.model.CallConfigStore
 import com.mateuszbury.exitcall.model.ScheduledCallStore
 import com.mateuszbury.exitcall.scheduler.ScheduledCallScheduler
@@ -27,9 +29,14 @@ class MainActivity : ComponentActivity() {
     private lateinit var scheduledCallStore: ScheduledCallStore
     private lateinit var scheduledCallScheduler: ScheduledCallScheduler
     private lateinit var capabilityResolver: CallCapabilityResolver
+    private lateinit var appSettingsStore: AppSettingsStore
 
     private var scheduledCallAtMillis by mutableStateOf<Long?>(null)
     private var capabilityIssue by mutableStateOf<CallCapability?>(null)
+    private var appSettings by mutableStateOf(AppSettings())
+    private var capabilityAvailability by mutableStateOf(
+        emptyMap<CallCapability, Boolean>()
+    )
 
     private var pendingCapabilityAction: (() -> Unit)? = null
     private var pendingRequiresExactAlarm = false
@@ -40,6 +47,8 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { granted ->
+            refreshCapabilityAvailability()
+
             if (granted) {
                 continuePendingCapabilityAction()
             } else {
@@ -62,7 +71,10 @@ class MainActivity : ComponentActivity() {
 
     private fun scheduleCall(triggerTimeMillis: Long): Boolean {
         return when (
-            scheduledCallScheduler.schedule(triggerTimeMillis)
+            scheduledCallScheduler.schedule(
+                triggerTimeMillis = triggerTimeMillis,
+                settingsSnapshot = appSettings
+            )
         ) {
             ScheduledCallScheduler.RegistrationResult.SCHEDULED -> {
                 scheduledCallAtMillis = triggerTimeMillis
@@ -103,6 +115,8 @@ class MainActivity : ComponentActivity() {
                 requireExactAlarm = pendingRequiresExactAlarm
             )
 
+        refreshCapabilityAvailability()
+
         if (missingCapability != null) {
             capabilityIssue = missingCapability
             return
@@ -139,10 +153,16 @@ class MainActivity : ComponentActivity() {
             return
         }
 
+        openCapabilitySettings(capability)
+    }
+
+    private fun openCapabilitySettings(
+        capability: CallCapability
+    ) {
         val settingsIntent = capabilityResolver.settingsIntent(capability)
 
         if (settingsIntent == null) {
-            continuePendingCapabilityAction()
+            refreshCapabilityAvailability()
             return
         }
 
@@ -164,12 +184,26 @@ class MainActivity : ComponentActivity() {
                 )
             }.onFailure {
                 waitingForCapabilitySettings = false
-                capabilityIssue =
-                    capabilityResolver.firstMissingCapability(
-                        requireExactAlarm = pendingRequiresExactAlarm
-                    )
+                refreshCapabilityAvailability()
+
+                if (pendingCapabilityAction != null) {
+                    capabilityIssue =
+                        capabilityResolver.firstMissingCapability(
+                            requireExactAlarm = pendingRequiresExactAlarm
+                        )
+                }
             }
         }
+    }
+
+    private fun refreshCapabilityAvailability() {
+        if (!::capabilityResolver.isInitialized) {
+            return
+        }
+
+        capabilityAvailability = CallCapability.values().associateWith(
+            capabilityResolver::isCapabilityAvailable
+        )
     }
 
     private fun cancelPendingCapabilityAction() {
@@ -203,6 +237,9 @@ class MainActivity : ComponentActivity() {
         val callConfigStore = CallConfigStore(this)
         val initialCallConfig = callConfigStore.load()
 
+        appSettingsStore = AppSettingsStore(this)
+        appSettings = appSettingsStore.load()
+
         scheduledCallStore = ScheduledCallStore(this)
         scheduledCallScheduler = ScheduledCallScheduler(
             context = this,
@@ -213,6 +250,7 @@ class MainActivity : ComponentActivity() {
             scheduledCallScheduler = scheduledCallScheduler
         )
 
+        refreshCapabilityAvailability()
         scheduledCallScheduler.restorePersistedCall()
         scheduledCallAtMillis = scheduledCallStore.load()
 
@@ -220,10 +258,13 @@ class MainActivity : ComponentActivity() {
             ExitCallTheme {
                 MainApp(
                     initialCallConfig = initialCallConfig,
+                    initialAppSettings = appSettings,
                     scheduledCallAtMillis = scheduledCallAtMillis,
                     capabilityIssue = capabilityIssue,
+                    capabilityAvailability = capabilityAvailability,
                     canRequestNotificationPermission =
                         canRequestNotificationRuntimePermission(),
+                    appVersionName = BuildConfig.VERSION_NAME,
                     onRequireCallCapabilities = { requireExactAlarm, onReady ->
                         ensureCallCapabilities(
                             requireExactAlarm = requireExactAlarm,
@@ -242,6 +283,13 @@ class MainActivity : ComponentActivity() {
                     onSaveCallConfig = { newConfig ->
                         callConfigStore.save(newConfig)
                     },
+                    onSaveAppSettings = { newSettings ->
+                        appSettingsStore.save(newSettings)
+                        appSettings = newSettings
+                    },
+                    onOpenCapabilitySettings = { capability ->
+                        openCapabilitySettings(capability)
+                    },
                     onCapabilityConfirm = { capability ->
                         handleCapabilityAction(capability)
                     },
@@ -259,6 +307,8 @@ class MainActivity : ComponentActivity() {
         if (::scheduledCallStore.isInitialized) {
             scheduledCallAtMillis = scheduledCallStore.load()
         }
+
+        refreshCapabilityAvailability()
 
         if (waitingForCapabilitySettings) {
             waitingForCapabilitySettings = false
