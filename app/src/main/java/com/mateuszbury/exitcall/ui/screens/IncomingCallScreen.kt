@@ -114,7 +114,8 @@ fun IncomingCallSlider(
             .clip(RoundedCornerShape(47.dp))
             .background(ExitCallSliderBackground)
     ) {
-        val knobWidth = 82.dp
+        val knobWidth = 86.dp
+        val knobHeight = 78.dp
         val maxDragPx = with(LocalDensity.current) {
             ((maxWidth - knobWidth) / 2 - 8.dp).toPx()
         }
@@ -149,9 +150,9 @@ fun IncomingCallSlider(
                 }
                 .size(
                     width = knobWidth,
-                    height = 78.dp
+                    height = knobHeight
                 )
-                .clip(RoundedCornerShape(26.dp))
+                .clip(RoundedCornerShape(percent = 50))
                 .background(MaterialTheme.colorScheme.onBackground)
                 .pointerInput(maxDragPx) {
                     detectHorizontalDragGestures(
@@ -191,7 +192,7 @@ fun IncomingCallSlider(
                 painter = painterResource(R.drawable.ic_call),
                 contentDescription = null,
                 tint = ExitCallAnswerGreen,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(28.dp)
             )
         }
     }
