@@ -14,11 +14,14 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.mateuszbury.exitcall.model.CallConfigStore
 import com.mateuszbury.exitcall.screens.CallScreen
 import com.mateuszbury.exitcall.ui.screens.ActiveCallScreen
 import com.mateuszbury.exitcall.ui.screens.IncomingCallScreen
+import com.mateuszbury.exitcall.ui.theme.ExitCallBackground
 import com.mateuszbury.exitcall.ui.theme.ExitCallTheme
 
 class IncomingCallActivity : ComponentActivity() {
@@ -48,6 +51,8 @@ class IncomingCallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        configureSystemBars()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
@@ -124,6 +129,24 @@ class IncomingCallActivity : ComponentActivity() {
                     else -> Unit
                 }
             }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun configureSystemBars() {
+        window.statusBarColor = ExitCallBackground.toArgb()
+        window.navigationBarColor = ExitCallBackground.toArgb()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
+
+        WindowCompat.getInsetsController(
+            window,
+            window.decorView
+        ).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
         }
     }
 
