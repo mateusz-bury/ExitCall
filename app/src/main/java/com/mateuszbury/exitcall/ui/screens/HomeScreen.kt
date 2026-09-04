@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mateuszbury.exitcall.R
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -64,12 +66,11 @@ fun HomeScreen(
                     )
                 }
 
-                TextButton(
-                    onClick = onSettings
-                ) {
-                    Text(
-                        text = "Settings",
-                        color = MaterialTheme.colorScheme.primary
+                IconButton(onClick = onSettings) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_settings),
+                        contentDescription = "Settings",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
