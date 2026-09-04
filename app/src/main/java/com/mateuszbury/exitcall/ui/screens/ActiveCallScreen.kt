@@ -386,6 +386,7 @@ private fun KeypadKey(
         color = ExitCallCallActionSurface,
         modifier = Modifier
             .size(68.dp)
+            .clip(CircleShape)
             .clickable(onClick = onClick)
     ) {
         Box(
