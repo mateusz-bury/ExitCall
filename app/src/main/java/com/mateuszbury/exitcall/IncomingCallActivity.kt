@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,17 +28,17 @@ class IncomingCallActivity : ComponentActivity() {
     }
 
     private var currentScreen by mutableStateOf(CallScreen.INCOMING_CALL)
-    private var timeoutReceiverRegistered = false
+    private var callFinishedReceiverRegistered = false
 
-    private val timeoutReceiver = object : BroadcastReceiver() {
+    private val callFinishedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (
-                intent?.action == IncomingCallService.ACTION_TIMEOUT &&
+                intent?.action == IncomingCallService.ACTION_CALL_FINISHED &&
                 currentScreen == CallScreen.INCOMING_CALL
             ) {
                 Log.d(
                     "ExitCall",
-                    "IncomingCallActivity closing after unanswered timeout"
+                    "IncomingCallActivity closing after incoming call ended"
                 )
 
                 finish()
@@ -61,11 +62,11 @@ class IncomingCallActivity : ComponentActivity() {
 
         ContextCompat.registerReceiver(
             this,
-            timeoutReceiver,
-            IntentFilter(IncomingCallService.ACTION_TIMEOUT),
+            callFinishedReceiver,
+            IntentFilter(IncomingCallService.ACTION_CALL_FINISHED),
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
-        timeoutReceiverRegistered = true
+        callFinishedReceiverRegistered = true
 
         val startActive = intent.getBooleanExtra(
             EXTRA_START_ACTIVE,
@@ -91,13 +92,18 @@ class IncomingCallActivity : ComponentActivity() {
 
         setContent {
             ExitCallTheme {
+                BackHandler(
+                    enabled = currentScreen == CallScreen.INCOMING_CALL
+                ) {
+                    declineIncomingCall()
+                }
+
                 when (currentScreen) {
                     CallScreen.INCOMING_CALL -> {
                         IncomingCallScreen(
                             config = config,
                             onDecline = {
-                                stopIncomingCallService()
-                                finish()
+                                declineIncomingCall()
                             },
                             onAnswer = {
                                 stopIncomingCallService()
@@ -137,12 +143,17 @@ class IncomingCallActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        if (timeoutReceiverRegistered) {
-            unregisterReceiver(timeoutReceiver)
-            timeoutReceiverRegistered = false
+        if (callFinishedReceiverRegistered) {
+            unregisterReceiver(callFinishedReceiver)
+            callFinishedReceiverRegistered = false
         }
 
         super.onDestroy()
+    }
+
+    private fun declineIncomingCall() {
+        stopIncomingCallService()
+        finish()
     }
 
     private fun stopIncomingCallService() {
