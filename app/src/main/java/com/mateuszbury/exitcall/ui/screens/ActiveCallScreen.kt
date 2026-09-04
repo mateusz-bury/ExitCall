@@ -211,7 +211,11 @@ fun ActiveCallScreen(
                         )
                         CallActionItem(
                             label = "Mute",
-                            iconRes = R.drawable.ic_mic_off,
+                            iconRes = if (muteEnabled) {
+                                R.drawable.ic_mic_off
+                            } else {
+                                R.drawable.ic_mic
+                            },
                             selected = muteEnabled,
                             onClick = {
                                 muteEnabled = !muteEnabled
