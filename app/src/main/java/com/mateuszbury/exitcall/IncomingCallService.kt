@@ -37,10 +37,6 @@ class IncomingCallService : Service() {
             "Incoming call timed out after ${UNANSWERED_TIMEOUT_MS / 1000} seconds"
         )
 
-        sendBroadcast(
-            Intent(ACTION_TIMEOUT).setPackage(packageName)
-        )
-
         finishIncomingCall("timeout")
     }
 
@@ -51,8 +47,8 @@ class IncomingCallService : Service() {
         const val ACTION_DECLINE =
             "com.mateuszbury.exitcall.ACTION_DECLINE"
 
-        const val ACTION_TIMEOUT =
-            "com.mateuszbury.exitcall.ACTION_TIMEOUT"
+        const val ACTION_CALL_FINISHED =
+            "com.mateuszbury.exitcall.ACTION_CALL_FINISHED"
 
         const val UNANSWERED_TIMEOUT_MS = 20_000L
     }
@@ -201,6 +197,10 @@ class IncomingCallService : Service() {
 
         isEnding = true
         timeoutHandler.removeCallbacks(timeoutRunnable)
+
+        sendBroadcast(
+            Intent(ACTION_CALL_FINISHED).setPackage(packageName)
+        )
 
         stopAlerting()
 
