@@ -8,12 +8,15 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.core.content.ContextCompat
+import java.util.concurrent.Executor
 
 class ActiveCallAudioRouter(
     context: Context
 ) {
     private val audioManager = context.getSystemService(AudioManager::class.java)
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val mainExecutor = ContextCompat.getMainExecutor(context)
 
     private var listener: ((AudioRouteSnapshot) -> Unit)? = null
     private var started = false
@@ -21,13 +24,16 @@ class ActiveCallAudioRouter(
     private var previousSpeakerphoneOn = false
     private var previousBluetoothScoOn = false
     private var previousCommunicationDeviceId: Int? = null
+    private var modernRouteObserver: ModernCommunicationDeviceObserver? = null
 
     private val deviceCallback = object : AudioDeviceCallback() {
         override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
+            Log.d("ExitCall", "Audio device added; refreshing active route state")
             publishSnapshot()
         }
 
         override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+            Log.d("ExitCall", "Audio device removed; refreshing active route state")
             publishSnapshot()
         }
     }
@@ -47,6 +53,19 @@ class ActiveCallAudioRouter(
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             previousCommunicationDeviceId = audioManager.communicationDevice?.id
+            modernRouteObserver = ModernCommunicationDeviceObserver(
+                audioManager = audioManager,
+                executor = mainExecutor,
+                onDeviceChanged = { device ->
+                    Log.d(
+                        "ExitCall",
+                        "Communication route confirmed by Android: type=${device?.type}"
+                    )
+                    publishSnapshot()
+                }
+            ).also { observer ->
+                observer.start()
+            }
         }
 
         audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
@@ -60,16 +79,27 @@ class ActiveCallAudioRouter(
         }
 
         if (route !in availableRoutes()) {
+            Log.w("ExitCall", "Ignoring unavailable audio route request: $route")
             publishSnapshot()
             return
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val accepted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             selectModernRoute(route)
         } else {
             selectLegacyRoute(route)
+            true
         }
 
+        if (!accepted) {
+            Log.w(
+                "ExitCall",
+                "Android rejected audio route request $route; keeping confirmed system route"
+            )
+        }
+
+        // The snapshot is always read back from AudioManager. This prevents the UI from
+        // displaying the requested route when Android did not actually activate it.
         publishSnapshot()
     }
 
@@ -78,6 +108,9 @@ class ActiveCallAudioRouter(
             listener = null
             return
         }
+
+        modernRouteObserver?.stop()
+        modernRouteObserver = null
 
         runCatching {
             audioManager.unregisterAudioDeviceCallback(deviceCallback)
@@ -94,7 +127,7 @@ class ActiveCallAudioRouter(
         started = false
     }
 
-    private fun selectModernRoute(route: AudioRoute) {
+    private fun selectModernRoute(route: AudioRoute): Boolean {
         val device = when (route) {
             AudioRoute.PHONE -> preferredPhoneDevice()
             AudioRoute.SPEAKER -> communicationDevices()
@@ -105,7 +138,7 @@ class ActiveCallAudioRouter(
 
         if (device == null) {
             Log.w("ExitCall", "Audio route $route is not currently available")
-            return
+            return false
         }
 
         val accepted = audioManager.setCommunicationDevice(device)
@@ -113,6 +146,7 @@ class ActiveCallAudioRouter(
             "ExitCall",
             "Audio route request route=$route deviceType=${device.type} accepted=$accepted"
         )
+        return accepted
     }
 
     @Suppress("DEPRECATION")
@@ -147,7 +181,11 @@ class ActiveCallAudioRouter(
         audioManager.clearCommunicationDevice()
 
         if (previousDevice != null) {
-            audioManager.setCommunicationDevice(previousDevice)
+            val restored = audioManager.setCommunicationDevice(previousDevice)
+            Log.d(
+                "ExitCall",
+                "Restoring previous communication route type=${previousDevice.type} accepted=$restored"
+            )
         }
     }
 
@@ -200,14 +238,7 @@ class ActiveCallAudioRouter(
     @Suppress("DEPRECATION")
     private fun selectedRoute(): AudioRoute {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val current = audioManager.communicationDevice
-
-            return when {
-                current == null -> AudioRoute.PHONE
-                current.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> AudioRoute.SPEAKER
-                isBluetoothDevice(current) -> AudioRoute.BLUETOOTH
-                else -> AudioRoute.PHONE
-            }
+            return routeForDevice(audioManager.communicationDevice)
         }
 
         return when {
@@ -216,6 +247,15 @@ class ActiveCallAudioRouter(
             }
 
             audioManager.isSpeakerphoneOn -> AudioRoute.SPEAKER
+            else -> AudioRoute.PHONE
+        }
+    }
+
+    private fun routeForDevice(device: AudioDeviceInfo?): AudioRoute {
+        return when {
+            device == null -> AudioRoute.PHONE
+            device.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> AudioRoute.SPEAKER
+            isBluetoothDevice(device) -> AudioRoute.BLUETOOTH
             else -> AudioRoute.PHONE
         }
     }
@@ -230,9 +270,6 @@ class ActiveCallAudioRouter(
             ?: devices.firstOrNull {
                 !isBluetoothDevice(it) &&
                     it.type != AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
-            }
-            ?: devices.firstOrNull {
-                it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
             }
     }
 
@@ -283,5 +320,29 @@ class ActiveCallAudioRouter(
 
         return Build.VERSION.SDK_INT >= 37 &&
             device.type == AudioDeviceInfo.TYPE_BLE_HEARING_AID
+    }
+
+    @Suppress("NewApi")
+    private class ModernCommunicationDeviceObserver(
+        private val audioManager: AudioManager,
+        private val executor: Executor,
+        private val onDeviceChanged: (AudioDeviceInfo?) -> Unit
+    ) {
+        private val listener = AudioManager.OnCommunicationDeviceChangedListener { device ->
+            onDeviceChanged(device)
+        }
+
+        fun start() {
+            audioManager.addOnCommunicationDeviceChangedListener(
+                executor,
+                listener
+            )
+        }
+
+        fun stop() {
+            runCatching {
+                audioManager.removeOnCommunicationDeviceChangedListener(listener)
+            }
+        }
     }
 }
