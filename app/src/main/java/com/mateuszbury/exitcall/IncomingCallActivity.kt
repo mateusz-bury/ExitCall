@@ -17,6 +17,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import com.mateuszbury.exitcall.audio.ActiveCallAudioRouter
+import com.mateuszbury.exitcall.audio.AudioRouteSnapshot
 import com.mateuszbury.exitcall.model.CallConfigStore
 import com.mateuszbury.exitcall.screens.CallScreen
 import com.mateuszbury.exitcall.ui.screens.ActiveCallScreen
@@ -31,7 +33,12 @@ class IncomingCallActivity : ComponentActivity() {
     }
 
     private var currentScreen by mutableStateOf(CallScreen.INCOMING_CALL)
+    private var audioRouteSnapshot by mutableStateOf(AudioRouteSnapshot())
     private var callFinishedReceiverRegistered = false
+
+    private val activeCallAudioRouter by lazy {
+        ActiveCallAudioRouter(this)
+    }
 
     private val callFinishedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -86,6 +93,7 @@ class IncomingCallActivity : ComponentActivity() {
 
         if (startActive) {
             stopIncomingCallService()
+            startActiveCallAudio()
         }
 
         val config = CallConfigStore(this).load()
@@ -113,6 +121,7 @@ class IncomingCallActivity : ComponentActivity() {
                             onAnswer = {
                                 stopIncomingCallService()
                                 currentScreen = CallScreen.ACTIVE_CALL
+                                startActiveCallAudio()
                             }
                         )
                     }
@@ -120,7 +129,13 @@ class IncomingCallActivity : ComponentActivity() {
                     CallScreen.ACTIVE_CALL -> {
                         ActiveCallScreen(
                             config = config,
+                            availableAudioRoutes = audioRouteSnapshot.availableRoutes,
+                            selectedAudioRoute = audioRouteSnapshot.selectedRoute,
+                            onAudioRouteSelected = { route ->
+                                activeCallAudioRouter.selectRoute(route)
+                            },
                             onHangUp = {
+                                activeCallAudioRouter.stop()
                                 finish()
                             }
                         )
@@ -162,10 +177,13 @@ class IncomingCallActivity : ComponentActivity() {
         ) {
             stopIncomingCallService()
             currentScreen = CallScreen.ACTIVE_CALL
+            startActiveCallAudio()
         }
     }
 
     override fun onDestroy() {
+        activeCallAudioRouter.stop()
+
         if (callFinishedReceiverRegistered) {
             unregisterReceiver(callFinishedReceiver)
             callFinishedReceiverRegistered = false
@@ -177,6 +195,12 @@ class IncomingCallActivity : ComponentActivity() {
     private fun declineIncomingCall() {
         stopIncomingCallService()
         finish()
+    }
+
+    private fun startActiveCallAudio() {
+        activeCallAudioRouter.start { snapshot ->
+            audioRouteSnapshot = snapshot
+        }
     }
 
     private fun stopIncomingCallService() {
