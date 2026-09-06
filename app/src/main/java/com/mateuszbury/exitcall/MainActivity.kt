@@ -33,12 +33,12 @@ class MainActivity : ComponentActivity() {
     private lateinit var scheduledCallScheduler: ScheduledCallScheduler
     private lateinit var capabilityResolver: CallCapabilityResolver
     private lateinit var appSettingsStore: AppSettingsStore
+    private lateinit var onboardingStore: OnboardingStore
 
     private var scheduledCallAtMillis by mutableStateOf<Long?>(null)
     private var capabilityIssue by mutableStateOf<CallCapability?>(null)
     private var appSettings by mutableStateOf(AppSettings())
     private var onboardingCompleted by mutableStateOf(false)
-    private var onboardingDemoCompleted by mutableStateOf(false)
     private var capabilityAvailability by mutableStateOf(
         emptyMap<CallCapability, Boolean>()
     )
@@ -54,7 +54,8 @@ class MainActivity : ComponentActivity() {
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                onboardingDemoCompleted = true
+                onboardingStore.markCompleted()
+                onboardingCompleted = true
             }
         }
 
@@ -285,7 +286,7 @@ class MainActivity : ComponentActivity() {
 
         val callConfigStore = CallConfigStore(this)
         val initialCallConfig = callConfigStore.load()
-        val onboardingStore = OnboardingStore(this)
+        onboardingStore = OnboardingStore(this)
         onboardingCompleted = onboardingStore.isCompleted()
 
         appSettingsStore = AppSettingsStore(this)
@@ -323,7 +324,7 @@ class MainActivity : ComponentActivity() {
                             onboardingCompleted = true
                         },
                         requireDemo = true,
-                        demoCompleted = onboardingDemoCompleted,
+                        demoCompleted = false,
                         onStartDemo = {
                             startDemoCall()
                         }
