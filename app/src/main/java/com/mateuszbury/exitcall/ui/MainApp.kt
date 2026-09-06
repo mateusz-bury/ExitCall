@@ -157,11 +157,6 @@ fun MainApp(
                     onOpenCapabilitySettings(CallCapability.FULL_SCREEN_INTENT)
                 },
                 onComplete = {
-                    currentScreen = MainScreen.SETTINGS
-                },
-                requireDemo = true,
-                demoCompleted = false,
-                onStartDemo = {
                     onStartDemoCall {
                         currentScreen = MainScreen.SETTINGS
                     }
