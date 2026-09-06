@@ -1,7 +1,6 @@
 package com.mateuszbury.exitcall.audio
 
 import android.content.Context
-import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.util.Log
 import com.mateuszbury.exitcall.R
@@ -15,16 +14,9 @@ class DemoVoicePlayer(
     fun play() {
         stop()
 
-        val audioAttributes = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-            .build()
-
         mediaPlayer = MediaPlayer.create(
             appContext,
-            R.raw.exitcall_demo_voice,
-            audioAttributes,
-            0
+            R.raw.exitcall_demo_voice
         )?.apply {
             setOnCompletionListener {
                 releasePlayer()
@@ -38,6 +30,12 @@ class DemoVoicePlayer(
                 true
             }
             start()
+
+            Log.d(TAG, "Demo voice playback started")
+        }
+
+        if (mediaPlayer == null) {
+            Log.w(TAG, "Demo voice MediaPlayer could not be created")
         }
     }
 
