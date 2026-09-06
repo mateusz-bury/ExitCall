@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.mateuszbury.exitcall.audio.DemoVoicePlayer
+import com.mateuszbury.exitcall.audio.IncomingCallAlertPlayer
+import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.screens.CallScreen
 import kotlinx.coroutines.delay
@@ -26,6 +28,9 @@ fun DemoCallFlow(
     }
 
     val context = LocalContext.current
+    val alertPlayer = remember(context) {
+        IncomingCallAlertPlayer(context)
+    }
     val voicePlayer = remember(context) {
         DemoVoicePlayer(context)
     }
@@ -33,22 +38,35 @@ fun DemoCallFlow(
         CallConfig(
             callerName = "ExitCall",
             phoneNumber = "",
-            vibrate = false
+            vibrate = true
         )
     }
+    val demoSettings = remember {
+        AppSettings()
+    }
 
-    DisposableEffect(voicePlayer) {
+    DisposableEffect(alertPlayer, voicePlayer) {
         onDispose {
+            alertPlayer.stop()
             voicePlayer.stop()
         }
     }
 
     LaunchedEffect(currentScreen) {
-        if (currentScreen == CallScreen.ACTIVE_CALL) {
-            delay(DEMO_VOICE_START_DELAY_MS)
-            voicePlayer.play()
-        } else {
-            voicePlayer.stop()
+        when (currentScreen) {
+            CallScreen.INCOMING_CALL -> {
+                voicePlayer.stop()
+                alertPlayer.start(
+                    ringtoneUri = demoSettings.ringtoneUri,
+                    vibrate = demoSettings.vibrate
+                )
+            }
+
+            CallScreen.ACTIVE_CALL -> {
+                alertPlayer.stop()
+                delay(DEMO_VOICE_START_DELAY_MS)
+                voicePlayer.play()
+            }
         }
     }
 
