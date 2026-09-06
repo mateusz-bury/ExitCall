@@ -35,6 +35,7 @@ fun SettingsScreen(
     appVersionName: String,
     onSettingsChange: (AppSettings) -> Unit,
     onOpenCapabilitySettings: (CallCapability) -> Unit,
+    onViewTutorial: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -336,9 +337,11 @@ fun SettingsScreen(
 
             item {
                 SettingsSection(title = "HELP & INFORMATION") {
-                    ComingSoonRow(
+                    SettingsActionRow(
                         title = "View tutorial again",
-                        subtitle = "The one-time demo will not reset"
+                        subtitle = "Review the ExitCall tutorial without resetting setup",
+                        actionLabel = "View",
+                        onClick = onViewTutorial
                     )
                     SettingsDivider()
                     ComingSoonRow(
