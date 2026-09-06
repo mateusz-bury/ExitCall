@@ -4,6 +4,8 @@
     <string name="onboarding_brand">EXITCALL</string>
     <string name="onboarding_continue">Continue</string>
     <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_start_demo">Start demo call</string>
+    <string name="onboarding_demo_required_hint">Answer the demo call and hang up to finish onboarding. The demo never uses a free call.</string>
 
     <string name="onboarding_welcome_title">A call when you need an exit</string>
     <string name="onboarding_welcome_body">ExitCall gives you a discreet, scheduled way to step away when a situation becomes uncomfortable.</string>
