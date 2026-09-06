@@ -48,14 +48,17 @@ class MainActivity : ComponentActivity() {
     private var waitingForCapabilitySettings = false
     private var notificationPermissionRequestedThisSession = false
     private var onboardingNotificationRequestInFlight = false
+    private var pendingDemoCompletion: (() -> Unit)? = null
 
     private val demoCallLauncher =
         registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
+            val completion = pendingDemoCompletion
+            pendingDemoCompletion = null
+
             if (result.resultCode == Activity.RESULT_OK) {
-                onboardingStore.markCompleted()
-                onboardingCompleted = true
+                completion?.invoke()
             }
         }
 
@@ -76,7 +79,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-    private fun startDemoCall() {
+    private fun startDemoCall(onCompleted: () -> Unit) {
+        pendingDemoCompletion = onCompleted
         demoCallLauncher.launch(
             Intent(
                 this,
@@ -326,7 +330,10 @@ class MainActivity : ComponentActivity() {
                         requireDemo = true,
                         demoCompleted = false,
                         onStartDemo = {
-                            startDemoCall()
+                            startDemoCall {
+                                onboardingStore.markCompleted()
+                                onboardingCompleted = true
+                            }
                         }
                     )
                 } else {
@@ -347,6 +354,9 @@ class MainActivity : ComponentActivity() {
                         },
                         onStartImmediateCall = {
                             startImmediateCall()
+                        },
+                        onStartDemoCall = { onCompleted ->
+                            startDemoCall(onCompleted)
                         },
                         onScheduleCall = { triggerTimeMillis ->
                             scheduleCall(triggerTimeMillis)
