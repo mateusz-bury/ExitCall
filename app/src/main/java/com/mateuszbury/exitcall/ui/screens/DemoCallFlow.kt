@@ -52,12 +52,7 @@ fun DemoCallFlow(
         }
     }
 
-    BackHandler {
-        when (currentScreen) {
-            CallScreen.INCOMING_CALL -> onCancelled()
-            CallScreen.ACTIVE_CALL -> onCompleted()
-        }
-    }
+    BackHandler(onBack = onCancelled)
 
     when (currentScreen) {
         CallScreen.INCOMING_CALL -> {
