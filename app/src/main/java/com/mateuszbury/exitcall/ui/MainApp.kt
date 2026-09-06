@@ -38,6 +38,7 @@ fun MainApp(
         onReady: () -> Unit
     ) -> Unit,
     onStartImmediateCall: () -> Unit,
+    onStartDemoCall: (onCompleted: () -> Unit) -> Unit,
     onScheduleCall: (Long) -> Boolean,
     onCancelScheduledCall: () -> Unit,
     onSaveCallConfig: (CallConfig) -> Unit,
@@ -157,6 +158,13 @@ fun MainApp(
                 },
                 onComplete = {
                     currentScreen = MainScreen.SETTINGS
+                },
+                requireDemo = true,
+                demoCompleted = false,
+                onStartDemo = {
+                    onStartDemoCall {
+                        currentScreen = MainScreen.SETTINGS
+                    }
                 }
             )
         }
