@@ -1,6 +1,7 @@
 package com.mateuszbury.exitcall
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
     private var capabilityIssue by mutableStateOf<CallCapability?>(null)
     private var appSettings by mutableStateOf(AppSettings())
     private var onboardingCompleted by mutableStateOf(false)
+    private var onboardingDemoCompleted by mutableStateOf(false)
     private var capabilityAvailability by mutableStateOf(
         emptyMap<CallCapability, Boolean>()
     )
@@ -46,6 +48,15 @@ class MainActivity : ComponentActivity() {
     private var waitingForCapabilitySettings = false
     private var notificationPermissionRequestedThisSession = false
     private var onboardingNotificationRequestInFlight = false
+
+    private val demoCallLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                onboardingDemoCompleted = true
+            }
+        }
 
     private val notificationPermissionLauncher =
         registerForActivityResult(
@@ -63,6 +74,15 @@ class MainActivity : ComponentActivity() {
                 capabilityIssue = CallCapability.NOTIFICATIONS
             }
         }
+
+    private fun startDemoCall() {
+        demoCallLauncher.launch(
+            Intent(
+                this,
+                DemoCallActivity::class.java
+            )
+        )
+    }
 
     private fun startImmediateCall() {
         val serviceIntent = Intent(
@@ -301,6 +321,11 @@ class MainActivity : ComponentActivity() {
                         onComplete = {
                             onboardingStore.markCompleted()
                             onboardingCompleted = true
+                        },
+                        requireDemo = true,
+                        demoCompleted = onboardingDemoCompleted,
+                        onStartDemo = {
+                            startDemoCall()
                         }
                     )
                 } else {
