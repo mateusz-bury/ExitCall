@@ -41,6 +41,11 @@
         </receiver>
 
         <activity
+            android:name=".DemoCallActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".IncomingCallActivity"
             android:exported="false"
             android:launchMode="singleTop"
