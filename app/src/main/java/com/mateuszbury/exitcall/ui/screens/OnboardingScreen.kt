@@ -48,10 +48,7 @@ fun OnboardingScreen(
     capabilityAvailability: Map<CallCapability, Boolean>,
     onRequestNotifications: () -> Unit,
     onOpenFullScreenSettings: () -> Unit,
-    onComplete: () -> Unit,
-    requireDemo: Boolean = false,
-    demoCompleted: Boolean = true,
-    onStartDemo: () -> Unit = {}
+    onComplete: () -> Unit
 ) {
     val notificationsEnabled =
         capabilityAvailability[CallCapability.NOTIFICATIONS] == true
@@ -123,19 +120,16 @@ fun OnboardingScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         val lastPage = currentPage == PAGE_COUNT - 1
-        val needsDemo = lastPage && requireDemo && !demoCompleted
         val canContinue =
             currentPage != PERMISSIONS_PAGE || notificationsEnabled
 
         Button(
             onClick = {
-                when {
-                    needsDemo -> onStartDemo()
-                    lastPage -> onComplete()
-                    else -> {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(currentPage + 1)
-                        }
+                if (lastPage) {
+                    onComplete()
+                } else {
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(currentPage + 1)
                     }
                 }
             },
@@ -150,10 +144,10 @@ fun OnboardingScreen(
                 .height(56.dp)
         ) {
             Text(
-                text = when {
-                    needsDemo -> stringResource(R.string.onboarding_start_demo)
-                    lastPage -> stringResource(R.string.onboarding_get_started)
-                    else -> stringResource(R.string.onboarding_continue)
+                text = if (lastPage) {
+                    stringResource(R.string.onboarding_get_started)
+                } else {
+                    stringResource(R.string.onboarding_continue)
                 },
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold
@@ -166,17 +160,6 @@ fun OnboardingScreen(
                 text = stringResource(R.string.onboarding_notifications_blocking_hint),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
-                textAlign = TextAlign.Center
-            )
-        }
-
-        if (needsDemo) {
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = stringResource(R.string.onboarding_demo_required_hint),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 13.sp,
-                lineHeight = 18.sp,
                 textAlign = TextAlign.Center
             )
         }
