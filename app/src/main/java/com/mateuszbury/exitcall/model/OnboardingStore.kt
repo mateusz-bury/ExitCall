@@ -27,8 +27,7 @@ class OnboardingStore(
         private const val PREFS_NAME = "exitcall_onboarding"
         private const val KEY_COMPLETED_VERSION = "completed_version"
 
-        // Bump when a mandatory onboarding slice is added so earlier test builds
-        // cannot silently skip newly required education/demo steps.
-        private const val CURRENT_VERSION = 1
+        // Version 2 adds the mandatory guided demo call.
+        private const val CURRENT_VERSION = 2
     }
 }
