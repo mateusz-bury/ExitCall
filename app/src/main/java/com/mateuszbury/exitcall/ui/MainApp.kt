@@ -12,6 +12,7 @@ import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.ui.components.CallCapabilityDialog
 import com.mateuszbury.exitcall.ui.screens.CallSetupScreen
 import com.mateuszbury.exitcall.ui.screens.HomeScreen
+import com.mateuszbury.exitcall.ui.screens.OnboardingScreen
 import com.mateuszbury.exitcall.ui.screens.ScheduleCallScreen
 import com.mateuszbury.exitcall.ui.screens.SettingsScreen
 
@@ -19,7 +20,8 @@ private enum class MainScreen {
     HOME,
     CALL_SETUP,
     SCHEDULE_CALL,
-    SETTINGS
+    SETTINGS,
+    TUTORIAL
 }
 
 @Composable
@@ -59,7 +61,11 @@ fun MainApp(
     BackHandler(
         enabled = currentScreen != MainScreen.HOME
     ) {
-        currentScreen = MainScreen.HOME
+        currentScreen = if (currentScreen == MainScreen.TUTORIAL) {
+            MainScreen.SETTINGS
+        } else {
+            MainScreen.HOME
+        }
     }
 
     when (currentScreen) {
@@ -131,8 +137,26 @@ fun MainApp(
                     appSettings = newSettings
                 },
                 onOpenCapabilitySettings = onOpenCapabilitySettings,
+                onViewTutorial = {
+                    currentScreen = MainScreen.TUTORIAL
+                },
                 onBack = {
                     currentScreen = MainScreen.HOME
+                }
+            )
+        }
+
+        MainScreen.TUTORIAL -> {
+            OnboardingScreen(
+                capabilityAvailability = capabilityAvailability,
+                onRequestNotifications = {
+                    onCapabilityConfirm(CallCapability.NOTIFICATIONS)
+                },
+                onOpenFullScreenSettings = {
+                    onOpenCapabilitySettings(CallCapability.FULL_SCREEN_INTENT)
+                },
+                onComplete = {
+                    currentScreen = MainScreen.SETTINGS
                 }
             )
         }
