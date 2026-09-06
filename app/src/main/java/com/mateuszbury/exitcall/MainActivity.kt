@@ -19,9 +19,11 @@ import com.mateuszbury.exitcall.capability.CallCapabilityResolver
 import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.AppSettingsStore
 import com.mateuszbury.exitcall.model.CallConfigStore
+import com.mateuszbury.exitcall.model.OnboardingStore
 import com.mateuszbury.exitcall.model.ScheduledCallStore
 import com.mateuszbury.exitcall.scheduler.ScheduledCallScheduler
 import com.mateuszbury.exitcall.ui.MainApp
+import com.mateuszbury.exitcall.ui.screens.OnboardingScreen
 import com.mateuszbury.exitcall.ui.theme.ExitCallTheme
 import java.util.Locale
 
@@ -34,6 +36,7 @@ class MainActivity : ComponentActivity() {
     private var scheduledCallAtMillis by mutableStateOf<Long?>(null)
     private var capabilityIssue by mutableStateOf<CallCapability?>(null)
     private var appSettings by mutableStateOf(AppSettings())
+    private var onboardingCompleted by mutableStateOf(false)
     private var capabilityAvailability by mutableStateOf(
         emptyMap<CallCapability, Boolean>()
     )
@@ -42,6 +45,7 @@ class MainActivity : ComponentActivity() {
     private var pendingRequiresExactAlarm = false
     private var waitingForCapabilitySettings = false
     private var notificationPermissionRequestedThisSession = false
+    private var onboardingNotificationRequestInFlight = false
 
     private val notificationPermissionLauncher =
         registerForActivityResult(
@@ -49,7 +53,10 @@ class MainActivity : ComponentActivity() {
         ) { granted ->
             refreshCapabilityAvailability()
 
-            if (granted) {
+            if (onboardingNotificationRequestInFlight) {
+                onboardingNotificationRequestInFlight = false
+                notificationPermissionRequestedThisSession = true
+            } else if (granted) {
                 continuePendingCapabilityAction()
             } else {
                 notificationPermissionRequestedThisSession = true
@@ -135,6 +142,28 @@ class MainActivity : ComponentActivity() {
         return capabilityResolver.canRequestNotificationRuntimePermission(
             requestedThisSession = notificationPermissionRequestedThisSession
         )
+    }
+
+    private fun requestNotificationsFromOnboarding() {
+        if (
+            capabilityResolver.isCapabilityAvailable(
+                CallCapability.NOTIFICATIONS
+            )
+        ) {
+            refreshCapabilityAvailability()
+            return
+        }
+
+        if (canRequestNotificationRuntimePermission()) {
+            onboardingNotificationRequestInFlight = true
+            notificationPermissionRequestedThisSession = true
+            notificationPermissionLauncher.launch(
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+            return
+        }
+
+        openCapabilitySettings(CallCapability.NOTIFICATIONS)
     }
 
     private fun handleCapabilityAction(
@@ -236,6 +265,8 @@ class MainActivity : ComponentActivity() {
 
         val callConfigStore = CallConfigStore(this)
         val initialCallConfig = callConfigStore.load()
+        val onboardingStore = OnboardingStore(this)
+        onboardingCompleted = onboardingStore.isCompleted()
 
         appSettingsStore = AppSettingsStore(this)
         appSettings = appSettingsStore.load()
@@ -256,47 +287,65 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ExitCallTheme {
-                MainApp(
-                    initialCallConfig = initialCallConfig,
-                    initialAppSettings = appSettings,
-                    scheduledCallAtMillis = scheduledCallAtMillis,
-                    capabilityIssue = capabilityIssue,
-                    capabilityAvailability = capabilityAvailability,
-                    canRequestNotificationPermission =
-                        canRequestNotificationRuntimePermission(),
-                    appVersionName = BuildConfig.VERSION_NAME,
-                    onRequireCallCapabilities = { requireExactAlarm, onReady ->
-                        ensureCallCapabilities(
-                            requireExactAlarm = requireExactAlarm,
-                            onReady = onReady
-                        )
-                    },
-                    onStartImmediateCall = {
-                        startImmediateCall()
-                    },
-                    onScheduleCall = { triggerTimeMillis ->
-                        scheduleCall(triggerTimeMillis)
-                    },
-                    onCancelScheduledCall = {
-                        cancelScheduledCall()
-                    },
-                    onSaveCallConfig = { newConfig ->
-                        callConfigStore.save(newConfig)
-                    },
-                    onSaveAppSettings = { newSettings ->
-                        appSettingsStore.save(newSettings)
-                        appSettings = newSettings
-                    },
-                    onOpenCapabilitySettings = { capability ->
-                        openCapabilitySettings(capability)
-                    },
-                    onCapabilityConfirm = { capability ->
-                        handleCapabilityAction(capability)
-                    },
-                    onCapabilityDismiss = {
-                        cancelPendingCapabilityAction()
-                    }
-                )
+                if (!onboardingCompleted) {
+                    OnboardingScreen(
+                        capabilityAvailability = capabilityAvailability,
+                        onRequestNotifications = {
+                            requestNotificationsFromOnboarding()
+                        },
+                        onOpenFullScreenSettings = {
+                            openCapabilitySettings(
+                                CallCapability.FULL_SCREEN_INTENT
+                            )
+                        },
+                        onComplete = {
+                            onboardingStore.markCompleted()
+                            onboardingCompleted = true
+                        }
+                    )
+                } else {
+                    MainApp(
+                        initialCallConfig = initialCallConfig,
+                        initialAppSettings = appSettings,
+                        scheduledCallAtMillis = scheduledCallAtMillis,
+                        capabilityIssue = capabilityIssue,
+                        capabilityAvailability = capabilityAvailability,
+                        canRequestNotificationPermission =
+                            canRequestNotificationRuntimePermission(),
+                        appVersionName = BuildConfig.VERSION_NAME,
+                        onRequireCallCapabilities = { requireExactAlarm, onReady ->
+                            ensureCallCapabilities(
+                                requireExactAlarm = requireExactAlarm,
+                                onReady = onReady
+                            )
+                        },
+                        onStartImmediateCall = {
+                            startImmediateCall()
+                        },
+                        onScheduleCall = { triggerTimeMillis ->
+                            scheduleCall(triggerTimeMillis)
+                        },
+                        onCancelScheduledCall = {
+                            cancelScheduledCall()
+                        },
+                        onSaveCallConfig = { newConfig ->
+                            callConfigStore.save(newConfig)
+                        },
+                        onSaveAppSettings = { newSettings ->
+                            appSettingsStore.save(newSettings)
+                            appSettings = newSettings
+                        },
+                        onOpenCapabilitySettings = { capability ->
+                            openCapabilitySettings(capability)
+                        },
+                        onCapabilityConfirm = { capability ->
+                            handleCapabilityAction(capability)
+                        },
+                        onCapabilityDismiss = {
+                            cancelPendingCapabilityAction()
+                        }
+                    )
+                }
             }
         }
     }
