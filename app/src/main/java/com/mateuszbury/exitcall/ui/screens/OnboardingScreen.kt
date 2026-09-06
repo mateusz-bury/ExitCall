@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,10 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -39,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mateuszbury.exitcall.R
 import com.mateuszbury.exitcall.capability.CallCapability
+import kotlinx.coroutines.launch
 
 private const val PAGE_COUNT = 5
 private const val PERMISSIONS_PAGE = 2
@@ -50,12 +50,24 @@ fun OnboardingScreen(
     onOpenFullScreenSettings: () -> Unit,
     onComplete: () -> Unit
 ) {
-    var page by remember { mutableIntStateOf(0) }
     val notificationsEnabled =
         capabilityAvailability[CallCapability.NOTIFICATIONS] == true
+    val pagerState = rememberPagerState(
+        pageCount = {
+            if (notificationsEnabled) {
+                PAGE_COUNT
+            } else {
+                PERMISSIONS_PAGE + 1
+            }
+        }
+    )
+    val coroutineScope = rememberCoroutineScope()
+    val currentPage = pagerState.currentPage
 
-    BackHandler(enabled = page > 0) {
-        page--
+    BackHandler(enabled = currentPage > 0) {
+        coroutineScope.launch {
+            pagerState.animateScrollToPage(currentPage - 1)
+        }
     }
 
     Column(
@@ -77,11 +89,12 @@ fun OnboardingScreen(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        Box(
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-        ) {
+        ) { page ->
             when (page) {
                 0 -> WelcomePage()
                 1 -> EcMarkerPage()
@@ -96,15 +109,22 @@ fun OnboardingScreen(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-        ProgressDots(currentPage = page)
+        ProgressDots(currentPage = currentPage)
         Spacer(modifier = Modifier.height(20.dp))
 
-        val lastPage = page == PAGE_COUNT - 1
-        val canContinue = page != PERMISSIONS_PAGE || notificationsEnabled
+        val lastPage = currentPage == PAGE_COUNT - 1
+        val canContinue =
+            currentPage != PERMISSIONS_PAGE || notificationsEnabled
 
         Button(
             onClick = {
-                if (lastPage) onComplete() else page++
+                if (lastPage) {
+                    onComplete()
+                } else {
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(currentPage + 1)
+                    }
+                }
             },
             enabled = canContinue,
             shape = RoundedCornerShape(18.dp),
@@ -127,7 +147,7 @@ fun OnboardingScreen(
             )
         }
 
-        if (page == PERMISSIONS_PAGE && !notificationsEnabled) {
+        if (currentPage == PERMISSIONS_PAGE && !notificationsEnabled) {
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = stringResource(R.string.onboarding_notifications_blocking_hint),
