@@ -324,12 +324,6 @@ class MainActivity : ComponentActivity() {
                             )
                         },
                         onComplete = {
-                            onboardingStore.markCompleted()
-                            onboardingCompleted = true
-                        },
-                        requireDemo = true,
-                        demoCompleted = false,
-                        onStartDemo = {
                             startDemoCall {
                                 onboardingStore.markCompleted()
                                 onboardingCompleted = true
