@@ -91,20 +91,27 @@ fun OnboardingScreen(
 
         HorizontalPager(
             state = pagerState,
+            pageSpacing = 24.dp,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
         ) { page ->
-            when (page) {
-                0 -> WelcomePage()
-                1 -> EcMarkerPage()
-                2 -> CapabilityPage(
-                    capabilityAvailability = capabilityAvailability,
-                    onRequestNotifications = onRequestNotifications,
-                    onOpenFullScreenSettings = onOpenFullScreenSettings
-                )
-                3 -> TrialPage()
-                else -> ReadyPage()
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 4.dp)
+            ) {
+                when (page) {
+                    0 -> WelcomePage()
+                    1 -> EcMarkerPage()
+                    2 -> CapabilityPage(
+                        capabilityAvailability = capabilityAvailability,
+                        onRequestNotifications = onRequestNotifications,
+                        onOpenFullScreenSettings = onOpenFullScreenSettings
+                    )
+                    3 -> TrialPage()
+                    else -> ReadyPage()
+                }
             }
         }
 
