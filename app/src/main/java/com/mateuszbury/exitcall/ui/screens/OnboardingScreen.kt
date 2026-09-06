@@ -2,10 +2,10 @@ package com.mateuszbury.exitcall.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -48,10 +50,7 @@ fun OnboardingScreen(
     onOpenFullScreenSettings: () -> Unit,
     onComplete: () -> Unit
 ) {
-    var page by remember {
-        mutableIntStateOf(0)
-    }
-
+    var page by remember { mutableIntStateOf(0) }
     val notificationsEnabled =
         capabilityAvailability[CallCapability.NOTIFICATIONS] == true
 
@@ -76,13 +75,12 @@ fun OnboardingScreen(
             fontWeight = FontWeight.SemiBold
         )
 
-        Spacer(modifier = Modifier.height(22.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         Box(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
         ) {
             when (page) {
                 0 -> WelcomePage()
@@ -97,20 +95,16 @@ fun OnboardingScreen(
             }
         }
 
+        Spacer(modifier = Modifier.height(12.dp))
         ProgressDots(currentPage = page)
+        Spacer(modifier = Modifier.height(20.dp))
 
-        Spacer(modifier = Modifier.height(22.dp))
-
-        val isLastPage = page == PAGE_COUNT - 1
+        val lastPage = page == PAGE_COUNT - 1
         val canContinue = page != PERMISSIONS_PAGE || notificationsEnabled
 
         Button(
             onClick = {
-                if (isLastPage) {
-                    onComplete()
-                } else {
-                    page++
-                }
+                if (lastPage) onComplete() else page++
             },
             enabled = canContinue,
             shape = RoundedCornerShape(18.dp),
@@ -123,7 +117,7 @@ fun OnboardingScreen(
                 .height(56.dp)
         ) {
             Text(
-                text = if (isLastPage) {
+                text = if (lastPage) {
                     stringResource(R.string.onboarding_get_started)
                 } else {
                     stringResource(R.string.onboarding_continue)
@@ -135,7 +129,6 @@ fun OnboardingScreen(
 
         if (page == PERMISSIONS_PAGE && !notificationsEnabled) {
             Spacer(modifier = Modifier.height(10.dp))
-
             Text(
                 text = stringResource(R.string.onboarding_notifications_blocking_hint),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -150,7 +143,7 @@ fun OnboardingScreen(
 
 @Composable
 private fun WelcomePage() {
-    OnboardingPage(
+    PageScaffold(
         title = stringResource(R.string.onboarding_welcome_title),
         body = stringResource(R.string.onboarding_welcome_body)
     ) {
@@ -169,8 +162,7 @@ private fun WelcomePage() {
             }
         }
 
-        Spacer(modifier = Modifier.height(34.dp))
-
+        Spacer(modifier = Modifier.height(30.dp))
         FeatureLine(stringResource(R.string.onboarding_welcome_feature_schedule))
         FeatureLine(stringResource(R.string.onboarding_welcome_feature_call))
         FeatureLine(stringResource(R.string.onboarding_welcome_feature_safety))
@@ -179,7 +171,7 @@ private fun WelcomePage() {
 
 @Composable
 private fun EcMarkerPage() {
-    OnboardingPage(
+    PageScaffold(
         title = stringResource(R.string.onboarding_marker_title),
         body = stringResource(R.string.onboarding_marker_body)
     ) {
@@ -188,7 +180,7 @@ private fun EcMarkerPage() {
             color = MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(270.dp)
+                .height(250.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -222,17 +214,14 @@ private fun EcMarkerPage() {
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(18.dp))
-
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = stringResource(R.string.onboarding_marker_demo_caller),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Medium
                     )
-
                     Spacer(modifier = Modifier.height(4.dp))
-
                     Text(
                         text = stringResource(R.string.onboarding_marker_incoming),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -242,16 +231,13 @@ private fun EcMarkerPage() {
             }
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
-
+        Spacer(modifier = Modifier.height(24.dp))
         RuleCard(
             title = stringResource(R.string.onboarding_marker_rule_exitcall),
             body = stringResource(R.string.onboarding_marker_rule_exitcall_body),
             emphasized = true
         )
-
         Spacer(modifier = Modifier.height(12.dp))
-
         RuleCard(
             title = stringResource(R.string.onboarding_marker_rule_real),
             body = stringResource(R.string.onboarding_marker_rule_real_body),
@@ -273,7 +259,7 @@ private fun CapabilityPage(
     val exactAlarmEnabled =
         capabilityAvailability[CallCapability.EXACT_ALARM] == true
 
-    OnboardingPage(
+    PageScaffold(
         title = stringResource(R.string.onboarding_permissions_title),
         body = stringResource(R.string.onboarding_permissions_body)
     ) {
@@ -328,7 +314,7 @@ private fun CapabilityPage(
 
 @Composable
 private fun TrialPage() {
-    OnboardingPage(
+    PageScaffold(
         title = stringResource(R.string.onboarding_trial_title),
         body = stringResource(R.string.onboarding_trial_body)
     ) {
@@ -337,17 +323,13 @@ private fun TrialPage() {
             title = stringResource(R.string.onboarding_trial_demo_title),
             body = stringResource(R.string.onboarding_trial_demo_body)
         )
-
         Spacer(modifier = Modifier.height(12.dp))
-
         TrialCard(
             value = "2",
             title = stringResource(R.string.onboarding_trial_free_title),
             body = stringResource(R.string.onboarding_trial_free_body)
         )
-
         Spacer(modifier = Modifier.height(20.dp))
-
         Text(
             text = stringResource(R.string.onboarding_trial_rules),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -360,7 +342,7 @@ private fun TrialPage() {
 
 @Composable
 private fun ReadyPage() {
-    OnboardingPage(
+    PageScaffold(
         title = stringResource(R.string.onboarding_ready_title),
         body = stringResource(R.string.onboarding_ready_body)
     ) {
@@ -378,9 +360,7 @@ private fun ReadyPage() {
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(30.dp))
-
+        Spacer(modifier = Modifier.height(28.dp))
         Text(
             text = stringResource(R.string.onboarding_ready_hint),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -392,15 +372,18 @@ private fun ReadyPage() {
 }
 
 @Composable
-private fun OnboardingPage(
+private fun PageScaffold(
     title: String,
     body: String,
-    content: @Composable Column.() -> Unit
+    content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onBackground,
@@ -409,9 +392,7 @@ private fun OnboardingPage(
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center
         )
-
         Spacer(modifier = Modifier.height(12.dp))
-
         Text(
             text = body,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -419,10 +400,9 @@ private fun OnboardingPage(
             lineHeight = 23.sp,
             textAlign = TextAlign.Center
         )
-
-        Spacer(modifier = Modifier.height(34.dp))
-
+        Spacer(modifier = Modifier.height(30.dp))
         content()
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 
@@ -434,22 +414,8 @@ private fun FeatureLine(text: String) {
             .padding(vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-            modifier = Modifier.size(30.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = "✓",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-
+        StatusBubble(text = "✓")
         Spacer(modifier = Modifier.width(14.dp))
-
         Text(
             text = text,
             color = MaterialTheme.colorScheme.onBackground,
@@ -485,9 +451,7 @@ private fun RuleCard(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
-
             Spacer(modifier = Modifier.height(4.dp))
-
             Text(
                 text = body,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -524,9 +488,7 @@ private fun CapabilityCard(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
-
                     Spacer(modifier = Modifier.height(4.dp))
-
                     Text(
                         text = description,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -534,9 +496,7 @@ private fun CapabilityCard(
                         lineHeight = 18.sp
                     )
                 }
-
                 Spacer(modifier = Modifier.width(12.dp))
-
                 Text(
                     text = status,
                     color = if (enabled) {
@@ -550,8 +510,7 @@ private fun CapabilityCard(
             }
 
             if (actionLabel != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-
+                Spacer(modifier = Modifier.height(6.dp))
                 TextButton(
                     onClick = onAction,
                     modifier = Modifier.align(Alignment.End)
@@ -578,23 +537,8 @@ private fun TrialCard(
             modifier = Modifier.padding(18.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                modifier = Modifier.size(48.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = value,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
+            StatusBubble(text = value)
             Spacer(modifier = Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
@@ -602,9 +546,7 @@ private fun TrialCard(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )
-
                 Spacer(modifier = Modifier.height(3.dp))
-
                 Text(
                     text = body,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -612,6 +554,24 @@ private fun TrialCard(
                     lineHeight = 18.sp
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun StatusBubble(text: String) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+        modifier = Modifier.size(42.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = text,
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
