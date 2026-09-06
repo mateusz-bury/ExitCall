@@ -1,3 +1,50 @@
 <resources>
     <string name="app_name">ExitCall</string>
+
+    <string name="onboarding_brand">EXITCALL</string>
+    <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_get_started">Get started</string>
+
+    <string name="onboarding_welcome_title">A call when you need an exit</string>
+    <string name="onboarding_welcome_body">ExitCall gives you a discreet, scheduled way to step away when a situation becomes uncomfortable.</string>
+    <string name="onboarding_welcome_feature_schedule">Schedule an ExitCall for the moment you need it.</string>
+    <string name="onboarding_welcome_feature_call">Receive a familiar incoming-call experience.</string>
+    <string name="onboarding_welcome_feature_safety">Use it as a private exit and safety tool.</string>
+
+    <string name="onboarding_marker_title">Know when it is ExitCall</string>
+    <string name="onboarding_marker_body">Every ExitCall carries one small marker so you can distinguish it from a genuine phone call.</string>
+    <string name="onboarding_marker_demo_caller">ExitCall</string>
+    <string name="onboarding_marker_incoming">Incoming call</string>
+    <string name="onboarding_marker_rule_exitcall">EC visible = ExitCall</string>
+    <string name="onboarding_marker_rule_exitcall_body">The discreet EC marker stays in a fixed position on ExitCall call screens.</string>
+    <string name="onboarding_marker_rule_real">No EC = treat it as a real call</string>
+    <string name="onboarding_marker_rule_real_body">If the marker is absent, assume the call is genuine and respond normally.</string>
+
+    <string name="onboarding_permissions_title">Make sure ExitCall can reach you</string>
+    <string name="onboarding_permissions_body">Android controls how ExitCall can notify you. We only ask for capabilities used by the call flow.</string>
+    <string name="onboarding_notifications_title">Notifications</string>
+    <string name="onboarding_notifications_body">Required. ExitCall cannot deliver a call while notifications are disabled.</string>
+    <string name="onboarding_fsi_title">Full-screen calls</string>
+    <string name="onboarding_fsi_body">Recommended. When unavailable, ExitCall falls back to a high-priority call notification.</string>
+    <string name="onboarding_exact_alarm_title">Exact alarms</string>
+    <string name="onboarding_exact_alarm_body">Needed only for precise scheduled calls. ExitCall asks for this when you schedule one.</string>
+    <string name="onboarding_enabled">Enabled ✓</string>
+    <string name="onboarding_required">Required</string>
+    <string name="onboarding_recommended">Recommended</string>
+    <string name="onboarding_requested_later">Requested later</string>
+    <string name="onboarding_enable">Enable</string>
+    <string name="onboarding_open_settings">Open settings</string>
+    <string name="onboarding_notifications_blocking_hint">Enable notifications to continue. They are required for ExitCall delivery.</string>
+
+    <string name="onboarding_trial_title">Free to try</string>
+    <string name="onboarding_trial_body">You can learn the flow before deciding whether ExitCall is useful for you.</string>
+    <string name="onboarding_trial_demo_title">Guided demo call</string>
+    <string name="onboarding_trial_demo_body">One onboarding demo is included and never uses a free call.</string>
+    <string name="onboarding_trial_free_title">Free configurable ExitCalls</string>
+    <string name="onboarding_trial_free_body">Two real ExitCalls are included before the one-time Premium unlock.</string>
+    <string name="onboarding_trial_rules">Answer or Decline uses one free call. A timeout does not. Scheduling or editing a call does not use one either.</string>
+
+    <string name="onboarding_ready_title">You are ready</string>
+    <string name="onboarding_ready_body">ExitCall is now set up for the core experience.</string>
+    <string name="onboarding_ready_hint">You can change call preferences later in Settings. Exact-alarm access will be requested only when you schedule a precise future call.</string>
 </resources>
