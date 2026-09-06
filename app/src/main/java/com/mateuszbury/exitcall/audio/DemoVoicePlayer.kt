@@ -55,9 +55,11 @@ class DemoVoicePlayer(
     }
 
     fun stop() {
-        mediaPlayer?.runCatching {
-            if (isPlaying) {
-                stop()
+        mediaPlayer?.let { player ->
+            runCatching {
+                if (player.isPlaying) {
+                    player.stop()
+                }
             }
         }
         releasePlayer()
