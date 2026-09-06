@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.util.Log
+import com.mateuszbury.exitcall.R
 
 class DemoVoicePlayer(
     context: Context
@@ -14,20 +15,6 @@ class DemoVoicePlayer(
     fun play() {
         stop()
 
-        val rawResourceId = appContext.resources.getIdentifier(
-            DEMO_VOICE_RESOURCE_NAME,
-            "raw",
-            appContext.packageName
-        )
-
-        if (rawResourceId == 0) {
-            Log.w(
-                TAG,
-                "Demo voice asset missing: res/raw/$DEMO_VOICE_RESOURCE_NAME.mp3"
-            )
-            return
-        }
-
         val audioAttributes = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
@@ -35,7 +22,7 @@ class DemoVoicePlayer(
 
         mediaPlayer = MediaPlayer.create(
             appContext,
-            rawResourceId,
+            R.raw.exitcall_demo_voice,
             audioAttributes,
             0
         )?.apply {
@@ -72,6 +59,5 @@ class DemoVoicePlayer(
 
     companion object {
         private const val TAG = "ExitCall"
-        private const val DEMO_VOICE_RESOURCE_NAME = "exitcall_demo_voice"
     }
 }
