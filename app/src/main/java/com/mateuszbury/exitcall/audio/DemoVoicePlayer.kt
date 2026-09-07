@@ -21,6 +21,7 @@ class DemoVoicePlayer(
         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
         .build()
     private var mediaPlayer: MediaPlayer? = null
+    private var muted = false
     private var focusRequest: AudioFocusRequest? = null
     private var hasAudioFocus = false
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
@@ -59,12 +60,21 @@ class DemoVoicePlayer(
                 stop()
                 true
             }
+            val volume = if (muted) 0f else 1f
+            player.setVolume(volume, volume)
             player.start()
             Log.d(TAG, "Demo voice playback started on communication audio")
         } catch (error: Exception) {
             Log.w(TAG, "Demo voice playback could not start", error)
             stop()
         }
+    }
+
+    fun setMuted(enabled: Boolean) {
+        // Keep this state even before the delayed player is created.
+        muted = enabled
+        val volume = if (enabled) 0f else 1f
+        mediaPlayer?.setVolume(volume, volume)
     }
 
     @Suppress("DEPRECATION")
