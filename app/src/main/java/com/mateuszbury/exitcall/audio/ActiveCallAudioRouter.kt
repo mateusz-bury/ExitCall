@@ -73,6 +73,18 @@ class ActiveCallAudioRouter(
         publishSnapshot()
     }
 
+    // A demo starts privately even if Android previously had speakerphone enabled.
+    // PHONE already resolves to a wired headset before the built-in earpiece.
+    fun selectDefaultRoute() {
+        val devices = communicationDevices()
+        val route = when {
+            devices.any(::isWiredPhoneDevice) -> AudioRoute.PHONE
+            devices.any(::isBluetoothDevice) -> AudioRoute.BLUETOOTH
+            else -> AudioRoute.PHONE
+        }
+        selectRoute(route)
+    }
+
     fun selectRoute(route: AudioRoute) {
         if (!started) {
             return

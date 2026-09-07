@@ -9,15 +9,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import com.mateuszbury.exitcall.audio.AudioRoute
+import com.mateuszbury.exitcall.audio.ActiveCallAudioRouter
+import com.mateuszbury.exitcall.audio.AudioRouteSnapshot
 import com.mateuszbury.exitcall.audio.DemoVoicePlayer
 import com.mateuszbury.exitcall.audio.IncomingCallAlertPlayer
 import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.screens.CallScreen
 import kotlinx.coroutines.delay
-
-
 
 private const val DEMO_VOICE_START_DELAY_MS = 1_000L
 
@@ -37,6 +36,12 @@ fun DemoCallFlow(
     val voicePlayer = remember(context) {
         DemoVoicePlayer(context)
     }
+    val audioRouter = remember(context) {
+        ActiveCallAudioRouter(context)
+    }
+    var audioRouteSnapshot by remember {
+        mutableStateOf(AudioRouteSnapshot())
+    }
     val demoConfig = remember {
         CallConfig(
             callerName = "ExitCall",
@@ -48,10 +53,11 @@ fun DemoCallFlow(
         AppSettings()
     }
 
-    DisposableEffect(alertPlayer, voicePlayer) {
+    DisposableEffect(alertPlayer, voicePlayer, audioRouter) {
         onDispose {
             alertPlayer.stop()
             voicePlayer.stop()
+            audioRouter.stop()
         }
     }
 
@@ -59,6 +65,7 @@ fun DemoCallFlow(
         when (currentScreen) {
             CallScreen.INCOMING_CALL -> {
                 voicePlayer.stop()
+                audioRouter.stop()
                 alertPlayer.start(
                     ringtoneUri = demoSettings.ringtoneUri,
                     vibrate = demoSettings.vibrate
@@ -67,6 +74,10 @@ fun DemoCallFlow(
 
             CallScreen.ACTIVE_CALL -> {
                 alertPlayer.stop()
+                audioRouter.start { snapshot ->
+                    audioRouteSnapshot = snapshot
+                }
+                audioRouter.selectDefaultRoute()
                 delay(DEMO_VOICE_START_DELAY_MS)
                 voicePlayer.play()
             }
@@ -89,9 +100,10 @@ fun DemoCallFlow(
         CallScreen.ACTIVE_CALL -> {
             ActiveCallScreen(
                 config = demoConfig,
-                availableAudioRoutes = setOf(AudioRoute.PHONE),
-                selectedAudioRoute = AudioRoute.PHONE,
-                onAudioRouteSelected = {},
+                availableAudioRoutes = audioRouteSnapshot.availableRoutes,
+                selectedAudioRoute = audioRouteSnapshot.selectedRoute,
+                onAudioRouteSelected = audioRouter::selectRoute,
+                onMuteChanged = voicePlayer::setMuted,
                 onHangUp = onCompleted
             )
         }

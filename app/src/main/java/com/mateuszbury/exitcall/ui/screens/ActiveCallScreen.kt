@@ -58,6 +58,7 @@ fun ActiveCallScreen(
     availableAudioRoutes: Set<AudioRoute>,
     selectedAudioRoute: AudioRoute,
     onAudioRouteSelected: (AudioRoute) -> Unit,
+    onMuteChanged: (Boolean) -> Unit = {},
     onHangUp: () -> Unit
 ) {
     var elapsedSeconds by remember {
@@ -266,6 +267,7 @@ fun ActiveCallScreen(
                             selected = muteEnabled,
                             onClick = {
                                 muteEnabled = !muteEnabled
+                                onMuteChanged(muteEnabled)
                             },
                             modifier = Modifier.weight(1f)
                         )
