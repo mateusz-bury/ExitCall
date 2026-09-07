@@ -11,6 +11,7 @@ import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.ui.components.CallCapabilityDialog
 import com.mateuszbury.exitcall.ui.screens.CallSetupScreen
+import com.mateuszbury.exitcall.ui.screens.DemoCallFlow
 import com.mateuszbury.exitcall.ui.screens.HomeScreen
 import com.mateuszbury.exitcall.ui.screens.OnboardingScreen
 import com.mateuszbury.exitcall.ui.screens.ScheduleCallScreen
@@ -21,7 +22,8 @@ private enum class MainScreen {
     CALL_SETUP,
     SCHEDULE_CALL,
     SETTINGS,
-    TUTORIAL
+    TUTORIAL,
+    TUTORIAL_DEMO
 }
 
 @Composable
@@ -59,7 +61,8 @@ fun MainApp(
     }
 
     BackHandler(
-        enabled = currentScreen != MainScreen.HOME
+        enabled = currentScreen != MainScreen.HOME &&
+            currentScreen != MainScreen.TUTORIAL_DEMO
     ) {
         currentScreen = if (currentScreen == MainScreen.TUTORIAL) {
             MainScreen.SETTINGS
@@ -156,7 +159,18 @@ fun MainApp(
                     onOpenCapabilitySettings(CallCapability.FULL_SCREEN_INTENT)
                 },
                 onComplete = {
+                    currentScreen = MainScreen.TUTORIAL_DEMO
+                }
+            )
+        }
+
+        MainScreen.TUTORIAL_DEMO -> {
+            DemoCallFlow(
+                onCompleted = {
                     currentScreen = MainScreen.SETTINGS
+                },
+                onCancelled = {
+                    currentScreen = MainScreen.TUTORIAL
                 }
             )
         }

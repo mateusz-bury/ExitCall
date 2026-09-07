@@ -23,6 +23,7 @@ import com.mateuszbury.exitcall.model.OnboardingStore
 import com.mateuszbury.exitcall.model.ScheduledCallStore
 import com.mateuszbury.exitcall.scheduler.ScheduledCallScheduler
 import com.mateuszbury.exitcall.ui.MainApp
+import com.mateuszbury.exitcall.ui.screens.DemoCallFlow
 import com.mateuszbury.exitcall.ui.screens.OnboardingScreen
 import com.mateuszbury.exitcall.ui.theme.ExitCallTheme
 import java.util.Locale
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
     private var capabilityIssue by mutableStateOf<CallCapability?>(null)
     private var appSettings by mutableStateOf(AppSettings())
     private var onboardingCompleted by mutableStateOf(false)
+    private var onboardingDemoActive by mutableStateOf(false)
     private var capabilityAvailability by mutableStateOf(
         emptyMap<CallCapability, Boolean>()
     )
@@ -287,64 +289,80 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ExitCallTheme {
-                if (!onboardingCompleted) {
-                    OnboardingScreen(
-                        capabilityAvailability = capabilityAvailability,
-                        onRequestNotifications = {
-                            requestNotificationsFromOnboarding()
-                        },
-                        onOpenFullScreenSettings = {
-                            openCapabilitySettings(
-                                CallCapability.FULL_SCREEN_INTENT
-                            )
-                        },
-                        onComplete = {
-                            onboardingStore.markCompleted()
-                            onboardingCompleted = true
-                        }
-                    )
-                } else {
-                    MainApp(
-                        initialCallConfig = initialCallConfig,
-                        initialAppSettings = appSettings,
-                        scheduledCallAtMillis = scheduledCallAtMillis,
-                        capabilityIssue = capabilityIssue,
-                        capabilityAvailability = capabilityAvailability,
-                        canRequestNotificationPermission =
-                            canRequestNotificationRuntimePermission(),
-                        appVersionName = BuildConfig.VERSION_NAME,
-                        onRequireCallCapabilities = { requireExactAlarm, onReady ->
-                            ensureCallCapabilities(
-                                requireExactAlarm = requireExactAlarm,
-                                onReady = onReady
-                            )
-                        },
-                        onStartImmediateCall = {
-                            startImmediateCall()
-                        },
-                        onScheduleCall = { triggerTimeMillis ->
-                            scheduleCall(triggerTimeMillis)
-                        },
-                        onCancelScheduledCall = {
-                            cancelScheduledCall()
-                        },
-                        onSaveCallConfig = { newConfig ->
-                            callConfigStore.save(newConfig)
-                        },
-                        onSaveAppSettings = { newSettings ->
-                            appSettingsStore.save(newSettings)
-                            appSettings = newSettings
-                        },
-                        onOpenCapabilitySettings = { capability ->
-                            openCapabilitySettings(capability)
-                        },
-                        onCapabilityConfirm = { capability ->
-                            handleCapabilityAction(capability)
-                        },
-                        onCapabilityDismiss = {
-                            cancelPendingCapabilityAction()
-                        }
-                    )
+                when {
+                    !onboardingCompleted && onboardingDemoActive -> {
+                        DemoCallFlow(
+                            onCompleted = {
+                                onboardingStore.markCompleted()
+                                onboardingDemoActive = false
+                                onboardingCompleted = true
+                            },
+                            onCancelled = {
+                                onboardingDemoActive = false
+                            }
+                        )
+                    }
+
+                    !onboardingCompleted -> {
+                        OnboardingScreen(
+                            capabilityAvailability = capabilityAvailability,
+                            onRequestNotifications = {
+                                requestNotificationsFromOnboarding()
+                            },
+                            onOpenFullScreenSettings = {
+                                openCapabilitySettings(
+                                    CallCapability.FULL_SCREEN_INTENT
+                                )
+                            },
+                            onComplete = {
+                                onboardingDemoActive = true
+                            }
+                        )
+                    }
+
+                    else -> {
+                        MainApp(
+                            initialCallConfig = initialCallConfig,
+                            initialAppSettings = appSettings,
+                            scheduledCallAtMillis = scheduledCallAtMillis,
+                            capabilityIssue = capabilityIssue,
+                            capabilityAvailability = capabilityAvailability,
+                            canRequestNotificationPermission =
+                                canRequestNotificationRuntimePermission(),
+                            appVersionName = BuildConfig.VERSION_NAME,
+                            onRequireCallCapabilities = { requireExactAlarm, onReady ->
+                                ensureCallCapabilities(
+                                    requireExactAlarm = requireExactAlarm,
+                                    onReady = onReady
+                                )
+                            },
+                            onStartImmediateCall = {
+                                startImmediateCall()
+                            },
+                            onScheduleCall = { triggerTimeMillis ->
+                                scheduleCall(triggerTimeMillis)
+                            },
+                            onCancelScheduledCall = {
+                                cancelScheduledCall()
+                            },
+                            onSaveCallConfig = { newConfig ->
+                                callConfigStore.save(newConfig)
+                            },
+                            onSaveAppSettings = { newSettings ->
+                                appSettingsStore.save(newSettings)
+                                appSettings = newSettings
+                            },
+                            onOpenCapabilitySettings = { capability ->
+                                openCapabilitySettings(capability)
+                            },
+                            onCapabilityConfirm = { capability ->
+                                handleCapabilityAction(capability)
+                            },
+                            onCapabilityDismiss = {
+                                cancelPendingCapabilityAction()
+                            }
+                        )
+                    }
                 }
             }
         }

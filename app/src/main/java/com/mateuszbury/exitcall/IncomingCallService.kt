@@ -4,23 +4,15 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
-import android.media.Ringtone
-import android.media.RingtoneManager
-import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.os.VibrationAttributes
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
+import com.mateuszbury.exitcall.audio.IncomingCallAlertPlayer
 import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.AppSettingsStore
 import com.mateuszbury.exitcall.model.CallConfigStore
@@ -28,8 +20,7 @@ import com.mateuszbury.exitcall.model.RingDuration
 
 class IncomingCallService : Service() {
 
-    private var ringtone: Ringtone? = null
-    private var vibrator: Vibrator? = null
+    private lateinit var alertPlayer: IncomingCallAlertPlayer
     private var isEnding = false
     private var callStarted = false
     private var unansweredTimeoutMs = 0L
@@ -82,6 +73,7 @@ class IncomingCallService : Service() {
     override fun onCreate() {
         super.onCreate()
 
+        alertPlayer = IncomingCallAlertPlayer(this)
         createNotificationChannel()
     }
 
@@ -222,8 +214,10 @@ class IncomingCallService : Service() {
             notification
         )
 
-        startRingtone(settings.ringtoneUri)
-        startVibration(settings.vibrate)
+        alertPlayer.start(
+            ringtoneUri = settings.ringtoneUri,
+            vibrate = settings.vibrate
+        )
 
         timeoutHandler.postDelayed(
             timeoutRunnable,
@@ -270,7 +264,7 @@ class IncomingCallService : Service() {
             Intent(ACTION_CALL_FINISHED).setPackage(packageName)
         )
 
-        stopAlerting()
+        alertPlayer.stop()
 
         stopForeground(STOP_FOREGROUND_REMOVE)
         getSystemService(NotificationManager::class.java)
@@ -282,123 +276,6 @@ class IncomingCallService : Service() {
         )
 
         stopSelf()
-    }
-
-    private fun stopAlerting() {
-        ringtone?.stop()
-        ringtone = null
-
-        vibrator?.cancel()
-        vibrator = null
-    }
-
-    private fun startRingtone(configuredRingtoneUri: String?) {
-        val defaultRingtoneUri = RingtoneManager.getDefaultUri(
-            RingtoneManager.TYPE_RINGTONE
-        )
-
-        val ringtoneUri = configuredRingtoneUri
-            ?.takeIf { it.isNotBlank() }
-            ?.let(Uri::parse)
-            ?: defaultRingtoneUri
-
-        ringtone = RingtoneManager.getRingtone(
-            applicationContext,
-            ringtoneUri
-        ) ?: RingtoneManager.getRingtone(
-            applicationContext,
-            defaultRingtoneUri
-        )
-
-        ringtone?.audioAttributes =
-            AudioAttributes.Builder()
-                .setUsage(
-                    AudioAttributes.USAGE_NOTIFICATION_RINGTONE
-                )
-                .setContentType(
-                    AudioAttributes.CONTENT_TYPE_SONIFICATION
-                )
-                .build()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            ringtone?.isLooping = true
-        }
-
-        ringtone?.play()
-
-        Log.d(
-            "ExitCall",
-            "Ringtone started from IncomingCallService"
-        )
-    }
-
-    private fun startVibration(enabled: Boolean) {
-        if (!enabled) {
-            Log.d(
-                "ExitCall",
-                "Vibration disabled by app settings"
-            )
-            return
-        }
-
-        vibrator =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val vibratorManager =
-                    getSystemService(
-                        Context.VIBRATOR_MANAGER_SERVICE
-                    ) as VibratorManager
-
-                vibratorManager.defaultVibrator
-            } else {
-                @Suppress("DEPRECATION")
-                getSystemService(
-                    Context.VIBRATOR_SERVICE
-                ) as Vibrator
-            }
-
-        val pattern = longArrayOf(
-            0,
-            700,
-            800
-        )
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val effect =
-                VibrationEffect.createWaveform(
-                    pattern,
-                    0
-                )
-
-            if (
-                Build.VERSION.SDK_INT >=
-                Build.VERSION_CODES.TIRAMISU
-            ) {
-                val attributes =
-                    VibrationAttributes.Builder()
-                        .setUsage(
-                            VibrationAttributes.USAGE_RINGTONE
-                        )
-                        .build()
-
-                vibrator?.vibrate(
-                    effect,
-                    attributes
-                )
-            } else {
-                vibrator?.vibrate(effect)
-            }
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(
-                pattern,
-                0
-            )
-        }
-
-        Log.d(
-            "ExitCall",
-            "Vibration started"
-        )
     }
 
     private fun createNotificationChannel() {
@@ -425,7 +302,10 @@ class IncomingCallService : Service() {
 
     override fun onDestroy() {
         timeoutHandler.removeCallbacks(timeoutRunnable)
-        stopAlerting()
+
+        if (::alertPlayer.isInitialized) {
+            alertPlayer.stop()
+        }
 
         stopForeground(STOP_FOREGROUND_REMOVE)
         getSystemService(NotificationManager::class.java)
