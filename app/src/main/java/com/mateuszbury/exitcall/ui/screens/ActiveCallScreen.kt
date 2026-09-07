@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mateuszbury.exitcall.R
+import com.mateuszbury.exitcall.audio.AudioRoute
 import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.phone.PhoneNumberFormatter
 import com.mateuszbury.exitcall.ui.theme.ExitCallActiveBackground
@@ -54,6 +55,9 @@ import kotlinx.coroutines.delay
 @Composable
 fun ActiveCallScreen(
     config: CallConfig,
+    availableAudioRoutes: Set<AudioRoute>,
+    selectedAudioRoute: AudioRoute,
+    onAudioRouteSelected: (AudioRoute) -> Unit,
     onHangUp: () -> Unit
 ) {
     var elapsedSeconds by remember {
@@ -65,10 +69,10 @@ fun ActiveCallScreen(
     var moreVisible by remember {
         mutableStateOf(false)
     }
-    var muteEnabled by remember {
+    var audioRouteVisible by remember {
         mutableStateOf(false)
     }
-    var speakerEnabled by remember {
+    var muteEnabled by remember {
         mutableStateOf(false)
     }
     var keypadInput by remember {
@@ -158,7 +162,7 @@ fun ActiveCallScreen(
             }
         }
 
-        if (keypadVisible || moreVisible) {
+        if (keypadVisible || moreVisible || audioRouteVisible) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -168,6 +172,7 @@ fun ActiveCallScreen(
                     ) {
                         keypadVisible = false
                         moreVisible = false
+                        audioRouteVisible = false
                     }
             )
         }
@@ -221,6 +226,20 @@ fun ActiveCallScreen(
                     )
                 }
 
+                audioRouteVisible -> {
+                    AudioRoutePanel(
+                        availableRoutes = availableAudioRoutes,
+                        selectedRoute = selectedAudioRoute,
+                        onRouteSelected = { route ->
+                            onAudioRouteSelected(route)
+                            audioRouteVisible = false
+                        },
+                        onClose = {
+                            audioRouteVisible = false
+                        }
+                    )
+                }
+
                 else -> {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -233,6 +252,7 @@ fun ActiveCallScreen(
                             onClick = {
                                 keypadVisible = true
                                 moreVisible = false
+                                audioRouteVisible = false
                             },
                             modifier = Modifier.weight(1f)
                         )
@@ -250,11 +270,13 @@ fun ActiveCallScreen(
                             modifier = Modifier.weight(1f)
                         )
                         CallActionItem(
-                            label = "Speaker",
-                            iconRes = R.drawable.ic_volume_up,
-                            selected = speakerEnabled,
+                            label = audioRouteLabel(selectedAudioRoute),
+                            iconRes = audioRouteIconRes(selectedAudioRoute),
+                            selected = selectedAudioRoute != AudioRoute.PHONE,
                             onClick = {
-                                speakerEnabled = !speakerEnabled
+                                audioRouteVisible = true
+                                keypadVisible = false
+                                moreVisible = false
                             },
                             modifier = Modifier.weight(1f)
                         )
@@ -265,6 +287,7 @@ fun ActiveCallScreen(
                             onClick = {
                                 moreVisible = true
                                 keypadVisible = false
+                                audioRouteVisible = false
                             },
                             modifier = Modifier.weight(1f)
                         )
@@ -308,6 +331,98 @@ fun ActiveCallScreen(
                     end = 16.dp
                 )
         )
+    }
+}
+
+@Composable
+private fun AudioRoutePanel(
+    availableRoutes: Set<AudioRoute>,
+    selectedRoute: AudioRoute,
+    onRouteSelected: (AudioRoute) -> Unit,
+    onClose: () -> Unit
+) {
+    Text(
+        text = "Audio",
+        color = MaterialTheme.colorScheme.onBackground,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.fillMaxWidth(),
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(modifier = Modifier.height(18.dp))
+
+    listOf(
+        AudioRoute.PHONE,
+        AudioRoute.SPEAKER,
+        AudioRoute.BLUETOOTH
+    ).filter { it in availableRoutes }
+        .forEachIndexed { index, route ->
+            val selected = route == selectedRoute
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(
+                        if (selected) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                        } else {
+                            ExitCallCallActionSurface
+                        }
+                    )
+                    .clickable {
+                        onRouteSelected(route)
+                    }
+                    .padding(horizontal = 18.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(audioRouteIconRes(route)),
+                    contentDescription = audioRouteLabel(route),
+                    tint = if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onBackground
+                    },
+                    modifier = Modifier.size(28.dp)
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Text(
+                    text = audioRouteLabel(route),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 17.sp,
+                    fontWeight = if (selected) {
+                        FontWeight.SemiBold
+                    } else {
+                        FontWeight.Normal
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (selected) {
+                    Text(
+                        text = "✓",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            if (index < availableRoutes.size - 1) {
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+        }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    TextButton(
+        onClick = onClose
+    ) {
+        Text("Close")
     }
 }
 
@@ -418,13 +533,6 @@ private fun MorePanel(
     Spacer(modifier = Modifier.height(18.dp))
 
     MoreActionRow(
-        title = "Audio route",
-        subtitle = "Bluetooth and headset routing coming in #20"
-    )
-
-    Spacer(modifier = Modifier.height(10.dp))
-
-    MoreActionRow(
         title = "Post-call behavior",
         subtitle = "Additional destinations coming later"
     )
@@ -518,5 +626,21 @@ fun CallActionItem(
             },
             fontSize = 13.sp
         )
+    }
+}
+
+private fun audioRouteLabel(route: AudioRoute): String {
+    return when (route) {
+        AudioRoute.PHONE -> "Phone"
+        AudioRoute.SPEAKER -> "Speaker"
+        AudioRoute.BLUETOOTH -> "Bluetooth"
+    }
+}
+
+private fun audioRouteIconRes(route: AudioRoute): Int {
+    return when (route) {
+        AudioRoute.PHONE -> R.drawable.ic_call
+        AudioRoute.SPEAKER -> R.drawable.ic_volume_up
+        AudioRoute.BLUETOOTH -> R.drawable.ic_bluetooth
     }
 }
