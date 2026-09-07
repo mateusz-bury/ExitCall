@@ -103,6 +103,7 @@ fun DemoCallFlow(
                 availableAudioRoutes = audioRouteSnapshot.availableRoutes,
                 selectedAudioRoute = audioRouteSnapshot.selectedRoute,
                 onAudioRouteSelected = audioRouter::selectRoute,
+                onMuteChanged = voicePlayer::setMuted,
                 onHangUp = onCompleted
             )
         }
