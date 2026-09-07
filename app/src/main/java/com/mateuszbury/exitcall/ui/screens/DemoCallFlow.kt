@@ -9,12 +9,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.mateuszbury.exitcall.audio.AudioRoute
 import com.mateuszbury.exitcall.audio.DemoVoicePlayer
 import com.mateuszbury.exitcall.audio.IncomingCallAlertPlayer
 import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.screens.CallScreen
 import kotlinx.coroutines.delay
+
+
 
 private const val DEMO_VOICE_START_DELAY_MS = 1_000L
 
@@ -86,6 +89,9 @@ fun DemoCallFlow(
         CallScreen.ACTIVE_CALL -> {
             ActiveCallScreen(
                 config = demoConfig,
+                availableAudioRoutes = setOf(AudioRoute.PHONE),
+                selectedAudioRoute = AudioRoute.PHONE,
+                onAudioRouteSelected = {},
                 onHangUp = onCompleted
             )
         }
