@@ -115,7 +115,7 @@ Key completed issues include #1-#7, #10-#18, #27, #38, #44-#52, #55 and #58 wher
 
 ### Home / Settings
 
-- [ ] #23 Settings integration tracker. v1.0 children: #53, #75, #76, #99, #101, #103 and selected #34 scope. Post-v1.0: #31, #100, #102, #104.
+- [ ] #23 Settings integration tracker. Remaining v1.0 children: #53, #75, #76, #99 and selected #34 scope. Post-v1.0: #31, #100, #102, #104. #101/#103 completed in PR #106.
 - [x] #30 Production Home dashboard first slice: Next call, Caller, Sound and real readiness. PR #105; trial/Premium joins only after #74/#75.
 - [x] #101 Open-source licenses and third-party notices. PR #106.
 - [x] #103 Privacy, safe use, support and About information. PR #106.
