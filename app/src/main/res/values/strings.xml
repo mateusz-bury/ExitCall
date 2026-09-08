@@ -76,5 +76,51 @@
     <string name="home_schedule_call">Schedule a call</string>
     <string name="home_edit_scheduled_call">Edit scheduled call</string>
     <string name="home_set_up_call">Set up a call</string>
+
+    <string name="info_title">Privacy, safe use &amp; support</string>
+    <string name="info_intro">Clear information about what ExitCall stores, the Android capabilities it uses and the limits of the service.</string>
+    <string name="info_privacy_title">PRIVACY</string>
+    <string name="info_privacy_body">ExitCall is designed to work on your device without an ExitCall account or server.</string>
+    <string name="info_privacy_local">Caller details, call settings, onboarding status and a pending schedule are stored in the app\'s private local storage.</string>
+    <string name="info_privacy_network">The app does not request Internet access and does not upload your data. Android may include app data in a device backup according to your system backup settings.</string>
+    <string name="info_privacy_contacts">Choosing a contact uses Android\'s single-phone picker. ExitCall does not request broad access to your address book.</string>
+    <string name="info_privacy_permissions">Notifications deliver calls. Exact alarms are used only for precise schedules. Full-screen access improves presentation but has a notification fallback.</string>
+    <string name="info_safe_use_title">SAFE USE</string>
+    <string name="info_safe_use_body">ExitCall creates a simulated incoming call to help you leave an awkward or uncomfortable situation.</string>
+    <string name="info_safe_use_marker">The EC marker identifies an ExitCall. If EC is absent, treat the call as genuine.</string>
+    <string name="info_safe_use_delivery">Android and device power settings can affect delivery. Test ExitCall on your device before relying on it.</string>
+    <string name="info_safe_use_emergency">ExitCall is not an emergency service and cannot contact police, medical services or another person for you.</string>
+    <string name="info_support_title">SUPPORT</string>
+    <string name="info_support_body">For questions, feedback or a problem report, contact the developer through the public profile below.</string>
+    <string name="info_support_action">Open developer profile</string>
+    <string name="info_support_fallback">If the link does not open, visit github.com/mateusz-bury in a browser.</string>
+    <string name="info_link_failure">Could not open the link. Visit github.com/mateusz-bury.</string>
+    <string name="info_about_title">ABOUT</string>
+    <string name="info_about_identity">ExitCall is a native Android app for creating a discreet, user-configured incoming-call experience.</string>
+    <string name="info_about_author">Created by Mateusz Bury.</string>
+    <string name="info_about_version">Version %1$s</string>
+
+    <string name="licenses_title">Open-source licenses</string>
+    <string name="licenses_intro">ExitCall uses the production libraries below. Each is distributed under the Apache License 2.0.</string>
+    <string name="licenses_kotlin">Kotlin standard library</string>
+    <string name="licenses_core_ktx">AndroidX Core KTX</string>
+    <string name="licenses_lifecycle">AndroidX Lifecycle Runtime KTX</string>
+    <string name="licenses_activity_compose">AndroidX Activity Compose</string>
+    <string name="licenses_compose_ui">Jetpack Compose UI</string>
+    <string name="licenses_compose_graphics">Jetpack Compose UI Graphics</string>
+    <string name="licenses_compose_preview">Jetpack Compose UI Tooling Preview</string>
+    <string name="licenses_material3">Material 3 for Compose</string>
+    <string name="licenses_splashscreen">AndroidX Core Splashscreen</string>
+    <string name="licenses_compose_bom_version">Compose BOM 2026.02.01</string>
+    <string name="licenses_android_copyright">Copyright © The Android Open Source Project</string>
+    <string name="licenses_kotlin_copyright">Copyright © JetBrains s.r.o. and Kotlin contributors</string>
+    <string name="licenses_version">Version: %1$s</string>
+    <string name="licenses_apache_name">Apache License 2.0</string>
+    <string name="licenses_apache_title">Apache License 2.0</string>
+    <string name="licenses_apache_summary">Licensed on an AS IS basis, without warranties or conditions. The complete license text is available from the Apache Software Foundation.</string>
+    <string name="licenses_view_text">View complete license text</string>
+    <string name="licenses_url_fallback">If the link does not open, visit apache.org/licenses/LICENSE-2.0.</string>
+    <string name="licenses_link_failure">Could not open the license link. Visit apache.org/licenses/LICENSE-2.0.</string>
+    <string name="licenses_scope_note">Inventory source: production dependencies in app/build.gradle.kts and gradle/libs.versions.toml. Test, debug and build-only tooling are excluded.</string>
 </resources>
 
