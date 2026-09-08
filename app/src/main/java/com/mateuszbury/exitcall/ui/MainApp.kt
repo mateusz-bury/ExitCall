@@ -23,8 +23,7 @@ private enum class MainScreen {
     SCHEDULE_CALL,
     SETTINGS,
     TUTORIAL,
-    TUTORIAL_DEMO,
-    DEMO_REPLAY
+    TUTORIAL_DEMO
 }
 
 @Composable
@@ -63,8 +62,7 @@ fun MainApp(
 
     BackHandler(
         enabled = currentScreen != MainScreen.HOME &&
-            currentScreen != MainScreen.TUTORIAL_DEMO &&
-            currentScreen != MainScreen.DEMO_REPLAY
+            currentScreen != MainScreen.TUTORIAL_DEMO
     ) {
         currentScreen = if (currentScreen == MainScreen.TUTORIAL) {
             MainScreen.SETTINGS
@@ -142,11 +140,6 @@ fun MainApp(
                     appSettings = newSettings
                 },
                 onOpenCapabilitySettings = onOpenCapabilitySettings,
-                onReplayDemo = {
-                    onRequireCallCapabilities(false) {
-                        currentScreen = MainScreen.DEMO_REPLAY
-                    }
-                },
                 onViewTutorial = {
                     currentScreen = MainScreen.TUTORIAL
                 },
@@ -173,17 +166,13 @@ fun MainApp(
             )
         }
 
-        MainScreen.TUTORIAL_DEMO, MainScreen.DEMO_REPLAY -> {
+        MainScreen.TUTORIAL_DEMO -> {
             DemoCallFlow(
                 onCompleted = {
                     currentScreen = MainScreen.SETTINGS
                 },
                 onCancelled = {
-                    currentScreen = if (currentScreen == MainScreen.DEMO_REPLAY) {
-                        MainScreen.SETTINGS
-                    } else {
-                        MainScreen.TUTORIAL
-                    }
+                    currentScreen = MainScreen.TUTORIAL
                 }
             )
         }

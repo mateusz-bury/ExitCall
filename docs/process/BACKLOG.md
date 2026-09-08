@@ -23,7 +23,7 @@ As of 2026-09-08:
 - navigation/header consistency and Home Settings gear are complete through PR #86.
 - #20/#22 Active Call controls and route picker are complete; PR #97 connected demo audio to the real communication route and made playback Mute functional.
 - #21 remains in Testing: handset output, Bluetooth ringtone isolation and Mute passed; explicit Phone ↔ Speaker ↔ Bluetooth switching and cleanup still need a recorded device pass.
-- #29 onboarding/demo foundation is merged through PR #97. PR #98 is open for direct Settings replay, cleanup hardening and final build/device acceptance.
+- #29 onboarding/demo foundation is merged through PR #97. PR #98 is open for cleanup hardening and final build/device acceptance.
 - #23 remains open only for Settings/help/information integrations owned by remaining features.
 - #9 remains the maintained physical regression safety net and release-quality gate, but its stale expectations must be refreshed.
 
@@ -37,7 +37,7 @@ Current recommended order:
 
 Today's bounded session (2026-09-08):
 
-1. Build and physically accept PR #98: onboarding completion, direct Settings replay, cancellation/timeout cleanup and state isolation.
+1. Build and physically accept PR #98: onboarding completion, Settings tutorial replay, cancellation/timeout cleanup and state isolation.
 2. In the same installed build, record Phone ↔ Speaker ↔ Bluetooth switching, portrait lock and Notifications/FSI fallback checks where the device exposes them.
 3. Merge #98 only after the required checks pass. Start #53 only if time remains; do not start #74/#75/#76 in the same session.
 
@@ -183,7 +183,7 @@ Active Call now has functional Keypad, route picker and More panels. The shared 
 
 ### #29 / PR #98 — onboarding/demo audit candidate
 
-Onboarding foundation and the controlled demo are merged through PR #97. PR #98 adds direct Settings replay, clearer capability/audio education, launch-time notification rechecks and idempotent cancellation/timeout cleanup. Its audit maps code coverage separately from required physical acceptance; the PR remains unmerged until that checklist passes.
+Onboarding foundation and the controlled demo are merged through PR #97. PR #98 adds clearer capability/audio education, launch-time notification rechecks and idempotent cancellation/timeout cleanup. Its audit maps code coverage separately from required physical acceptance; the PR remains unmerged until that checklist passes.
 
 ---
 
@@ -202,7 +202,7 @@ Onboarding foundation and the controlled demo are merged through PR #97. PR #98 
 - Exact-alarm access is required only for exact future scheduling.
 - `ActiveCallAudioRouter` is the shared owner of Phone/Speaker/Bluetooth communication routing for production and demo Active Call.
 - Demo narration is local communication audio. Its Mute changes player volume and does not claim to mute a real telephony microphone.
-- Settings tutorial replay and direct demo replay reuse the same controlled `DemoCallFlow` and must not mutate onboarding completion, call configuration or future entitlement state.
+- Settings tutorial replay reuses the controlled `DemoCallFlow` and must not mutate onboarding completion, call configuration or future entitlement state.
 - Immediate and scheduled ExitCalls converge on the same service/activity lifecycle.
 - Markdown under `docs/` is the maintained living documentation; versioned DOCX files are specification snapshots.
 

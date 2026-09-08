@@ -42,7 +42,7 @@ Current merged implementation covers:
 - Settings tutorial replay using the same demo engine,
 - consistent main-app back navigation/header presentation.
 
-PR #98 is open for direct Settings replay, demo lifecycle hardening and final build/device acceptance. Important remaining areas include Settings help/information (#23), missed-call notification (#53), custom local audio (#76), Home dashboard (#30), monetization/release and broader regression/OEM verification.
+PR #98 is open for demo lifecycle hardening and final build/device acceptance. Important remaining areas include Settings help/information (#23), missed-call notification (#53), custom local audio (#76), Home dashboard (#30), monetization/release and broader regression/OEM verification.
 
 ---
 
@@ -294,9 +294,9 @@ PR #84 introduced the Settings foundation.
 
 Each supported capability row can route to the relevant Android setting and state refreshes after returning to the app.
 
-### Tutorial and demo replay
+### Tutorial replay
 
-Settings can reopen the full tutorial and its shared `DemoCallFlow`. PR #98 additionally exposes a direct **Replay demo call** action. Neither path may write onboarding completion, user Call Setup data, scheduled state or entitlement state.
+Settings can reopen the full tutorial and its shared `DemoCallFlow`. Tutorial replay may not write onboarding completion, user Call Setup data, scheduled state or entitlement state.
 
 ### Explicit placeholders
 
@@ -632,7 +632,7 @@ Current test assets:
 - PR #97 user acceptance for earpiece demo output, Bluetooth ringtone isolation and playback Mute,
 - PR #98 onboarding/demo audit and device checklist.
 
-The current acceptance pass must cover PR #98 build, first-run completion rules, both Settings replay paths, timeout/background/lock cleanup and persistence isolation. The same installed build should record the remaining #21 route matrix plus #59 portrait and #8 FSI-fallback checks where supported.
+The current acceptance pass must cover PR #98 build, first-run completion rules, the Settings tutorial replay, timeout/background/lock cleanup and persistence isolation. The same installed build should record the remaining #21 route matrix plus #59 portrait and #8 FSI-fallback checks where supported.
 
 #9 is the release regression gate and still needs stale expectations corrected and a full execution record. #25 remains open for broader automated persistence/scheduler/state coverage. #26 remains open for the OEM/device matrix.
 

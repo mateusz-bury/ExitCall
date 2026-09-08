@@ -28,7 +28,7 @@ Most recent merged work:
 - PR #95: controlled onboarding demo,
 - PR #97: demo communication-audio routing, Bluetooth ringtone fix and functional playback Mute.
 
-PR #98 is open for final build/device verification. It audits the complete onboarding/demo flow, adds direct **Replay demo call** in Settings, hardens demo cancellation/timeout cleanup and adds notification-gate instrumentation coverage.
+PR #98 is open for final build/device verification. It audits the complete onboarding/demo flow, hardens demo cancellation/timeout cleanup and adds notification-gate instrumentation coverage.
 
 Current focus:
 

@@ -46,9 +46,6 @@
 
     <string name="onboarding_ready_title">Try your demo call</string>
     <string name="onboarding_ready_body">Answer the call to hear a calm, guided voice. Hang up when you are ready to finish setup. This demo never uses a free call.</string>
-    <string name="onboarding_ready_hint">Later, you can record your own voice or import an audio file. Without custom audio, ExitCall uses the default voice. You can replay this demo from Settings.</string>
-    <string name="settings_replay_demo_title">Replay demo call</string>
-    <string name="settings_replay_demo_body">Try the guided call again without changing your setup or using a free call</string>
-    <string name="settings_replay_demo_action">Play</string>
+    <string name="onboarding_ready_hint">Later, you can record your own voice or import an audio file. Without custom audio, ExitCall uses the default voice. You can review this tutorial again from Settings.</string>
 </resources>
 

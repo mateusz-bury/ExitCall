@@ -236,9 +236,9 @@ v1.0 uses mandatory first-run onboarding.
 - Demo narration begins only after Answer and uses the shared communication-audio route.
 - Decline, Back, unanswered timeout, background/lock and disposal cancel without completing first-run onboarding.
 - Only Answer followed by Hang Up completes first-run onboarding.
-- Settings can replay the tutorial and, after PR #98 acceptance, launch the same demo directly.
-- Replay must not reset or mutate onboarding completion, caller/settings/schedule data, free-call state or Premium state.
-- Demo and both replay paths never consume a configurable call.
+- Settings can replay the tutorial, which ends with the same controlled demo.
+- Tutorial replay must not reset or mutate onboarding completion, caller/settings/schedule data, free-call state or Premium state.
+- Demo playback never consumes a configurable call.
 - Future custom recording/import remains owned by #76; until then the bundled default voice is used.
 
 Tracked and physically accepted in #29 before closure.
