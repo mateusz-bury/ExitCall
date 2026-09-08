@@ -36,6 +36,8 @@ fun SettingsScreen(
     onSettingsChange: (AppSettings) -> Unit,
     onOpenCapabilitySettings: (CallCapability) -> Unit,
     onViewTutorial: () -> Unit,
+    onOpenInformation: () -> Unit,
+    onOpenLicenses: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -344,14 +346,18 @@ fun SettingsScreen(
                         onClick = onViewTutorial
                     )
                     SettingsDivider()
-                    ComingSoonRow(
+                    SettingsActionRow(
                         title = "Privacy, safe use & support",
-                        subtitle = "Product and support information"
+                        subtitle = "How ExitCall handles data and when to use it",
+                        actionLabel = "View",
+                        onClick = onOpenInformation
                     )
                     SettingsDivider()
-                    ComingSoonRow(
+                    SettingsActionRow(
                         title = "Open-source licenses",
-                        subtitle = "Third-party software notices"
+                        subtitle = "Third-party software notices",
+                        actionLabel = "View",
+                        onClick = onOpenLicenses
                     )
                     SettingsDivider()
                     ReadOnlyRow(
