@@ -5,7 +5,7 @@
 **Platform:** Android  
 **Production application ID:** `com.mateuszbury.exitcall`
 
-This document describes the v1.0 implementation baseline after the P2 call/audio work through PR #97 and the onboarding/demo audit candidate in PR #98.
+This document describes the v1.0 implementation baseline after the P2 call/audio work through PR #97, completed onboarding/demo work in PR #98, the Home dashboard foundation in PR #105 and Settings information surfaces in PR #106.
 
 Versioned DOCX files under `docs/specifications/` remain historical specification snapshots. This Markdown document is the current technical source of truth.
 
@@ -40,9 +40,11 @@ Current merged implementation covers:
 - mandatory first-run onboarding and a controlled ExitCall demo,
 - local guided demo audio after Answer,
 - Settings tutorial replay that finishes without launching another demo,
+- production Home dashboard backed by current call/configuration/readiness state,
+- privacy, safe-use, support, About and open-source notices screens,
 - consistent main-app back navigation/header presentation.
 
-PR #98 is open for demo lifecycle hardening and final build/device acceptance. Important remaining areas include Settings help/information (#23), missed-call notification (#53), custom local audio (#76), Home dashboard (#30), monetization/release and broader regression/OEM verification.
+PR #98 completed demo lifecycle hardening, PR #105 delivered the first Home dashboard slice and PR #106 completed Settings information/notices. Important remaining areas include missed-call notification (#53), custom local audio (#76), trial/Premium ownership (#74/#75/#77), battery guidance (#99) and broader regression/OEM verification.
 
 ---
 
@@ -226,6 +228,9 @@ HOME
   |-- Set up a call --> CALL_SETUP
   |-- Schedule/Edit --> SCHEDULE_CALL
   |-- Settings ------> SETTINGS
+  |                      |-- Tutorial replay
+  |                      |-- Privacy / safe use / support / About
+  |                      |-- Open-source licenses
   |-- Start call ----> capability gate -> IncomingCallService
 ```
 
@@ -233,7 +238,8 @@ Navigation conventions after PR #86:
 
 - Home exposes Settings as a gear icon.
 - Call Setup, Schedule and Settings share `ExitCallTopBar` and the same back-arrow asset/placement.
-- Android Back on secondary main-app screens returns Home.
+- Android Back on Call Setup, Schedule and Settings returns Home.
+- Tutorial replay and both Settings information screens return to Settings on top-bar or Android Back.
 
 The separate Incoming/Active call Activity is outside this main-process screen state machine.
 
@@ -298,9 +304,18 @@ Each supported capability row can route to the relevant Android setting and stat
 
 Settings can reopen the informational tutorial. In replay mode the final page uses Finish and returns directly to Settings; `DemoCallFlow` remains exclusive to first-run onboarding. Tutorial replay may not write onboarding completion, user Call Setup data, scheduled state or entitlement state.
 
+### Help and information
+
+PR #106 replaced the two disabled information placeholders with routed screens:
+
+- `InformationScreen`: privacy, safe-use limits, verified developer support destination, author and installed version,
+- `OpenSourceLicensesScreen`: declared production dependency inventory, versions, copyright owners and Apache 2.0 destination,
+- both routes use resource-based copy and return to Settings,
+- `docs/process/RELEASE_CHECKLIST.md` owns verification after dependency, permission, persistence or support-link changes.
+
 ### Explicit placeholders
 
-Features whose owners are not implemented remain disabled/`Coming soon` rather than opening empty destinations. These include custom voice/audio, language/theme, after-call behavior, purchase restore, local-data management and remaining help/information rows.
+Features whose owners are not implemented remain disabled/`Coming soon` rather than opening empty destinations. These include custom voice/audio, battery guidance, language/theme, after-call behavior, purchase restore and local-data management.
 
 ### Version display
 
@@ -526,7 +541,7 @@ Current behavior:
 
 `ActiveCallAudioRouter` is shared by production and demo Active Call. It requests communication devices, observes system route changes where supported, handles rejected requests without showing false UI state and restores the previous audio mode/route on cleanup.
 
-The demo creates a controlled `CallConfig`, uses the bundled local narration and starts voice only after Answer. `DemoCallFlow` is separate from the production foreground-service pipeline and must never consume a configurable-call entitlement. PR #98 consolidates Back/Decline/Hang Up/timeout/background cleanup into one idempotent finish path.
+The demo creates a controlled `CallConfig`, uses the bundled local narration and starts voice only after Answer. `DemoCallFlow` is separate from the production foreground-service pipeline and must never consume a configurable-call entitlement. PR #98 consolidated Back/Decline/Hang Up/timeout/background cleanup into one idempotent finish path.
 
 PR #97 device evidence:
 
@@ -627,12 +642,12 @@ Current test assets:
 
 - maintained physical regression suite in #9,
 - phone-number and ring-duration unit tests,
-- three PR #98 onboarding/tutorial-gate instrumentation tests (authored, not yet executed),
+- three onboarding/tutorial-gate instrumentation tests introduced with PR #98,
 - reboot/scheduler physical verification on the primary Motorola hardware,
 - PR #97 user acceptance for earpiece demo output, Bluetooth ringtone isolation and playback Mute,
 - PR #98 onboarding/demo audit and device checklist.
 
-The current acceptance pass must cover PR #98 build, first-run completion rules, Settings tutorial replay without a demo, timeout/background/lock cleanup and persistence isolation. The same installed build should record the remaining #21 route matrix plus #59 portrait and #8 FSI-fallback checks where supported.
+Targeted physical coverage still needs recorded results for the remaining #21 route matrix plus #59 portrait and #8 FSI-fallback checks where supported. Settings information screens added in PR #106 require a basic navigation, scrolling and external-destination pass as part of normal regression.
 
 #9 is the release regression gate and still needs stale expectations corrected and a full execution record. #25 remains open for broader automated persistence/scheduler/state coverage. #26 remains open for the OEM/device matrix.
 
@@ -643,6 +658,8 @@ The current acceptance pass must cover PR #98 build, first-run completion rules,
 Current baseline:
 
 - no backend/cloud account required,
+- no `INTERNET` permission and no ExitCall-managed upload path,
+- Android may include app-private data in system-managed backup according to device settings and current backup rules,
 - no bulk contacts access,
 - contact picker reads only the selected phone-data row,
 - caller configuration is local,
@@ -657,13 +674,13 @@ Current baseline:
 
 Recommended order:
 
-1. Build and physically accept PR #98; merge only if first-run demo, tutorial-only replay and cleanup checks pass.
-2. Record focused Phone/Speaker/Bluetooth, portrait and capability-fallback results in #21/#59/#8.
-3. Refresh and execute #9 against the current merged baseline.
-4. Implement #53 missed-call notification and its Settings owner.
-5. Continue with #76 local custom audio, then #30 Home dashboard.
+1. Implement #53 missed-call notification and its Settings owner.
+2. Continue with #76 local custom audio.
+3. Add local trial/access gating in #74, then integrate Premium ownership/restore through #75/#77.
+4. Record focused Phone/Speaker/Bluetooth, portrait and capability-fallback results in #21/#59/#8.
+5. Refresh and execute #9 against the current merged baseline.
 
-Do not start entitlement/billing work (#74/#75/#77) in the same session as PR #98 acceptance. Settings/help completion (#23) should consume features from their owning issues instead of duplicating state.
+Keep #53 isolated from Decline, Answer and demo behavior: only an enabled setting plus a genuine unanswered production timeout may create the missed-call notification. Settings tracker #23 remains an integration map; implementation stays in its owning child issues.
 
 ---
 
