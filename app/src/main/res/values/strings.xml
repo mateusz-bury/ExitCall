@@ -52,5 +52,29 @@
     <string name="tutorial_complete_title">Tutorial complete</string>
     <string name="tutorial_complete_body">You have reviewed how ExitCall works and how to identify an ExitCall.</string>
     <string name="tutorial_complete_hint">Your settings, scheduled call and free-call balance have not changed.</string>
+    <string name="home_title">ExitCall</string>
+    <string name="home_tagline">Leave when you need to.</string>
+    <string name="home_settings_content_description">Settings</string>
+    <string name="home_next_call">Next call</string>
+    <string name="home_not_scheduled">Not scheduled</string>
+    <string name="home_caller">Caller</string>
+    <string name="home_no_phone_number">No phone number</string>
+    <string name="home_sound">Sound</string>
+    <string name="home_vibrate_on">Vibrate on</string>
+    <string name="home_vibrate_off">Vibrate off</string>
+    <string name="home_status">Status</string>
+    <string name="home_status_ready">Ready</string>
+    <string name="home_status_action_required">Action required</string>
+    <string name="home_status_notifications_required">Enable notifications for call delivery.</string>
+    <string name="home_status_exact_alarm_required">Restore exact-alarm access for the scheduled call.</string>
+    <string name="home_status_notification_fallback">Notification fallback is active; full-screen calls are unavailable.</string>
+    <string name="home_status_all_ready">ExitCall can deliver immediate and scheduled calls.</string>
+    <string name="home_status_manage">Manage</string>
+    <string name="home_status_improve">Improve</string>
+    <string name="home_need_an_exit">Need an exit?</string>
+    <string name="home_start_call">Start call</string>
+    <string name="home_schedule_call">Schedule a call</string>
+    <string name="home_edit_scheduled_call">Edit scheduled call</string>
+    <string name="home_set_up_call">Set up a call</string>
 </resources>
 
