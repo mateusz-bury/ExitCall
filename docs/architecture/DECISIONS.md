@@ -123,6 +123,8 @@ Exact-alarm capability is required only for precise future scheduling.
 - Use Android's system single-phone-data picker on demand.
 - Do not request broad `READ_CONTACTS` for this flow.
 - Persist only caller name and the selected phone number after Save.
+- The current app has no `INTERNET` permission and no ExitCall-managed upload path.
+- Android system backup is a separate platform behavior and must be disclosed while backup remains enabled.
 - Do not add random-contact selection.
 
 ## Phone-number handling
@@ -221,8 +223,12 @@ Production Settings foundation is implemented.
 - Global ringtone, vibration and ring duration are live.
 - Notifications / Exact alarms / Full-screen calls expose live readiness and Android settings actions.
 - App version is read from build metadata.
+- Tutorial replay is complete through #29 and returns to Settings without another demo.
+- Privacy, safe-use, support, About and open-source notices are complete through #101/#103 and PR #106.
+- Until an official support email/domain exists, the verified public developer profile is the support destination and a visible fallback address is required.
+- Dependency, permission, persistence and support-link changes must run the checks in `docs/process/RELEASE_CHECKLIST.md`.
 - Future features appear as explicit disabled/`Coming soon` rows rather than fake working navigation.
-- Functional missed-call toggle, tutorial replay, licenses/privacy/safe-use/support/about are completed through their owning issues (#53/#29/#23).
+- Missed-call toggle remains owned by #53; battery guidance by #99; custom audio by #76; purchase restore by #75; post-v1.0 language/theme/data controls by their dedicated issues.
 
 ## Onboarding and demo
 
