@@ -77,6 +77,10 @@
     <string name="home_edit_scheduled_call">Edit scheduled call</string>
     <string name="home_set_up_call">Set up a call</string>
 
+    <string name="settings_view">View</string>
+    <string name="settings_information_subtitle">How ExitCall handles data and when to use it</string>
+    <string name="settings_licenses_subtitle">Third-party software notices</string>
+
     <string name="info_title">Privacy, safe use &amp; support</string>
     <string name="info_intro">Clear information about what ExitCall stores, the Android capabilities it uses and the limits of the service.</string>
     <string name="info_privacy_title">PRIVACY</string>
