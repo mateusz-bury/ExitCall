@@ -151,11 +151,15 @@ fun HomeScreen(
                 )
                 DashboardCard(
                     title = stringResource(R.string.home_caller),
-                    value = callConfig.callerName.ifBlank {
+                    value = if (callConfig.callerName.isBlank()) {
                         stringResource(R.string.app_name)
+                    } else {
+                        callConfig.callerName
                     },
-                    supporting = callConfig.phoneNumber.ifBlank {
+                    supporting = if (callConfig.phoneNumber.isBlank()) {
                         stringResource(R.string.home_no_phone_number)
+                    } else {
+                        callConfig.phoneNumber
                     },
                     modifier = Modifier.weight(1f)
                 )
