@@ -1,11 +1,11 @@
-# ExitCall Technical Documentation v1.5
+# ExitCall Technical Documentation v1.6
 
 **Status:** living technical documentation  
-**Baseline date:** 2026-09-04  
+**Baseline date:** 2026-09-08  
 **Platform:** Android  
 **Production application ID:** `com.mateuszbury.exitcall`
 
-This document describes the current v1.0 implementation baseline and architecture after the P2 Settings, lifecycle and call-screen polish work merged in PRs #84-#87.
+This document describes the v1.0 implementation baseline after the P2 call/audio work through PR #97 and the onboarding/demo audit candidate in PR #98.
 
 Versioned DOCX files under `docs/specifications/` remain historical specification snapshots. This Markdown document is the current technical source of truth.
 
@@ -35,9 +35,14 @@ Current merged implementation covers:
 - scheduled snapshots of alert settings,
 - system ringtone picker with default fallback,
 - centralized theme and polished Incoming/Active call surfaces,
+- functional Active Call keypad, More, Mute and route picker,
+- real Phone/Speaker/Bluetooth communication-audio routing with Android-confirmed route state,
+- mandatory first-run onboarding and a controlled ExitCall demo,
+- local guided demo audio after Answer,
+- Settings tutorial replay using the same demo engine,
 - consistent main-app back navigation/header presentation.
 
-Important incomplete v1.0 areas include Active Call secondary-control behavior (#22), Settings help/information completion (#23), missed-call notification (#53), custom local audio (#76), Home dashboard (#30), onboarding/monetization/release work and broader regression/OEM verification.
+PR #98 is open for direct Settings replay, demo lifecycle hardening and final build/device acceptance. Important remaining areas include Settings help/information (#23), missed-call notification (#53), custom local audio (#76), Home dashboard (#30), monetization/release and broader regression/OEM verification.
 
 ---
 
@@ -146,6 +151,11 @@ Centralizes Android/version-specific checks and settings routing for Notificatio
 
 - shared phone-number formatter/validator used by manual entry and contact-picked values.
 
+### `audio/`
+
+- `ActiveCallAudioRouter` is the shared owner of Android communication-device discovery, Phone/Speaker/Bluetooth route requests, route-state observation and cleanup,
+- `DemoVoicePlayer` prepares the bundled local voice as communication audio and exposes playback-volume Mute.
+
 ### `scheduler/`
 
 - `ScheduledCallScheduler.kt`
@@ -161,7 +171,7 @@ Owns exact registration, replacement, cancellation and recovery.
 - `screens/`
 - `theme/`
 
-Current screens include Home, Call Setup, Schedule, Settings, Incoming Call and Active Call plus isolated date/time picker dialogs.
+Current screens include Home, Call Setup, Schedule, Settings, onboarding, the controlled demo flow, Incoming Call and Active Call plus isolated date/time picker dialogs.
 
 ---
 
@@ -284,9 +294,13 @@ PR #84 introduced the Settings foundation.
 
 Each supported capability row can route to the relevant Android setting and state refreshes after returning to the app.
 
+### Tutorial and demo replay
+
+Settings can reopen the full tutorial and its shared `DemoCallFlow`. PR #98 additionally exposes a direct **Replay demo call** action. Neither path may write onboarding completion, user Call Setup data, scheduled state or entitlement state.
+
 ### Explicit placeholders
 
-Later features are shown as disabled/`Coming soon` rows rather than empty navigation targets. These include voice/audio route, language/theme, after-call behavior, purchase restore, local-data management, tutorial/help and information rows where the owning feature is not yet implemented.
+Features whose owners are not implemented remain disabled/`Coming soon` rather than opening empty destinations. These include custom voice/audio, language/theme, after-call behavior, purchase restore, local-data management and remaining help/information rows.
 
 ### Version display
 
@@ -495,7 +509,7 @@ Answer starts/reuses `IncomingCallActivity` with `EXTRA_START_ACTIVE = true` and
 
 ---
 
-## 17. Active Call lifecycle and UI
+## 17. Active Call lifecycle, controls and audio
 
 After Answer, `IncomingCallActivity` renders `ActiveCallScreen`.
 
@@ -504,22 +518,23 @@ Current behavior:
 - timer increments locally once per second,
 - caller name/phone and avatar remain visible,
 - Hang Up finishes the Activity,
-- Android Back follows current default Return-to-Android behavior,
-- no incoming service alerting remains active after Answer.
+- Android Back follows the default Return-to-Android behavior,
+- incoming service alerting is stopped before Active Call,
+- Keypad and More open dismissible local panels,
+- Mute is stateful; in the controlled demo it sets player volume to zero without pausing/restarting the track,
+- the route panel exposes available Phone/Speaker/Bluetooth routes and reflects the route Android accepted.
 
-PR #87 established the current visual baseline:
+`ActiveCallAudioRouter` is shared by production and demo Active Call. It requests communication devices, observes system route changes where supported, handles rejected requests without showing false UI state and restores the previous audio mode/route on cleanup.
 
-- timer -> caller name -> phone hierarchy,
-- large caller initial/avatar,
-- rounded bottom control sheet,
-- proper vector icons for Keypad/Mute/Speaker/More,
-- wide red Hang Up control,
-- `Audio Emoji` removed,
-- shared ExitCall theme colors,
-- dark system navigation bar,
-- discreet `EC` marker preserved.
+The demo creates a controlled `CallConfig`, uses the bundled local narration and starts voice only after Answer. `DemoCallFlow` is separate from the production foreground-service pipeline and must never consume a configurable-call entitlement. PR #98 consolidates Back/Decline/Hang Up/timeout/background cleanup into one idempotent finish path.
 
-Keypad/Mute/Speaker/More are still intentionally non-interactive until #22 is completed. They must not ship as dead controls.
+PR #97 device evidence:
+
+- handset earpiece output accepted,
+- Bluetooth ringtone no longer duplicated through the phone speaker,
+- playback Mute/unmute accepted.
+
+Explicit Phone ↔ Speaker ↔ Bluetooth switching, wired-device removal/fallback and full cleanup remain tracked as physical verification in #21.
 
 ---
 
@@ -606,21 +621,20 @@ The current architecture should preserve these invariants:
 
 ## 22. Testing state
 
-Physical-device testing remains essential because ExitCall depends heavily on Android/OEM behavior around alarms, notifications, FSI, lock screen and system bars.
+Physical-device testing remains essential because ExitCall depends on Android/OEM behavior around alarms, notifications, FSI, lock screen, audio routes and system bars.
 
 Current test assets:
 
 - maintained physical regression suite in #9,
-- phone-number unit tests from #15,
-- ring-duration validation/fallback unit tests from #58,
-- reboot/scheduler physical verification on primary Motorola hardware,
-- targeted physical smoke review for recent lifecycle/Settings/call-UI work.
+- phone-number and ring-duration unit tests,
+- two PR #98 notification-gate instrumentation tests (authored, not yet executed),
+- reboot/scheduler physical verification on the primary Motorola hardware,
+- PR #97 user acceptance for earpiece demo output, Bluetooth ringtone isolation and playback Mute,
+- PR #98 onboarding/demo audit and device checklist.
 
-#9 needs a maintenance pass because several exclusions and assumptions became stale after #13/#14/#15/#58 and the final FSI policy.
+The current acceptance pass must cover PR #98 build, first-run completion rules, both Settings replay paths, timeout/background/lock cleanup and persistence isolation. The same installed build should record the remaining #21 route matrix plus #59 portrait and #8 FSI-fallback checks where supported.
 
-#25 remains open for broader automated coverage of persistence/scheduler/state.
-
-#26 remains open for an explicit OEM/device compatibility matrix.
+#9 is the release regression gate and still needs stale expectations corrected and a full execution record. #25 remains open for broader automated persistence/scheduler/state coverage. #26 remains open for the OEM/device matrix.
 
 ---
 
@@ -641,15 +655,15 @@ Current baseline:
 
 ## 24. Current technical frontier
 
-Recommended next technical/feature work:
+Recommended order:
 
-1. #22 implement intentional behavior for Keypad/Mute/Speaker/More without changing the call engine.
-2. #53 add missed-call notification and Settings toggle on timeout only.
-3. #76 add local custom recording/import/playback with lifecycle-safe cleanup.
-4. #30 replace Home placeholders with real configuration/readiness state.
-5. Maintain #9 regression alongside each change.
+1. Build and physically accept PR #98; merge only if onboarding/demo replay and cleanup checks pass.
+2. Record focused Phone/Speaker/Bluetooth, portrait and capability-fallback results in #21/#59/#8.
+3. Refresh and execute #9 against the current merged baseline.
+4. Implement #53 missed-call notification and its Settings owner.
+5. Continue with #76 local custom audio, then #30 Home dashboard.
 
-Settings/help completion (#23) should consume functionality from owning issues rather than duplicating their state or logic.
+Do not start entitlement/billing work (#74/#75/#77) in the same session as PR #98 acceptance. Settings/help completion (#23) should consume features from their owning issues instead of duplicating state.
 
 ---
 
