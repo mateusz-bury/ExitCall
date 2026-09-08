@@ -21,7 +21,7 @@ The merged baseline includes:
 - functional Active Call keypad, Mute, More and real Phone/Speaker/Bluetooth routing,
 - mandatory first-run onboarding and one controlled ExitCall demo,
 - guided demo audio on the communication route, with handset output, Bluetooth ringtone isolation and Mute accepted on the primary device,
-- Settings tutorial replay using the same `DemoCallFlow`.
+- Settings tutorial replay that finishes without launching another demo.
 
 PR #98 is the current verification candidate. It adds notification rechecks, idempotent demo cleanup, background/lock cancellation, unanswered timeout handling and two instrumentation tests for the notification gate. Its build/device checklist is still pending.
 

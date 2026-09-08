@@ -39,7 +39,7 @@ Current merged implementation covers:
 - real Phone/Speaker/Bluetooth communication-audio routing with Android-confirmed route state,
 - mandatory first-run onboarding and a controlled ExitCall demo,
 - local guided demo audio after Answer,
-- Settings tutorial replay using the same demo engine,
+- Settings tutorial replay that finishes without launching another demo,
 - consistent main-app back navigation/header presentation.
 
 PR #98 is open for demo lifecycle hardening and final build/device acceptance. Important remaining areas include Settings help/information (#23), missed-call notification (#53), custom local audio (#76), Home dashboard (#30), monetization/release and broader regression/OEM verification.
@@ -296,7 +296,7 @@ Each supported capability row can route to the relevant Android setting and stat
 
 ### Tutorial replay
 
-Settings can reopen the full tutorial and its shared `DemoCallFlow`. Tutorial replay may not write onboarding completion, user Call Setup data, scheduled state or entitlement state.
+Settings can reopen the informational tutorial. In replay mode the final page uses Finish and returns directly to Settings; `DemoCallFlow` remains exclusive to first-run onboarding. Tutorial replay may not write onboarding completion, user Call Setup data, scheduled state or entitlement state.
 
 ### Explicit placeholders
 
@@ -632,7 +632,7 @@ Current test assets:
 - PR #97 user acceptance for earpiece demo output, Bluetooth ringtone isolation and playback Mute,
 - PR #98 onboarding/demo audit and device checklist.
 
-The current acceptance pass must cover PR #98 build, first-run completion rules, the Settings tutorial replay, timeout/background/lock cleanup and persistence isolation. The same installed build should record the remaining #21 route matrix plus #59 portrait and #8 FSI-fallback checks where supported.
+The current acceptance pass must cover PR #98 build, first-run completion rules, Settings tutorial replay without a demo, timeout/background/lock cleanup and persistence isolation. The same installed build should record the remaining #21 route matrix plus #59 portrait and #8 FSI-fallback checks where supported.
 
 #9 is the release regression gate and still needs stale expectations corrected and a full execution record. #25 remains open for broader automated persistence/scheduler/state coverage. #26 remains open for the OEM/device matrix.
 
@@ -657,7 +657,7 @@ Current baseline:
 
 Recommended order:
 
-1. Build and physically accept PR #98; merge only if onboarding/demo replay and cleanup checks pass.
+1. Build and physically accept PR #98; merge only if first-run demo, tutorial-only replay and cleanup checks pass.
 2. Record focused Phone/Speaker/Bluetooth, portrait and capability-fallback results in #21/#59/#8.
 3. Refresh and execute #9 against the current merged baseline.
 4. Implement #53 missed-call notification and its Settings owner.

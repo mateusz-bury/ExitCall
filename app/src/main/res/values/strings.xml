@@ -4,6 +4,7 @@
     <string name="onboarding_brand">EXITCALL</string>
     <string name="onboarding_continue">Continue</string>
     <string name="onboarding_get_started">Start demo call</string>
+    <string name="onboarding_finish">Finish</string>
 
     <string name="onboarding_welcome_title">A call when you need an exit</string>
     <string name="onboarding_welcome_body">ExitCall gives you a discreet, scheduled way to step away when a situation becomes uncomfortable.</string>
@@ -47,5 +48,9 @@
     <string name="onboarding_ready_title">Try your demo call</string>
     <string name="onboarding_ready_body">Answer the call to hear a calm, guided voice. Hang up when you are ready to finish setup. This demo never uses a free call.</string>
     <string name="onboarding_ready_hint">Later, you can record your own voice or import an audio file. Without custom audio, ExitCall uses the default voice. You can review this tutorial again from Settings.</string>
+
+    <string name="tutorial_complete_title">Tutorial complete</string>
+    <string name="tutorial_complete_body">You have reviewed how ExitCall works and how to identify an ExitCall.</string>
+    <string name="tutorial_complete_hint">Your settings, scheduled call and free-call balance have not changed.</string>
 </resources>
 

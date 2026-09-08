@@ -37,7 +37,7 @@ Current recommended order:
 
 Today's bounded session (2026-09-08):
 
-1. Build and physically accept PR #98: onboarding completion, Settings tutorial replay, cancellation/timeout cleanup and state isolation.
+1. Build and physically accept PR #98: first-run demo completion, Settings tutorial replay without another demo, cancellation/timeout cleanup and state isolation.
 2. In the same installed build, record Phone ↔ Speaker ↔ Bluetooth switching, portrait lock and Notifications/FSI fallback checks where the device exposes them.
 3. Merge #98 only after the required checks pass. Start #53 only if time remains; do not start #74/#75/#76 in the same session.
 
@@ -202,7 +202,7 @@ Onboarding foundation and the controlled demo are merged through PR #97. PR #98 
 - Exact-alarm access is required only for exact future scheduling.
 - `ActiveCallAudioRouter` is the shared owner of Phone/Speaker/Bluetooth communication routing for production and demo Active Call.
 - Demo narration is local communication audio. Its Mute changes player volume and does not claim to mute a real telephony microphone.
-- Settings tutorial replay reuses the controlled `DemoCallFlow` and must not mutate onboarding completion, call configuration or future entitlement state.
+- Settings tutorial replay ends with Finish and returns to Settings without invoking `DemoCallFlow` or mutating onboarding completion, call configuration or future entitlement state.
 - Immediate and scheduled ExitCalls converge on the same service/activity lifecycle.
 - Markdown under `docs/` is the maintained living documentation; versioned DOCX files are specification snapshots.
 

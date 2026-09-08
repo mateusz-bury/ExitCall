@@ -73,4 +73,26 @@ class OnboardingGateTest {
         compose.onNodeWithText("Start demo call").performClick()
         compose.runOnIdle { assertEquals(1, completed) }
     }
+
+    @Test
+    fun tutorialReplay_withoutNotifications_finishesWithoutDemo() {
+        var completed = 0
+        compose.setContent {
+            ExitCallTheme {
+                OnboardingScreen(
+                    capabilityAvailability = mapOf(CallCapability.NOTIFICATIONS to false),
+                    launchesDemoOnComplete = false,
+                    onRequestNotifications = {},
+                    onOpenFullScreenSettings = {},
+                    onComplete = { completed++ }
+                )
+            }
+        }
+        repeat(4) {
+            compose.onNodeWithText("Continue").performClick()
+            compose.waitForIdle()
+        }
+        compose.onNodeWithText("Finish").performClick()
+        compose.runOnIdle { assertEquals(1, completed) }
+    }
 }

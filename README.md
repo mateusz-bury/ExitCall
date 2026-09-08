@@ -20,7 +20,7 @@ Current merged baseline includes:
 - functional Active Call keypad, Mute, route picker and More panel,
 - real Phone / Speaker / Bluetooth audio routing with route-state synchronization and cleanup,
 - mandatory first-run onboarding and a controlled ExitCall demo with guided local audio,
-- Settings tutorial replay of the demo.
+- Settings tutorial replay that finishes without launching another demo.
 
 Most recent merged work:
 
