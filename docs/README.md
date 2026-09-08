@@ -23,7 +23,7 @@ The merged baseline includes:
 - guided demo audio on the communication route, with handset output, Bluetooth ringtone isolation and Mute accepted on the primary device,
 - Settings tutorial replay that finishes without launching another demo.
 
-PR #98 is the current verification candidate. It adds notification rechecks, idempotent demo cleanup, background/lock cancellation, unanswered timeout handling and two instrumentation tests for the notification gate. Its build/device checklist is still pending.
+PR #98 is the current verification candidate. It adds notification rechecks, idempotent demo cleanup, background/lock cancellation, unanswered timeout handling and three instrumentation tests for onboarding/tutorial gating. Its build/device checklist is still pending.
 
 The immediate work frontier is: accept PR #98, finish focused route/lifecycle/portrait/capability checks, maintain regression issue #9, then continue with missed-call behavior (#53), custom local audio (#76) and Home dashboard (#30).
 

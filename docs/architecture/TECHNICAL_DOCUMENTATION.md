@@ -627,7 +627,7 @@ Current test assets:
 
 - maintained physical regression suite in #9,
 - phone-number and ring-duration unit tests,
-- two PR #98 notification-gate instrumentation tests (authored, not yet executed),
+- three PR #98 onboarding/tutorial-gate instrumentation tests (authored, not yet executed),
 - reboot/scheduler physical verification on the primary Motorola hardware,
 - PR #97 user acceptance for earpiece demo output, Bluetooth ringtone isolation and playback Mute,
 - PR #98 onboarding/demo audit and device checklist.

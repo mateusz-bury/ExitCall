@@ -164,7 +164,11 @@ fun OnboardingScreen(
             )
         }
 
-        if (currentPage == PERMISSIONS_PAGE && !notificationsEnabled) {
+        if (
+            launchesDemoOnComplete &&
+            currentPage == PERMISSIONS_PAGE &&
+            !notificationsEnabled
+        ) {
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = stringResource(R.string.onboarding_notifications_blocking_hint),
