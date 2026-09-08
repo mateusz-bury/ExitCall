@@ -71,7 +71,10 @@ fun MainApp(
     when (currentScreen) {
         MainScreen.HOME -> {
             HomeScreen(
+                callConfig = callConfig,
+                appSettings = appSettings,
                 scheduledCallAtMillis = scheduledCallAtMillis,
+                capabilityAvailability = capabilityAvailability,
                 onCallMeNow = {
                     onRequireCallCapabilities(
                         false,
@@ -88,7 +91,8 @@ fun MainApp(
                 },
                 onSettings = {
                     currentScreen = MainScreen.SETTINGS
-                }
+                },
+                onOpenCapabilitySettings = onOpenCapabilitySettings
             )
         }
 

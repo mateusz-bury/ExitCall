@@ -23,8 +23,8 @@ As of 2026-09-08:
 - navigation/header consistency and Home Settings gear are complete through PR #86.
 - #20/#22 Active Call controls and route picker are complete; PR #97 connected demo audio to the real communication route and made playback Mute functional.
 - #21 remains in Testing: handset output, Bluetooth ringtone isolation and Mute passed; explicit Phone ↔ Speaker ↔ Bluetooth switching and cleanup still need a recorded device pass.
-- #29 onboarding/demo foundation is merged through PR #97. PR #98 is open for cleanup hardening and final build/device acceptance.
-- #23 remains open only for Settings/help/information integrations owned by remaining features.
+- #29 onboarding/demo is complete through merged PR #98: first run includes one demo; Settings tutorial replay ends without another call.
+- #23 is now the decomposed Settings integration tracker; each remaining row has one owning issue.
 - #9 remains the maintained physical regression safety net and release-quality gate, but its stale expectations must be refreshed.
 
 Working rule: **one large task or at most two small tasks active at once**.
@@ -33,18 +33,18 @@ Working rule: **one large task or at most two small tasks active at once**.
 
 Current recommended order:
 
-`accept PR #98 -> close focused #21/#59/#8 verification gaps -> #53 missed-call notification -> #76 custom local audio -> #30 production Home dashboard`
+`#30 production Home dashboard -> #53 missed-call notification -> #76 custom local audio -> #74 trial/access gating`
 
-Today's bounded session (2026-09-08):
+Current bounded session (2026-09-08):
 
-1. Build and physically accept PR #98: first-run demo completion, Settings tutorial replay without another demo, cancellation/timeout cleanup and state isolation.
-2. In the same installed build, record Phone ↔ Speaker ↔ Bluetooth switching, portrait lock and Notifications/FSI fallback checks where the device exposes them.
-3. Merge #98 only after the required checks pass. Start #53 only if time remains; do not start #74/#75/#76 in the same session.
+1. Build #30 dashboard foundation from existing MainApp state: Next call, Caller, Sound and real readiness.
+2. Keep trial/Premium state out until #74/#75 provide its source of truth.
+3. Physically review Home layout and navigation, then merge before starting #53.
 
 Notes:
 
-- #23 is completed incrementally as #53 and #29 land; do not create duplicate Settings logic.
-- #19 should be closed only after focused system-mode/DND verification, even though the app-level vibration setting and cleanup path are already implemented.
+- #23 tracks child issues #31/#34/#53/#75/#76/#99-#104; implementation stays in those owners.
+- #19 is complete after focused system-mode/DND verification.
 - #8 and #59 remain verification/follow-up work and can be folded into normal physical regression sessions.
 - #9 needs a maintenance pass because several old exclusions/expectations became stale after #13/#14/#15/#58 and the final FSI policy.
 
@@ -104,7 +104,7 @@ Key completed issues include #1-#7, #10-#18, #27, #38, #44-#52, #55 and #58 wher
 - [x] #16 Polish IncomingCallScreen layout and vertical positioning. PR #87.
 - [x] #17 Polish Answer/Decline slider visuals and native-style call icon. PR #87.
 - [x] #18 Intentional Back behavior: Incoming Back = decline/cleanup, Active Back = Return to Android. PR #85.
-- [ ] #19 Finish/verify system vibration and Do Not Disturb behavior. Implementation is largely present; focused system-mode verification remains.
+- [x] #19 System vibration and Do Not Disturb behavior verified on the primary device.
 - [x] #20 Bluetooth/headset audio-route support. Route picker and shared router merged; remaining hardware combinations stay in regression coverage.
 - [ ] #21 Real Phone/Speaker route behavior is implemented. Handset, Bluetooth ringtone isolation and playback Mute passed; explicit route switching/disconnect/cleanup verification remains.
 - [x] #22 ActiveCallScreen controls. Keypad, route picker, More and functional demo-playback Mute are merged.
@@ -113,8 +113,8 @@ Key completed issues include #1-#7, #10-#18, #27, #38, #44-#52, #55 and #58 wher
 
 ### Home / Settings
 
-- [ ] #23 Complete Settings Help/information integrations. Foundation is complete via #58/PR #84; remaining work is missed-call toggle, functional tutorial/help, licenses/privacy/safe-use/support/about.
-- [ ] #30 Production Home dashboard: Next call, Caller, Sound, readiness and trial/Premium state.
+- [ ] #23 Settings integration tracker. v1.0 children: #53, #75, #76, #99, #101, #103 and selected #34 scope. Post-v1.0: #31, #100, #102, #104.
+- [ ] #30 Production Home dashboard. First slice: Next call, Caller, Sound and real readiness; trial/Premium joins only after #74/#75.
 - [x] Shared navigation polish: Home Settings gear + common Back top bar for Setup/Schedule/Settings. PR #86.
 - #24 theme centralization is complete; PR #87 additionally aligned call surfaces/system navigation bar with the shared palette.
 
@@ -128,7 +128,7 @@ Key completed issues include #1-#7, #10-#18, #27, #38, #44-#52, #55 and #58 wher
 
 ## P3 — onboarding, monetization and release
 
-- [ ] #29 Mandatory first-run onboarding with one ExitCall demo, capability education and EC-marker rule. PRs #94/#95/#97 are merged; PR #98 is in build/device verification.
+- [x] #29 Mandatory first-run onboarding with one ExitCall demo, capability education and EC-marker rule. Completed through merged PR #98.
 - [ ] #74 Local free-call trial: 2 configurable calls after demo; consume only on Answer or Decline; timeout/demo do not consume.
 - [ ] #75 Google Play Billing one-time Premium entitlement; Play purchase state is authoritative when available.
 - [ ] #77 Premium/paywall UX during onboarding and after trial exhaustion.
@@ -146,6 +146,9 @@ Key completed issues include #1-#7, #10-#18, #27, #38, #44-#52, #55 and #58 wher
 ## P4 — post-v1.0 / icebox
 - #31 Localization framework and language selection.
 - #32 Localized guided voice content.
+- #100 System/Light/Dark theme selection.
+- #102 Default audio-output preference decision.
+- #104 Local-data management controls.
 - #40 Lightweight marketing experiments after product validation.
 - #41 Selected Asian-market partner/distribution research.
 - #42 Native iOS evaluation in Swift / SwiftUI after Android validation.
@@ -181,9 +184,9 @@ Home uses a Settings gear action. Call Setup, Schedule and Settings share one re
 
 Active Call now has functional Keypad, route picker and More panels. The shared audio router owns real Phone/Speaker/Bluetooth selection and restores prior audio state on cleanup. PR #97 routes demo narration as communication audio, prevents the phone speaker from duplicating Bluetooth ringtone output and connects Mute to player volume. Handset output, Bluetooth ringtone isolation and Mute were accepted on the primary device; #21 retains the remaining switching/disconnect matrix.
 
-### #29 / PR #98 — onboarding/demo audit candidate
+### #29 / PR #98 — completed onboarding/demo flow
 
-Onboarding foundation and the controlled demo are merged through PR #97. PR #98 adds clearer capability/audio education, launch-time notification rechecks and idempotent cancellation/timeout cleanup. Its audit maps code coverage separately from required physical acceptance; the PR remains unmerged until that checklist passes.
+First run includes the controlled demo and completes only after Answer → Hang Up. PR #98 added capability/audio education and lifecycle-safe timeout/background cleanup. Settings tutorial replay now ends with Finish and returns to Settings without launching another call.
 
 ---
 
