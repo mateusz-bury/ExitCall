@@ -23,7 +23,8 @@ private enum class MainScreen {
     SCHEDULE_CALL,
     SETTINGS,
     TUTORIAL,
-    TUTORIAL_DEMO
+    TUTORIAL_DEMO,
+    DEMO_REPLAY
 }
 
 @Composable
@@ -62,7 +63,8 @@ fun MainApp(
 
     BackHandler(
         enabled = currentScreen != MainScreen.HOME &&
-            currentScreen != MainScreen.TUTORIAL_DEMO
+            currentScreen != MainScreen.TUTORIAL_DEMO &&
+            currentScreen != MainScreen.DEMO_REPLAY
     ) {
         currentScreen = if (currentScreen == MainScreen.TUTORIAL) {
             MainScreen.SETTINGS
@@ -140,6 +142,11 @@ fun MainApp(
                     appSettings = newSettings
                 },
                 onOpenCapabilitySettings = onOpenCapabilitySettings,
+                onReplayDemo = {
+                    onRequireCallCapabilities(false) {
+                        currentScreen = MainScreen.DEMO_REPLAY
+                    }
+                },
                 onViewTutorial = {
                     currentScreen = MainScreen.TUTORIAL
                 },
@@ -159,18 +166,24 @@ fun MainApp(
                     onOpenCapabilitySettings(CallCapability.FULL_SCREEN_INTENT)
                 },
                 onComplete = {
-                    currentScreen = MainScreen.TUTORIAL_DEMO
+                    onRequireCallCapabilities(false) {
+                        currentScreen = MainScreen.TUTORIAL_DEMO
+                    }
                 }
             )
         }
 
-        MainScreen.TUTORIAL_DEMO -> {
+        MainScreen.TUTORIAL_DEMO, MainScreen.DEMO_REPLAY -> {
             DemoCallFlow(
                 onCompleted = {
                     currentScreen = MainScreen.SETTINGS
                 },
                 onCancelled = {
-                    currentScreen = MainScreen.TUTORIAL
+                    currentScreen = if (currentScreen == MainScreen.DEMO_REPLAY) {
+                        MainScreen.SETTINGS
+                    } else {
+                        MainScreen.TUTORIAL
+                    }
                 }
             )
         }
@@ -188,3 +201,4 @@ fun MainApp(
         )
     }
 }
+

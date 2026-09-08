@@ -121,10 +121,13 @@ fun OnboardingScreen(
 
         val lastPage = currentPage == PAGE_COUNT - 1
         val canContinue =
-            currentPage != PERMISSIONS_PAGE || notificationsEnabled
+            currentPage < PERMISSIONS_PAGE || notificationsEnabled
 
         Button(
             onClick = {
+                if (!canContinue) {
+                    return@Button
+                }
                 if (lastPage) {
                     onComplete()
                 } else {
@@ -626,3 +629,4 @@ private fun ProgressDots(currentPage: Int) {
         }
     }
 }
+

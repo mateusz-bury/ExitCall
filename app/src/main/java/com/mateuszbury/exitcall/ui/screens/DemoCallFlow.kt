@@ -7,8 +7,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.findViewTreeLifecycleOwner
 import com.mateuszbury.exitcall.audio.ActiveCallAudioRouter
 import com.mateuszbury.exitcall.audio.AudioRouteSnapshot
 import com.mateuszbury.exitcall.audio.DemoVoicePlayer
@@ -53,15 +58,42 @@ fun DemoCallFlow(
         AppSettings()
     }
 
-    DisposableEffect(alertPlayer, voicePlayer, audioRouter) {
-        onDispose {
+    var demoEnded by remember { mutableStateOf(false) }
+    val latestOnCompleted by rememberUpdatedState(onCompleted)
+    val latestOnCancelled by rememberUpdatedState(onCancelled)
+    val stopAudio = remember(alertPlayer, voicePlayer, audioRouter) {
+        {
             alertPlayer.stop()
             voicePlayer.stop()
             audioRouter.stop()
         }
     }
+    val finishDemo: (Boolean) -> Unit = { completed ->
+        if (!demoEnded) {
+            demoEnded = true
+            stopAudio()
+            if (completed) latestOnCompleted() else latestOnCancelled()
+        }
+    }
+    val latestFinishDemo by rememberUpdatedState(finishDemo)
+    val lifecycle = LocalView.current.findViewTreeLifecycleOwner()?.lifecycle
 
-    LaunchedEffect(currentScreen) {
+    DisposableEffect(lifecycle, stopAudio) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                // A tutorial/demo must not keep ringing or start voice in the background.
+                latestFinishDemo(false)
+            }
+        }
+        lifecycle?.addObserver(observer)
+        onDispose {
+            lifecycle?.removeObserver(observer)
+            stopAudio()
+        }
+    }
+
+    LaunchedEffect(currentScreen, demoEnded) {
+        if (demoEnded) return@LaunchedEffect
         when (currentScreen) {
             CallScreen.INCOMING_CALL -> {
                 voicePlayer.stop()
@@ -70,6 +102,11 @@ fun DemoCallFlow(
                     ringtoneUri = demoSettings.ringtoneUri,
                     vibrate = demoSettings.vibrate
                 )
+                delay(demoSettings.ringDurationSeconds * 1_000L)
+                // Answer can arrive before recomposition cancels this effect.
+                if (currentScreen == CallScreen.INCOMING_CALL && !demoEnded) {
+                    latestFinishDemo(false)
+                }
             }
 
             CallScreen.ACTIVE_CALL -> {
@@ -79,20 +116,20 @@ fun DemoCallFlow(
                 }
                 audioRouter.selectDefaultRoute()
                 delay(DEMO_VOICE_START_DELAY_MS)
-                voicePlayer.play()
+                if (!demoEnded) voicePlayer.play()
             }
         }
     }
 
-    BackHandler(onBack = onCancelled)
+    BackHandler { finishDemo(false) }
 
     when (currentScreen) {
         CallScreen.INCOMING_CALL -> {
             IncomingCallScreen(
                 config = demoConfig,
-                onDecline = onCancelled,
+                onDecline = { finishDemo(false) },
                 onAnswer = {
-                    currentScreen = CallScreen.ACTIVE_CALL
+                    if (!demoEnded) currentScreen = CallScreen.ACTIVE_CALL
                 }
             )
         }
@@ -104,7 +141,7 @@ fun DemoCallFlow(
                 selectedAudioRoute = audioRouteSnapshot.selectedRoute,
                 onAudioRouteSelected = audioRouter::selectRoute,
                 onMuteChanged = voicePlayer::setMuted,
-                onHangUp = onCompleted
+                onHangUp = { finishDemo(true) }
             )
         }
     }

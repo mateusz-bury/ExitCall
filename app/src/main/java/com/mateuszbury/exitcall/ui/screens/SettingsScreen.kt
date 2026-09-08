@@ -20,6 +20,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.mateuszbury.exitcall.R
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +38,7 @@ fun SettingsScreen(
     onSettingsChange: (AppSettings) -> Unit,
     onOpenCapabilitySettings: (CallCapability) -> Unit,
     onViewTutorial: () -> Unit,
+    onReplayDemo: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -338,6 +341,13 @@ fun SettingsScreen(
             item {
                 SettingsSection(title = "HELP & INFORMATION") {
                     SettingsActionRow(
+                        title = stringResource(R.string.settings_replay_demo_title),
+                        subtitle = stringResource(R.string.settings_replay_demo_body),
+                        actionLabel = stringResource(R.string.settings_replay_demo_action),
+                        onClick = onReplayDemo
+                    )
+                    SettingsDivider()
+                    SettingsActionRow(
                         title = "View tutorial again",
                         subtitle = "Review the ExitCall tutorial without resetting setup",
                         actionLabel = "View",
@@ -597,3 +607,4 @@ private fun getSettingsRingtoneUri(intent: Intent?): Uri? {
         )
     }
 }
+

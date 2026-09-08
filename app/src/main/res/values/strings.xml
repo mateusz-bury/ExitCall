@@ -3,7 +3,7 @@
 
     <string name="onboarding_brand">EXITCALL</string>
     <string name="onboarding_continue">Continue</string>
-    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_get_started">Start demo call</string>
 
     <string name="onboarding_welcome_title">A call when you need an exit</string>
     <string name="onboarding_welcome_body">ExitCall gives you a discreet, scheduled way to step away when a situation becomes uncomfortable.</string>
@@ -44,7 +44,11 @@
     <string name="onboarding_trial_free_body">Two real ExitCalls are included before the one-time Premium unlock.</string>
     <string name="onboarding_trial_rules">Answer or Decline uses one free call. A timeout does not. Scheduling or editing a call does not use one either.</string>
 
-    <string name="onboarding_ready_title">You are ready</string>
-    <string name="onboarding_ready_body">ExitCall is now set up for the core experience.</string>
-    <string name="onboarding_ready_hint">You can change call preferences later in Settings. Exact-alarm access will be requested only when you schedule a precise future call.</string>
+    <string name="onboarding_ready_title">Try your demo call</string>
+    <string name="onboarding_ready_body">Answer the call to hear a calm, guided voice. Hang up when you are ready to finish setup. This demo never uses a free call.</string>
+    <string name="onboarding_ready_hint">Later, you can record your own voice or import an audio file. Without custom audio, ExitCall uses the default voice. You can replay this demo from Settings.</string>
+    <string name="settings_replay_demo_title">Replay demo call</string>
+    <string name="settings_replay_demo_body">Try the guided call again without changing your setup or using a free call</string>
+    <string name="settings_replay_demo_action">Play</string>
 </resources>
+
