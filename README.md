@@ -4,7 +4,7 @@ ExitCall is a native Android safety app that provides a user-configured incoming
 
 ## Current v1.0 state
 
-The core Android call pipeline works on physical hardware. P2 product-quality work is active and the onboarding/demo workstream is in final verification.
+The core Android call pipeline works on physical hardware. P2 product-quality work is active; onboarding, the first production Home dashboard and the Settings information surfaces are merged.
 
 Current merged baseline includes:
 
@@ -20,22 +20,22 @@ Current merged baseline includes:
 - functional Active Call keypad, Mute, route picker and More panel,
 - real Phone / Speaker / Bluetooth audio routing with route-state synchronization and cleanup,
 - mandatory first-run onboarding and a controlled ExitCall demo with guided local audio,
-- Settings tutorial replay that finishes without launching another demo.
+- Settings tutorial replay that finishes without launching another demo,
+- a production Home dashboard with next-call, caller, sound and real readiness state,
+- in-app privacy, safe-use, support, About and open-source notices.
 
 Most recent merged work:
 
-- PR #94: onboarding foundation,
-- PR #95: controlled onboarding demo,
-- PR #97: demo communication-audio routing, Bluetooth ringtone fix and functional playback Mute.
-
-PR #98 is open for final build/device verification. It audits the complete onboarding/demo flow, hardens demo cancellation/timeout cleanup and adds notification-gate instrumentation coverage.
+- PR #98: completed onboarding/demo flow and safe Settings tutorial replay,
+- PR #105: production Home dashboard foundation,
+- PR #106: Settings privacy/safe-use/support/About and open-source notices.
 
 Current focus:
 
-1. accept PR #98 on a physical device,
-2. record the remaining Phone ↔ Speaker ↔ Bluetooth and lifecycle checks,
-3. refresh/execute the physical regression suite,
-4. continue with missed-call behavior (#53), custom local audio (#76) and the production Home dashboard (#30).
+1. implement missed-call behavior and its Settings toggle (#53),
+2. continue with local custom call audio (#76),
+3. add trial/access gating (#74), followed by purchase restore and Premium ownership (#75),
+4. keep the physical regression suite (#9) and remaining route/capability checks current.
 
 ## Stack
 
