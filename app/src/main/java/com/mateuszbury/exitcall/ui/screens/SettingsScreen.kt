@@ -20,9 +20,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mateuszbury.exitcall.R
 import com.mateuszbury.exitcall.capability.CallCapability
 import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.RingDuration
@@ -36,6 +38,8 @@ fun SettingsScreen(
     onSettingsChange: (AppSettings) -> Unit,
     onOpenCapabilitySettings: (CallCapability) -> Unit,
     onViewTutorial: () -> Unit,
+    onOpenInformation: () -> Unit,
+    onOpenLicenses: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -344,14 +348,22 @@ fun SettingsScreen(
                         onClick = onViewTutorial
                     )
                     SettingsDivider()
-                    ComingSoonRow(
-                        title = "Privacy, safe use & support",
-                        subtitle = "Product and support information"
+                    SettingsActionRow(
+                        title = stringResource(R.string.info_title),
+                        subtitle = stringResource(
+                            R.string.settings_information_subtitle
+                        ),
+                        actionLabel = stringResource(R.string.settings_view),
+                        onClick = onOpenInformation
                     )
                     SettingsDivider()
-                    ComingSoonRow(
-                        title = "Open-source licenses",
-                        subtitle = "Third-party software notices"
+                    SettingsActionRow(
+                        title = stringResource(R.string.licenses_title),
+                        subtitle = stringResource(
+                            R.string.settings_licenses_subtitle
+                        ),
+                        actionLabel = stringResource(R.string.settings_view),
+                        onClick = onOpenLicenses
                     )
                     SettingsDivider()
                     ReadOnlyRow(

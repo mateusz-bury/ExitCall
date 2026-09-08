@@ -40,6 +40,7 @@ The Markdown files below are maintained living documentation. Versioned DOCX spe
 
 - [`process/BACKLOG.md`](process/BACKLOG.md) - roadmap, current session focus, completed work and later v1.0 workstreams
 - [`process/PROJECT_WORKFLOW.md`](process/PROJECT_WORKFLOW.md) - GitHub Project workflow and status conventions
+- [`process/RELEASE_CHECKLIST.md`](process/RELEASE_CHECKLIST.md) - release checks for dependency notices, privacy accuracy, safe-use copy and support destinations
 
 ## Specifications
 

@@ -12,7 +12,9 @@ import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.ui.components.CallCapabilityDialog
 import com.mateuszbury.exitcall.ui.screens.CallSetupScreen
 import com.mateuszbury.exitcall.ui.screens.HomeScreen
+import com.mateuszbury.exitcall.ui.screens.InformationScreen
 import com.mateuszbury.exitcall.ui.screens.OnboardingScreen
+import com.mateuszbury.exitcall.ui.screens.OpenSourceLicensesScreen
 import com.mateuszbury.exitcall.ui.screens.ScheduleCallScreen
 import com.mateuszbury.exitcall.ui.screens.SettingsScreen
 
@@ -21,7 +23,9 @@ private enum class MainScreen {
     CALL_SETUP,
     SCHEDULE_CALL,
     SETTINGS,
-    TUTORIAL
+    TUTORIAL,
+    INFORMATION,
+    OPEN_SOURCE_LICENSES
 }
 
 @Composable
@@ -61,10 +65,11 @@ fun MainApp(
     BackHandler(
         enabled = currentScreen != MainScreen.HOME
     ) {
-        currentScreen = if (currentScreen == MainScreen.TUTORIAL) {
-            MainScreen.SETTINGS
-        } else {
-            MainScreen.HOME
+        currentScreen = when (currentScreen) {
+            MainScreen.TUTORIAL,
+            MainScreen.INFORMATION,
+            MainScreen.OPEN_SOURCE_LICENSES -> MainScreen.SETTINGS
+            else -> MainScreen.HOME
         }
     }
 
@@ -144,8 +149,31 @@ fun MainApp(
                 onViewTutorial = {
                     currentScreen = MainScreen.TUTORIAL
                 },
+                onOpenInformation = {
+                    currentScreen = MainScreen.INFORMATION
+                },
+                onOpenLicenses = {
+                    currentScreen = MainScreen.OPEN_SOURCE_LICENSES
+                },
                 onBack = {
                     currentScreen = MainScreen.HOME
+                }
+            )
+        }
+
+        MainScreen.INFORMATION -> {
+            InformationScreen(
+                appVersionName = appVersionName,
+                onBack = {
+                    currentScreen = MainScreen.SETTINGS
+                }
+            )
+        }
+
+        MainScreen.OPEN_SOURCE_LICENSES -> {
+            OpenSourceLicensesScreen(
+                onBack = {
+                    currentScreen = MainScreen.SETTINGS
                 }
             )
         }

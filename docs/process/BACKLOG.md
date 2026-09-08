@@ -24,6 +24,8 @@ As of 2026-09-08:
 - #20/#22 Active Call controls and route picker are complete; PR #97 connected demo audio to the real communication route and made playback Mute functional.
 - #21 remains in Testing: handset output, Bluetooth ringtone isolation and Mute passed; explicit Phone ↔ Speaker ↔ Bluetooth switching and cleanup still need a recorded device pass.
 - #29 onboarding/demo is complete through merged PR #98: first run includes one demo; Settings tutorial replay ends without another call.
+- #30 production Home dashboard first slice is complete through merged PR #105.
+- #101/#103 Settings information and open-source notices are complete through PR #106.
 - #23 is now the decomposed Settings integration tracker; each remaining row has one owning issue.
 - #9 remains the maintained physical regression safety net and release-quality gate, but its stale expectations must be refreshed.
 
@@ -33,17 +35,17 @@ Working rule: **one large task or at most two small tasks active at once**.
 
 Current recommended order:
 
-`#30 production Home dashboard -> #53 missed-call notification -> #76 custom local audio -> #74 trial/access gating`
+`#53 missed-call notification -> #76 custom local audio -> #74 trial/access gating`
 
 Current bounded session (2026-09-08):
 
-1. Build #30 dashboard foundation from existing MainApp state: Next call, Caller, Sound and real readiness.
-2. Keep trial/Premium state out until #74/#75 provide its source of truth.
-3. Physically review Home layout and navigation, then merge before starting #53.
+1. Merge #101/#103 Settings information and open-source notices through PR #106.
+2. Implement #53 missed-call notification without changing decline or demo behavior.
+3. Continue with #76 custom local audio after #53 is accepted.
 
 Notes:
 
-- #23 tracks child issues #31/#34/#53/#75/#76/#99-#104; implementation stays in those owners.
+- #23 tracks remaining child issues #31/#34/#53/#75/#76/#99/#100/#102/#104; #101/#103 are complete through PR #106.
 - #19 is complete after focused system-mode/DND verification.
 - #8 and #59 remain verification/follow-up work and can be folded into normal physical regression sessions.
 - #9 needs a maintenance pass because several old exclusions/expectations became stale after #13/#14/#15/#58 and the final FSI policy.
@@ -113,8 +115,10 @@ Key completed issues include #1-#7, #10-#18, #27, #38, #44-#52, #55 and #58 wher
 
 ### Home / Settings
 
-- [ ] #23 Settings integration tracker. v1.0 children: #53, #75, #76, #99, #101, #103 and selected #34 scope. Post-v1.0: #31, #100, #102, #104.
-- [ ] #30 Production Home dashboard. First slice: Next call, Caller, Sound and real readiness; trial/Premium joins only after #74/#75.
+- [ ] #23 Settings integration tracker. Remaining v1.0 children: #53, #75, #76, #99 and selected #34 scope. Post-v1.0: #31, #100, #102, #104. #101/#103 completed in PR #106.
+- [x] #30 Production Home dashboard first slice: Next call, Caller, Sound and real readiness. PR #105; trial/Premium joins only after #74/#75.
+- [x] #101 Open-source licenses and third-party notices. PR #106.
+- [x] #103 Privacy, safe use, support and About information. PR #106.
 - [x] Shared navigation polish: Home Settings gear + common Back top bar for Setup/Schedule/Settings. PR #86.
 - #24 theme centralization is complete; PR #87 additionally aligned call surfaces/system navigation bar with the shared palette.
 
