@@ -39,9 +39,9 @@ Current recommended order:
 
 Current bounded session (2026-09-08):
 
-1. Merge #101/#103 Settings information and open-source notices through PR #106.
-2. Implement #53 missed-call notification without changing decline or demo behavior.
-3. Continue with #76 custom local audio after #53 is accepted.
+1. #101/#103 are merged through PR #106.
+2. Next implementation owner: #53 missed-call notification, without changing decline or demo behavior.
+3. After #53 acceptance, continue with #76 custom local audio.
 
 Notes:
 
@@ -192,6 +192,14 @@ Active Call now has functional Keypad, route picker and More panels. The shared 
 
 First run includes the controlled demo and completes only after Answer → Hang Up. PR #98 added capability/audio education and lifecycle-safe timeout/background cleanup. Settings tutorial replay now ends with Finish and returns to Settings without launching another call.
 
+### #30 / PR #105 — production Home dashboard foundation
+
+Home now presents the next scheduled call, caller identity, sound/vibration summary and real delivery readiness from existing sources of truth. Trial/Premium information remains intentionally absent until #74/#75 provide authoritative state.
+
+### #101 / #103 / PR #106 — Settings information surfaces
+
+The disabled Help & Information placeholders now open readable privacy/safe-use/support/About and open-source notices screens. Privacy copy matches the current local-only app architecture while disclosing Android system backup behavior. Production dependencies, copyright owners and the Apache 2.0 destination are documented, and the release checklist owns future notice/privacy verification.
+
 ---
 
 ## Current architecture observations
@@ -210,6 +218,8 @@ First run includes the controlled demo and completes only after Answer → Hang 
 - `ActiveCallAudioRouter` is the shared owner of Phone/Speaker/Bluetooth communication routing for production and demo Active Call.
 - Demo narration is local communication audio. Its Mute changes player volume and does not claim to mute a real telephony microphone.
 - Settings tutorial replay ends with Finish and returns to Settings without invoking `DemoCallFlow` or mutating onboarding completion, call configuration or future entitlement state.
+- Settings information and license screens are routed from Settings and return there on top-bar or Android Back.
+- The app requests no Internet permission; current user/configuration data remains app-local, while Android-controlled device backup is disclosed separately.
 - Immediate and scheduled ExitCalls converge on the same service/activity lifecycle.
 - Markdown under `docs/` is the maintained living documentation; versioned DOCX files are specification snapshots.
 
