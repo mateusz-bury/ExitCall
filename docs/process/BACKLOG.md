@@ -171,7 +171,7 @@ Incoming termination now uses one maintained cleanup contract. Notification Decl
 
 ### #16 / #17 and PR #87 — call-screen presentation polish
 
-Incoming and Active surfaces were rebuilt against the supplied native call references while keeping ExitCall's own design language and `EC` marker. The call UI now uses centralized theme colors, a dark system navigation bar, vector call/action icons and a wide Hang Up control. Active secondary controls remain visually complete but intentionally non-functional until #22.
+Incoming and Active surfaces were rebuilt against the supplied native call references while keeping ExitCall's own design language and `EC` marker. The call UI now uses centralized theme colors, a dark system navigation bar, vector call/action icons and a wide Hang Up control. PR #87 established the visual baseline; #20/#22 and PR #97 later completed the control and audio-route behavior described below.
 
 ### PR #86 — navigation/header consistency
 
