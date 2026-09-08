@@ -315,7 +315,10 @@ class MainActivity : ComponentActivity() {
                                 )
                             },
                             onComplete = {
-                                onboardingDemoActive = true
+                                refreshCapabilityAvailability()
+                                if (capabilityResolver.isCapabilityAvailable(CallCapability.NOTIFICATIONS)) {
+                                    onboardingDemoActive = true
+                                }
                             }
                         )
                     }
@@ -386,3 +389,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+

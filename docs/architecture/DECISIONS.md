@@ -170,18 +170,19 @@ Incoming termination uses one maintained cleanup contract.
 - Unanswered timeout may create a missed-call notification when the #53 Settings toggle is enabled.
 - Missed-call notification uses normal notification semantics, not the incoming-call ringtone.
 
-## Active Call controls
+## Active Call controls and routing
 
-Visual baseline is established by PR #87.
+The visual baseline was established by PR #87; behavior was completed through #20/#21/#22 and PR #97.
 
 - `Audio Emoji` is removed.
-- Keypad, Mute, Speaker and More use proper icons.
-- These four controls must not ship as dead controls.
 - Keypad opens a numeric keypad surface.
-- Mute and Speaker may be presentation/stateful controls in v1.0 where no real telephony operation exists.
-- More opens an intentional menu with enabled/disabled actions.
-- Bluetooth/headset routing is real behavior and remains tracked in #20.
-- Real speakerphone routing remains outside v1.0 unless later evidence changes the decision (#21).
+- More opens an intentional dismissible menu.
+- Mute is stateful. For demo narration it controls player volume; it does not claim to mute a real telephony microphone.
+- Phone, Speaker and Bluetooth are real communication-audio route requests, not cosmetic toggles.
+- Route UI follows the device Android accepted, including external changes where supported.
+- Production and demo Active Call share `ActiveCallAudioRouter`; no competing route implementation is allowed.
+- Cleanup restores prior audio mode/route.
+- Wired/headset/device-removal and OEM differences remain regression-matrix concerns rather than separate audio engines.
 
 ## Visual direction
 
@@ -227,15 +228,20 @@ Production Settings foundation is implemented.
 
 v1.0 uses mandatory first-run onboarding.
 
-- Explain what ExitCall does and required/recommended Android capabilities.
-- Notifications required; FSI recommended; exact-alarm access contextual for scheduling.
-- Include one demo call with caller `ExitCall`.
-- Demo uses the same `EC` marker rule as normal calls.
-- Default guided content is one emotionally neutral English voice track.
-- Demo audio begins after Answer and stops on Hang Up.
-- Tutorial can later be replayed from Settings without restoring trial/demo consumption.
+- Explain ExitCall's purpose, the `EC` marker and capability policy.
+- Notifications are required; FSI is recommended with notification fallback; exact-alarm access is contextual to precise scheduling.
+- Include one controlled demo call with caller `ExitCall`.
+- Demo uses the same Incoming/Active surfaces and `EC` marker as normal calls, but does not invoke the production foreground-service pipeline.
+- Default guided content is one local, emotionally neutral English voice track.
+- Demo narration begins only after Answer and uses the shared communication-audio route.
+- Decline, Back, unanswered timeout, background/lock and disposal cancel without completing first-run onboarding.
+- Only Answer followed by Hang Up completes first-run onboarding.
+- Settings can replay the informational tutorial, which ends with Finish and returns to Settings without a demo.
+- Tutorial replay must not reset or mutate onboarding completion, caller/settings/schedule data, free-call state or Premium state.
+- The first-run demo never consumes a configurable call.
+- Future custom recording/import remains owned by #76; until then the bundled default voice is used.
 
-Tracked in #29.
+Tracked and physically accepted in #29 before closure.
 
 ## Monetization and entitlement
 

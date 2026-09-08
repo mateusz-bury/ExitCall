@@ -46,6 +46,7 @@ private const val PERMISSIONS_PAGE = 2
 @Composable
 fun OnboardingScreen(
     capabilityAvailability: Map<CallCapability, Boolean>,
+    launchesDemoOnComplete: Boolean = true,
     onRequestNotifications: () -> Unit,
     onOpenFullScreenSettings: () -> Unit,
     onComplete: () -> Unit
@@ -54,7 +55,7 @@ fun OnboardingScreen(
         capabilityAvailability[CallCapability.NOTIFICATIONS] == true
     val pagerState = rememberPagerState(
         pageCount = {
-            if (notificationsEnabled) {
+            if (notificationsEnabled || !launchesDemoOnComplete) {
                 PAGE_COUNT
             } else {
                 PERMISSIONS_PAGE + 1
@@ -110,7 +111,9 @@ fun OnboardingScreen(
                         onOpenFullScreenSettings = onOpenFullScreenSettings
                     )
                     3 -> TrialPage()
-                    else -> ReadyPage()
+                    else -> ReadyPage(
+                        showDemoInstructions = launchesDemoOnComplete
+                    )
                 }
             }
         }
@@ -121,10 +124,15 @@ fun OnboardingScreen(
 
         val lastPage = currentPage == PAGE_COUNT - 1
         val canContinue =
-            currentPage != PERMISSIONS_PAGE || notificationsEnabled
+            !launchesDemoOnComplete ||
+                currentPage < PERMISSIONS_PAGE ||
+                notificationsEnabled
 
         Button(
             onClick = {
+                if (!canContinue) {
+                    return@Button
+                }
                 if (lastPage) {
                     onComplete()
                 } else {
@@ -144,8 +152,10 @@ fun OnboardingScreen(
                 .height(56.dp)
         ) {
             Text(
-                text = if (lastPage) {
+                text = if (lastPage && launchesDemoOnComplete) {
                     stringResource(R.string.onboarding_get_started)
+                } else if (lastPage) {
+                    stringResource(R.string.onboarding_finish)
                 } else {
                     stringResource(R.string.onboarding_continue)
                 },
@@ -154,7 +164,11 @@ fun OnboardingScreen(
             )
         }
 
-        if (currentPage == PERMISSIONS_PAGE && !notificationsEnabled) {
+        if (
+            launchesDemoOnComplete &&
+            currentPage == PERMISSIONS_PAGE &&
+            !notificationsEnabled
+        ) {
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = stringResource(R.string.onboarding_notifications_blocking_hint),
@@ -368,10 +382,24 @@ private fun TrialPage() {
 }
 
 @Composable
-private fun ReadyPage() {
+private fun ReadyPage(
+    showDemoInstructions: Boolean
+) {
     PageScaffold(
-        title = stringResource(R.string.onboarding_ready_title),
-        body = stringResource(R.string.onboarding_ready_body)
+        title = stringResource(
+            if (showDemoInstructions) {
+                R.string.onboarding_ready_title
+            } else {
+                R.string.tutorial_complete_title
+            }
+        ),
+        body = stringResource(
+            if (showDemoInstructions) {
+                R.string.onboarding_ready_body
+            } else {
+                R.string.tutorial_complete_body
+            }
+        )
     ) {
         Surface(
             shape = CircleShape,
@@ -389,7 +417,13 @@ private fun ReadyPage() {
         }
         Spacer(modifier = Modifier.height(28.dp))
         Text(
-            text = stringResource(R.string.onboarding_ready_hint),
+            text = stringResource(
+                if (showDemoInstructions) {
+                    R.string.onboarding_ready_hint
+                } else {
+                    R.string.tutorial_complete_hint
+                }
+            ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 15.sp,
             lineHeight = 22.sp,
@@ -626,3 +660,4 @@ private fun ProgressDots(currentPage: Int) {
         }
     }
 }
+
