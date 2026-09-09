@@ -82,7 +82,6 @@ class MissedCallNotifier(
             .setContentIntent(contentPendingIntent)
             .setAutoCancel(true)
             .setOnlyAlertOnce(true)
-            .setVibrate(null)
             .build()
 
         notificationManager.cancel(NOTIFICATION_ID)
