@@ -26,6 +26,10 @@ class AppSettingsStore(
             .putString(KEY_RINGTONE_NAME, settings.ringtoneName)
             .putBoolean(KEY_VIBRATE, settings.vibrate)
             .putInt(KEY_RING_DURATION_SECONDS, settings.ringDurationSeconds)
+            .putBoolean(
+                KEY_MISSED_CALL_NOTIFICATION_ENABLED,
+                settings.missedCallNotificationEnabled
+            )
             .apply()
     }
 
@@ -50,6 +54,10 @@ class AppSettingsStore(
                     KEY_RING_DURATION_SECONDS,
                     defaults.ringDurationSeconds
                 )
+            ),
+            missedCallNotificationEnabled = preferences.getBoolean(
+                KEY_MISSED_CALL_NOTIFICATION_ENABLED,
+                defaults.missedCallNotificationEnabled
             )
         )
     }
@@ -66,6 +74,7 @@ class AppSettingsStore(
             .putString(KEY_RINGTONE_NAME, legacyConfig.ringtoneName)
             .putBoolean(KEY_VIBRATE, legacyConfig.vibrate)
             .putInt(KEY_RING_DURATION_SECONDS, RingDuration.DEFAULT_SECONDS)
+            .putBoolean(KEY_MISSED_CALL_NOTIFICATION_ENABLED, true)
             .putBoolean(KEY_LEGACY_MIGRATION_COMPLETE, true)
             .apply()
     }
@@ -77,6 +86,8 @@ class AppSettingsStore(
         private const val KEY_RINGTONE_NAME = "ringtone_name"
         private const val KEY_VIBRATE = "vibrate"
         private const val KEY_RING_DURATION_SECONDS = "ring_duration_seconds"
+        private const val KEY_MISSED_CALL_NOTIFICATION_ENABLED =
+            "missed_call_notification_enabled"
         private const val KEY_LEGACY_MIGRATION_COMPLETE =
             "legacy_call_config_migration_complete"
     }
