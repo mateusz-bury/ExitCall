@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.mateuszbury.exitcall.MainActivity
 import com.mateuszbury.exitcall.R
 
@@ -27,6 +28,10 @@ class MissedCallNotifier(
         vibrate: Boolean
     ) {
         createChannel()
+
+        if (!canPostNotification()) {
+            return
+        }
 
         val displayName = callerName.ifBlank {
             appContext.getString(R.string.missed_call_unknown_caller)
@@ -113,6 +118,24 @@ class MissedCallNotifier(
         }
 
         notificationManager.createNotificationChannel(channel)
+    }
+
+    private fun canPostNotification(): Boolean {
+        if (
+            !NotificationManagerCompat
+                .from(appContext)
+                .areNotificationsEnabled()
+        ) {
+            return false
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return true
+        }
+
+        return notificationManager
+            .getNotificationChannel(CHANNEL_ID)
+            ?.importance != NotificationManager.IMPORTANCE_NONE
     }
 
     @Suppress("DEPRECATION")
