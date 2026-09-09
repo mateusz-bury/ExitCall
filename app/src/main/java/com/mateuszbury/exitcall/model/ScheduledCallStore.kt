@@ -35,6 +35,10 @@ class ScheduledCallStore(
                 KEY_RING_DURATION_SECONDS,
                 settingsSnapshot.ringDurationSeconds
             )
+            .putBoolean(
+                KEY_MISSED_CALL_NOTIFICATION_ENABLED,
+                settingsSnapshot.missedCallNotificationEnabled
+            )
             .apply()
     }
 
@@ -81,6 +85,10 @@ class ScheduledCallStore(
                     KEY_RING_DURATION_SECONDS,
                     defaults.ringDurationSeconds
                 )
+            ),
+            missedCallNotificationEnabled = preferences.getBoolean(
+                KEY_MISSED_CALL_NOTIFICATION_ENABLED,
+                defaults.missedCallNotificationEnabled
             )
         )
     }
@@ -93,6 +101,7 @@ class ScheduledCallStore(
             .remove(KEY_RINGTONE_NAME)
             .remove(KEY_VIBRATE)
             .remove(KEY_RING_DURATION_SECONDS)
+            .remove(KEY_MISSED_CALL_NOTIFICATION_ENABLED)
             .apply()
     }
 
@@ -145,6 +154,8 @@ class ScheduledCallStore(
         private const val KEY_VIBRATE = "settings_vibrate"
         private const val KEY_RING_DURATION_SECONDS =
             "settings_ring_duration_seconds"
+        private const val KEY_MISSED_CALL_NOTIFICATION_ENABLED =
+            "settings_missed_call_notification_enabled"
 
         private const val NO_SCHEDULED_CALL = -1L
     }
