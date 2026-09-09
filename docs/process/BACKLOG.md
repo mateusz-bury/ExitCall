@@ -6,7 +6,7 @@ GitHub Issues are the source of truth for actionable work. This file is the main
 
 **P2 product-quality work is active.**
 
-As of 2026-09-08:
+As of 2026-09-09:
 
 - P1 implementation baseline is complete and stable enough for continued P2 feature work.
 - Production Android identity is `com.mateuszbury.exitcall`.
@@ -26,6 +26,7 @@ As of 2026-09-08:
 - #29 onboarding/demo is complete through merged PR #98: first run includes one demo; Settings tutorial replay ends without another call.
 - #30 production Home dashboard first slice is complete through merged PR #105.
 - #101/#103 Settings information and open-source notices are complete through PR #106.
+- #53 configurable missed-call notification is complete through merged PR #108.
 - #23 is now the decomposed Settings integration tracker; each remaining row has one owning issue.
 - #9 remains the maintained physical regression safety net and release-quality gate, but its stale expectations must be refreshed.
 
@@ -35,17 +36,17 @@ Working rule: **one large task or at most two small tasks active at once**.
 
 Current recommended order:
 
-`#53 missed-call notification -> #76 custom local audio -> #74 trial/access gating`
+`#99 battery-optimization guidance -> #76 custom local audio -> #74 trial/access gating`
 
-Current bounded session (2026-09-08):
+Current bounded session (2026-09-09):
 
-1. #101/#103 are merged through PR #106.
-2. Next implementation owner: #53 missed-call notification, without changing decline or demo behavior.
-3. After #53 acceptance, continue with #76 custom local audio.
+1. #53 is complete through merged PR #108 and physically accepted on the primary device.
+2. Next implementation owner: #99 battery-optimization reliability guidance.
+3. After #99 acceptance, continue with #76 custom local audio, followed by #74 trial/access gating.
 
 Notes:
 
-- #23 tracks remaining child issues #31/#34/#53/#75/#76/#99/#100/#102/#104; #101/#103 are complete through PR #106.
+- #23 tracks remaining child issues #31/#34/#75/#76/#99/#100/#102/#104; #53/#101/#103 are complete through PRs #108/#106.
 - #19 is complete after focused system-mode/DND verification.
 - #8 and #59 remain verification/follow-up work and can be folded into normal physical regression sessions.
 - #9 needs a maintenance pass because several old exclusions/expectations became stale after #13/#14/#15/#58 and the final FSI policy.
@@ -110,12 +111,12 @@ Key completed issues include #1-#7, #10-#18, #27, #38, #44-#52, #55 and #58 wher
 - [x] #20 Bluetooth/headset audio-route support. Route picker and shared router merged; remaining hardware combinations stay in regression coverage.
 - [ ] #21 Real Phone/Speaker route behavior is implemented. Handset, Bluetooth ringtone isolation and playback Mute passed; explicit route switching/disconnect/cleanup verification remains.
 - [x] #22 ActiveCallScreen controls. Keypad, route picker, More and functional demo-playback Mute are merged.
-- [ ] #53 Configurable missed-call notification after unanswered timeout only.
+- [x] #53 Configurable missed-call notification after unanswered timeout only. PR #108.
 - [ ] #54 EC marker onboarding/demo and future visual-variant integration. Current marker remains implemented and preserved by PR #87.
 
 ### Home / Settings
 
-- [ ] #23 Settings integration tracker. Remaining v1.0 children: #53, #75, #76, #99 and selected #34 scope. Post-v1.0: #31, #100, #102, #104. #101/#103 completed in PR #106.
+- [ ] #23 Settings integration tracker. Remaining v1.0 children: #75, #76, #99 and selected #34 scope. Post-v1.0: #31, #100, #102, #104. #53/#101/#103 completed through PRs #108/#106.
 - [x] #30 Production Home dashboard first slice: Next call, Caller, Sound and real readiness. PR #105; trial/Premium joins only after #74/#75.
 - [x] #101 Open-source licenses and third-party notices. PR #106.
 - [x] #103 Privacy, safe use, support and About information. PR #106.
@@ -168,9 +169,9 @@ PR #82 uses Android's system phone-data picker and intentionally avoids `READ_CO
 
 ### #58 — production Settings and configurable timeout
 
-PR #84 introduced `AppSettings` / `AppSettingsStore` as the source of truth for global ringtone, vibration and ring duration. Legacy ringtone/vibration values are migrated once from `CallConfigStore`. Ring duration supports 5/10/20-second presets plus Custom 5–60 seconds. Settings exposes live Notifications/Exact Alarm/FSI status and explicit Coming soon placeholders for later work.
+PR #84 introduced `AppSettings` / `AppSettingsStore` as the source of truth for global ringtone, vibration and ring duration. PR #108 extends it with the persisted missed-call notification preference. Legacy ringtone/vibration values are migrated once from `CallConfigStore`. Ring duration supports 5/10/20-second presets plus Custom 5–60 seconds. Settings exposes live Notifications/Exact Alarm/FSI status and explicit Coming soon placeholders for later work.
 
-A new scheduled call captures an `AppSettings` snapshot. Therefore changing global ringtone/vibration/timeout later does not silently alter an already pending scheduled call.
+A new scheduled call captures an `AppSettings` snapshot. Therefore changing global ringtone/vibration/timeout or the missed-call notification preference later does not silently alter an already pending scheduled call.
 
 ### PR #85 — incoming lifecycle consistency
 
@@ -200,14 +201,18 @@ Home now presents the next scheduled call, caller identity, sound/vibration summ
 
 The disabled Help & Information placeholders now open readable privacy/safe-use/support/About and open-source notices screens. Privacy copy matches the current local-only app architecture while disclosing Android system backup behavior. Production dependencies, copyright owners and the Apache 2.0 destination are documented, and the release checklist owns future notice/privacy verification.
 
+### #53 / PR #108 — configurable missed-call notification
+
+Settings now persists an enabled-by-default missed-call toggle. Only an unanswered timeout posts the regular notification; Answer and Decline never do. The notification uses current caller identity, a dedicated non-ringing channel, the system notification sound and the existing vibration preference. Scheduled calls capture the toggle in their existing `AppSettings` snapshot.
+
 ---
 
 ## Current architecture observations
 
 - Production package identity is `com.mateuszbury.exitcall`.
 - `CallConfigStore` is the durable source of truth for caller identity and phone number. Legacy ringtone/vibration fields remain only as migration compatibility until cleanup is safe.
-- `AppSettingsStore` is the durable source of truth for global ringtone URI/name, vibration and ring duration.
-- `ScheduledCallStore` persists the single future trigger plus the `AppSettings` snapshot captured when it was scheduled.
+- `AppSettingsStore` is the durable source of truth for global ringtone URI/name, vibration, ring duration and missed-call notification preference.
+- `ScheduledCallStore` persists the single future trigger plus the `AppSettings` snapshot captured when it was scheduled, including missed-call behavior.
 - `ScheduledCallScheduler` owns exact-alarm registration, replacement, cancellation and recovery.
 - Normal scheduling, reboot recovery, exact-alarm permission recovery and app-start recovery reuse one scheduled-call `PendingIntent` identity.
 - Immediate calls use current `AppSettings`; scheduled calls use their captured alert-settings snapshot.
