@@ -90,6 +90,18 @@
     <string name="settings_information_subtitle">How ExitCall handles data and when to use it</string>
     <string name="settings_licenses_subtitle">Third-party software notices</string>
 
+    <string name="battery_optimization_title">Battery optimization</string>
+    <string name="battery_optimization_ready">Ready · Android reports unrestricted battery use</string>
+    <string name="battery_optimization_recommended">Action recommended · Optimization may affect scheduled calls</string>
+    <string name="battery_optimization_unknown">Review Android battery settings for scheduled-call reliability</string>
+    <string name="battery_optimization_review">Review</string>
+    <string name="battery_optimization_dialog_title">Battery optimization</string>
+    <string name="battery_optimization_dialog_ready">Android currently reports ExitCall as unrestricted. Device-specific power controls may still affect delivery, so test scheduled calls on this device.</string>
+    <string name="battery_optimization_dialog_recommended">Android currently applies battery optimization to ExitCall. Allowing unrestricted battery use may improve scheduled-call reliability, but delivery still depends on Android and device-specific power controls.</string>
+    <string name="battery_optimization_dialog_unknown">ExitCall could not determine the current Android battery-optimization state. Review the system settings and test scheduled calls on this device.</string>
+    <string name="battery_optimization_open_settings">Open settings</string>
+    <string name="battery_optimization_not_now">Not now</string>
+
     <string name="info_title">Privacy, safe use &amp; support</string>
     <string name="info_intro">Clear information about what ExitCall stores, the Android capabilities it uses and the limits of the service.</string>
     <string name="info_privacy_title">PRIVACY</string>
