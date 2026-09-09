@@ -346,6 +346,8 @@ fun SettingsScreen(
                             when (batteryOptimizationStatus) {
                                 BatteryOptimizationStatus.UNRESTRICTED ->
                                     R.string.battery_optimization_ready
+                                BatteryOptimizationStatus.BACKGROUND_RESTRICTED ->
+                                    R.string.battery_optimization_restricted
                                 BatteryOptimizationStatus.OPTIMIZED ->
                                     R.string.battery_optimization_recommended
                                 BatteryOptimizationStatus.UNKNOWN ->
@@ -449,6 +451,8 @@ fun SettingsScreen(
                         when (batteryOptimizationStatus) {
                             BatteryOptimizationStatus.UNRESTRICTED ->
                                 R.string.battery_optimization_dialog_ready
+                            BatteryOptimizationStatus.BACKGROUND_RESTRICTED ->
+                                R.string.battery_optimization_dialog_restricted
                             BatteryOptimizationStatus.OPTIMIZED ->
                                 R.string.battery_optimization_dialog_recommended
                             BatteryOptimizationStatus.UNKNOWN ->
