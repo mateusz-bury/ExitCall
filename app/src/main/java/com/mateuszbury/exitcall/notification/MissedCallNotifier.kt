@@ -79,6 +79,11 @@ class MissedCallNotifier(
             .setContentText(body)
             .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setSound(
+                RingtoneManager.getDefaultUri(
+                    RingtoneManager.TYPE_NOTIFICATION
+                )
+            )
             .setContentIntent(contentPendingIntent)
             .setAutoCancel(true)
             .setOnlyAlertOnce(true)
