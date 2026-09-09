@@ -4,7 +4,7 @@ This directory contains the maintained project documentation for ExitCall.
 
 ## Current technical baseline
 
-As of 2026-09-08, P2 product-quality work is active and onboarding/demo is in final physical verification.
+As of 2026-09-08, P2 product-quality work is active. Onboarding/demo, the first production Home dashboard and the Settings information surfaces are merged.
 
 The merged baseline includes:
 
@@ -21,11 +21,13 @@ The merged baseline includes:
 - functional Active Call keypad, Mute, More and real Phone/Speaker/Bluetooth routing,
 - mandatory first-run onboarding and one controlled ExitCall demo,
 - guided demo audio on the communication route, with handset output, Bluetooth ringtone isolation and Mute accepted on the primary device,
-- Settings tutorial replay that finishes without launching another demo.
+- Settings tutorial replay that finishes without launching another demo,
+- a production Home dashboard driven by existing call/configuration/readiness state,
+- in-app privacy, safe-use, support, About and open-source notices.
 
-PR #98 is the current verification candidate. It adds notification rechecks, idempotent demo cleanup, background/lock cancellation, unanswered timeout handling and three instrumentation tests for onboarding/tutorial gating. Its build/device checklist is still pending.
+PR #98 completed the onboarding/demo flow, PR #105 added the production Home dashboard foundation and PR #106 completed Settings privacy/safe-use/support/About plus open-source notices.
 
-The immediate work frontier is: accept PR #98, finish focused route/lifecycle/portrait/capability checks, maintain regression issue #9, then continue with missed-call behavior (#53), custom local audio (#76) and Home dashboard (#30).
+The immediate work frontier is: implement missed-call behavior (#53), continue with local custom audio (#76), then add local trial/access gating (#74). Focused route/lifecycle/portrait/capability checks and regression issue #9 remain the cross-cutting quality track.
 
 The Markdown files below are maintained living documentation. Versioned DOCX specifications are historical snapshots.
 
