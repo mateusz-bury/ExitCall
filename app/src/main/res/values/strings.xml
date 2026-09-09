@@ -78,6 +78,15 @@
     <string name="home_set_up_call">Set up a call</string>
 
     <string name="settings_view">View</string>
+    <string name="settings_missed_call_title">Missed call notification</string>
+    <string name="settings_missed_call_subtitle">Show after an unanswered ExitCall</string>
+
+    <string name="missed_call_channel_name">Missed calls</string>
+    <string name="missed_call_channel_description">Notifications for unanswered ExitCalls</string>
+    <string name="missed_call_title">Missed call from %1$s</string>
+    <string name="missed_call_body">ExitCall ended unanswered</string>
+    <string name="missed_call_body_with_number">%1$s · ExitCall ended unanswered</string>
+    <string name="missed_call_unknown_caller">Unknown caller</string>
     <string name="settings_information_subtitle">How ExitCall handles data and when to use it</string>
     <string name="settings_licenses_subtitle">Third-party software notices</string>
 
