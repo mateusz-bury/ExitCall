@@ -6,11 +6,13 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import com.mateuszbury.exitcall.model.ScheduledCallStore
+import com.mateuszbury.exitcall.notification.CallDeliveryDiagnostics
 
 class CallAlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("ExitCall", "Scheduled call triggered!")
+        CallDeliveryDiagnostics.log(context, "alarm-received")
 
         val scheduledCallStore = ScheduledCallStore(context)
         val settingsSnapshot = scheduledCallStore.loadSettingsSnapshot()
@@ -28,10 +30,16 @@ class CallAlarmReceiver : BroadcastReceiver() {
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
-        } else {
-            context.startService(serviceIntent)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
+        } catch (exception: RuntimeException) {
+            // Includes OEM/background service restrictions and revoked access.
+            // The elapsed call is consumed, not replayed unexpectedly later.
+            Log.e("ExitCallDelivery", "Scheduled service launch failed", exception)
         }
     }
 }

@@ -1,5 +1,9 @@
 # ExitCall Technical Documentation v1.6
 
+## PR #112 follow-up: background execution (2026-09-09, pending device validation)
+
+The [background delivery audit](../BACKGROUND_DELIVERY_AUDIT_2026-09-09.md) updates the baseline below: background execution is now a required setup/start prerequisite, separate from optional Doze guidance and FSI. Notification readiness includes the Incoming calls channel. The shared policy covers onboarding, immediate/scheduled entry and Home; existing pending schedules remain best effort after revocation. The audit contains the full dependency map, regression checklist and remaining device-evidence gap. Do not interpret these changes as verified Motorola screen-wake behavior.
+
 **Status:** living technical documentation  
 **Baseline date:** 2026-09-08  
 **Platform:** Android  

@@ -11,33 +11,34 @@ import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.mateuszbury.exitcall.scheduler.ScheduledCallScheduler
+import com.mateuszbury.exitcall.notification.IncomingCallChannel
+import com.mateuszbury.exitcall.power.BatteryOptimizationResolver
 
 class CallCapabilityResolver(
     context: Context,
     private val scheduledCallScheduler: ScheduledCallScheduler
 ) {
     private val appContext = context.applicationContext
+    private val batteryResolver = BatteryOptimizationResolver(appContext)
+
+    init {
+        IncomingCallChannel.ensureCreated(appContext)
+    }
 
     fun firstMissingCapability(
         requireExactAlarm: Boolean
     ): CallCapability? {
-        if (!isCapabilityAvailable(CallCapability.NOTIFICATIONS)) {
-            return CallCapability.NOTIFICATIONS
-        }
-
-        if (
-            requireExactAlarm &&
-            !isCapabilityAvailable(CallCapability.EXACT_ALARM)
-        ) {
-            return CallCapability.EXACT_ALARM
-        }
-
-        return null
+        return CallReadiness.firstMissing(
+            CallCapability.values().associateWith(::isCapabilityAvailable),
+            requireExactAlarm
+        )
     }
 
     fun isCapabilityAvailable(capability: CallCapability): Boolean {
         return when (capability) {
             CallCapability.NOTIFICATIONS -> hasNotificationCapability()
+            CallCapability.BACKGROUND_EXECUTION ->
+                batteryResolver.isBackgroundExecutionAllowed() == true
             CallCapability.EXACT_ALARM ->
                 scheduledCallScheduler.canScheduleExactAlarms()
             CallCapability.FULL_SCREEN_INTENT -> hasFullScreenIntentCapability()
@@ -59,7 +60,17 @@ class CallCapabilityResolver(
         capability: CallCapability
     ): Intent? {
         return when (capability) {
+            CallCapability.BACKGROUND_EXECUTION -> appDetailsSettingsIntent()
             CallCapability.NOTIFICATIONS -> {
+                if (NotificationManagerCompat.from(appContext).areNotificationsEnabled() &&
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                    !IncomingCallChannel.isReady(appContext)
+                ) {
+                    return Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, appContext.packageName)
+                        putExtra(Settings.EXTRA_CHANNEL_ID, IncomingCallChannel.ID)
+                    }
+                }
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                     putExtra(
                         Settings.EXTRA_APP_PACKAGE,
@@ -110,9 +121,7 @@ class CallCapabilityResolver(
             return false
         }
 
-        return NotificationManagerCompat
-            .from(appContext)
-            .areNotificationsEnabled()
+        return IncomingCallChannel.hasControls(appContext)
     }
 
     private fun hasFullScreenIntentCapability(): Boolean {

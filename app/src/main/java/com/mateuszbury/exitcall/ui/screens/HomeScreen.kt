@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mateuszbury.exitcall.R
 import com.mateuszbury.exitcall.capability.CallCapability
+import com.mateuszbury.exitcall.capability.CallReadiness
 import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.CallConfig
 import java.text.SimpleDateFormat
@@ -63,17 +64,17 @@ fun HomeScreen(
         capabilityAvailability[CallCapability.EXACT_ALARM] == true
     val fullScreenReady =
         capabilityAvailability[CallCapability.FULL_SCREEN_INTENT] == true
+    val requiredIssue = CallReadiness.firstMissing(
+        capabilityAvailability, requireExactAlarm = scheduledCallAtMillis != null
+    )
 
     val readinessCapability = when {
-        !notificationsReady -> CallCapability.NOTIFICATIONS
-        scheduledCallAtMillis != null && !exactAlarmReady ->
-            CallCapability.EXACT_ALARM
+        requiredIssue != null -> requiredIssue
         !fullScreenReady -> CallCapability.FULL_SCREEN_INTENT
         else -> null
     }
     val readinessTitle = if (
-        !notificationsReady ||
-        (scheduledCallAtMillis != null && !exactAlarmReady)
+        requiredIssue != null
     ) {
         stringResource(R.string.home_status_action_required)
     } else {
@@ -82,6 +83,8 @@ fun HomeScreen(
     val readinessDetail = when {
         !notificationsReady ->
             stringResource(R.string.home_status_notifications_required)
+        requiredIssue == CallCapability.BACKGROUND_EXECUTION ->
+            stringResource(R.string.home_status_background_required)
         scheduledCallAtMillis != null && !exactAlarmReady ->
             stringResource(R.string.home_status_exact_alarm_required)
         !fullScreenReady ->
@@ -89,8 +92,7 @@ fun HomeScreen(
         else -> stringResource(R.string.home_status_all_ready)
     }
     val readinessActionLabel = when {
-        !notificationsReady ||
-            (scheduledCallAtMillis != null && !exactAlarmReady) ->
+        requiredIssue != null ->
             stringResource(R.string.home_status_manage)
         !fullScreenReady -> stringResource(R.string.home_status_improve)
         else -> null

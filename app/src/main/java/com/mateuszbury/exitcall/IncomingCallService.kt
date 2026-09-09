@@ -1,6 +1,5 @@
 package com.mateuszbury.exitcall
 
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
@@ -18,6 +17,8 @@ import com.mateuszbury.exitcall.model.AppSettingsStore
 import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.model.CallConfigStore
 import com.mateuszbury.exitcall.notification.MissedCallNotifier
+import com.mateuszbury.exitcall.notification.IncomingCallChannel
+import com.mateuszbury.exitcall.notification.CallDeliveryDiagnostics
 import com.mateuszbury.exitcall.model.RingDuration
 
 class IncomingCallService : Service() {
@@ -41,7 +42,7 @@ class IncomingCallService : Service() {
     }
 
     companion object {
-        const val CHANNEL_ID = "incoming_call_channel_v2"
+        const val CHANNEL_ID = IncomingCallChannel.ID
         const val NOTIFICATION_ID = 1002
 
         const val ACTION_DECLINE =
@@ -84,7 +85,7 @@ class IncomingCallService : Service() {
         super.onCreate()
 
         alertPlayer = IncomingCallAlertPlayer(this)
-        createNotificationChannel()
+        IncomingCallChannel.ensureCreated(this)
     }
 
     override fun onStartCommand(
@@ -123,6 +124,7 @@ class IncomingCallService : Service() {
         config: CallConfig,
         settings: AppSettings
     ) {
+        CallDeliveryDiagnostics.log(this, "service-start")
         activeCallConfig = config
         activeSettings = settings
         unansweredTimeoutMs = settings.ringDurationSeconds * 1_000L
@@ -208,6 +210,7 @@ class IncomingCallService : Service() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setOngoing(true)
+            .setContentIntent(fullScreenPendingIntent)
             .setStyle(
                 NotificationCompat.CallStyle.forIncomingCall(
                     caller,
@@ -225,6 +228,15 @@ class IncomingCallService : Service() {
             NOTIFICATION_ID,
             notification
         )
+
+        // Permission/channel may be revoked after scheduling. Never ring without
+        // accessible notification controls. Promote first to satisfy the FGS deadline.
+        if (!IncomingCallChannel.hasControls(this)) {
+            Log.w("ExitCallDelivery", "Call stopped: notification controls unavailable")
+            stopSelf()
+            return
+        }
+        CallDeliveryDiagnostics.log(this, "notification-posted")
 
         alertPlayer.start(
             ringtoneUri = settings.ringtoneUri,
@@ -308,28 +320,6 @@ class IncomingCallService : Service() {
     private enum class FinishReason {
         TIMEOUT,
         DECLINE
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Incoming calls",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                setSound(null, null)
-                enableVibration(false)
-            }
-
-            val notificationManager =
-                getSystemService(
-                    NotificationManager::class.java
-                )
-
-            notificationManager.createNotificationChannel(
-                channel
-            )
-        }
     }
 
     override fun onDestroy() {

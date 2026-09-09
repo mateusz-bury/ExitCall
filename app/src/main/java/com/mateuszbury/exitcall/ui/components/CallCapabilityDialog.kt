@@ -19,10 +19,16 @@ fun CallCapabilityDialog(
     val dismissLabel: String
 
     when (capability) {
+        CallCapability.BACKGROUND_EXECUTION -> {
+            title = "Background use required"
+            message = "Allow background use for ExitCall in Android app battery settings. Return here after changing it. If access cannot be checked, retry; this requirement is separate from battery optimization and full-screen access."
+            confirmLabel = "Open settings"
+            dismissLabel = "Not now"
+        }
         CallCapability.NOTIFICATIONS -> {
             title = "Notifications required"
             message =
-                "ExitCall needs notifications to show incoming call controls reliably. No call will be started or scheduled until this is enabled."
+                "Enable ExitCall notifications and set the Incoming calls channel to high importance (allow pop-ups). No call will be started or scheduled until these controls are available."
             confirmLabel = if (canRequestNotificationPermission) {
                 "Allow notifications"
             } else {

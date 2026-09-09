@@ -2,6 +2,8 @@
 
 This directory contains the maintained project documentation for ExitCall.
 
+Latest PR #112 follow-up: [background execution and locked-screen delivery audit](BACKGROUND_DELIVERY_AUDIT_2026-09-09.md), with dependency impact, mandatory onboarding gate and device diagnostic checklist. Physical validation remains pending.
+
 ## Current technical baseline
 
 As of 2026-09-08, P2 product-quality work is active. Onboarding/demo, the first production Home dashboard and the Settings information surfaces are merged.

@@ -28,21 +28,27 @@ import com.mateuszbury.exitcall.R
 import com.mateuszbury.exitcall.capability.CallCapability
 import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.RingDuration
+import com.mateuszbury.exitcall.power.BatteryOptimizationStatus
 import com.mateuszbury.exitcall.ui.components.ExitCallTopBar
 
 @Composable
 fun SettingsScreen(
     settings: AppSettings,
     capabilityAvailability: Map<CallCapability, Boolean>,
+    batteryOptimizationStatus: BatteryOptimizationStatus,
     appVersionName: String,
     onSettingsChange: (AppSettings) -> Unit,
     onOpenCapabilitySettings: (CallCapability) -> Unit,
+    onOpenBatteryOptimizationSettings: () -> Unit,
     onViewTutorial: () -> Unit,
     onOpenInformation: () -> Unit,
     onOpenLicenses: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    var showBatteryOptimizationDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
 
     var customDuration by rememberSaveable(settings.ringDurationSeconds) {
         mutableStateOf(settings.ringDurationSeconds.toString())
@@ -288,6 +294,12 @@ fun SettingsScreen(
             item {
                 SettingsSection(title = "PERMISSIONS & DEVICE") {
                     CapabilityRow(
+                        title = stringResource(R.string.onboarding_background_title),
+                        available = capabilityAvailability[CallCapability.BACKGROUND_EXECUTION] == true,
+                        onManage = onOpenBatteryOptimizationSettings
+                    )
+                    SettingsDivider()
+                    CapabilityRow(
                         title = "Notifications",
                         available = capabilityAvailability[
                             CallCapability.NOTIFICATIONS
@@ -332,9 +344,28 @@ fun SettingsScreen(
 
                     SettingsDivider()
 
-                    ComingSoonRow(
-                        title = "Battery optimization",
-                        subtitle = "Device-specific reliability guidance"
+                    SettingsActionRow(
+                        title = stringResource(
+                            R.string.battery_optimization_title
+                        ),
+                        subtitle = stringResource(
+                            when (batteryOptimizationStatus) {
+                                BatteryOptimizationStatus.UNRESTRICTED ->
+                                    R.string.battery_optimization_ready
+                                BatteryOptimizationStatus.BACKGROUND_RESTRICTED ->
+                                    R.string.battery_optimization_restricted
+                                BatteryOptimizationStatus.OPTIMIZED ->
+                                    R.string.battery_optimization_recommended
+                                BatteryOptimizationStatus.UNKNOWN ->
+                                    R.string.battery_optimization_unknown
+                            }
+                        ),
+                        actionLabel = stringResource(
+                            R.string.battery_optimization_review
+                        ),
+                        onClick = {
+                            showBatteryOptimizationDialog = true
+                        }
                     )
                 }
             }
@@ -406,6 +437,64 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    if (showBatteryOptimizationDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showBatteryOptimizationDialog = false
+            },
+            title = {
+                Text(
+                    stringResource(
+                        R.string.battery_optimization_dialog_title
+                    )
+                )
+            },
+            text = {
+                Text(
+                    stringResource(
+                        when (batteryOptimizationStatus) {
+                            BatteryOptimizationStatus.UNRESTRICTED ->
+                                R.string.battery_optimization_dialog_ready
+                            BatteryOptimizationStatus.BACKGROUND_RESTRICTED ->
+                                R.string.battery_optimization_dialog_restricted
+                            BatteryOptimizationStatus.OPTIMIZED ->
+                                R.string.battery_optimization_dialog_recommended
+                            BatteryOptimizationStatus.UNKNOWN ->
+                                R.string.battery_optimization_dialog_unknown
+                        }
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showBatteryOptimizationDialog = false
+                        onOpenBatteryOptimizationSettings()
+                    }
+                ) {
+                    Text(
+                        stringResource(
+                            R.string.battery_optimization_open_settings
+                        )
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showBatteryOptimizationDialog = false
+                    }
+                ) {
+                    Text(
+                        stringResource(
+                            R.string.battery_optimization_not_now
+                        )
+                    )
+                }
+            }
+        )
     }
 }
 
