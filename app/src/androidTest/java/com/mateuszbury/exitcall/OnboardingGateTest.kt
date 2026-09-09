@@ -23,9 +23,10 @@ class OnboardingGateTest {
         compose.setContent {
             ExitCallTheme {
                 OnboardingScreen(
-                    capabilityAvailability = mapOf(CallCapability.NOTIFICATIONS to false),
+                    capabilityAvailability = mapOf(CallCapability.NOTIFICATIONS to false, CallCapability.BACKGROUND_EXECUTION to true),
                     onRequestNotifications = {},
                     onOpenFullScreenSettings = {},
+                    onOpenBackgroundSettings = {},
                     onComplete = { completed++ }
                 )
             }
@@ -46,10 +47,12 @@ class OnboardingGateTest {
             ExitCallTheme {
                 OnboardingScreen(
                     capabilityAvailability = mapOf(
-                        CallCapability.NOTIFICATIONS to notifications.value
+                        CallCapability.NOTIFICATIONS to notifications.value,
+                        CallCapability.BACKGROUND_EXECUTION to true
                     ),
                     onRequestNotifications = {},
                     onOpenFullScreenSettings = {},
+                    onOpenBackgroundSettings = {},
                     onComplete = { completed++ }
                 )
             }
@@ -80,10 +83,11 @@ class OnboardingGateTest {
         compose.setContent {
             ExitCallTheme {
                 OnboardingScreen(
-                    capabilityAvailability = mapOf(CallCapability.NOTIFICATIONS to false),
+                    capabilityAvailability = mapOf(CallCapability.NOTIFICATIONS to false, CallCapability.BACKGROUND_EXECUTION to true),
                     launchesDemoOnComplete = false,
                     onRequestNotifications = {},
                     onOpenFullScreenSettings = {},
+                    onOpenBackgroundSettings = {},
                     onComplete = { completed++ }
                 )
             }

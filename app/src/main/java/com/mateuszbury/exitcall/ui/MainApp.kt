@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.mateuszbury.exitcall.capability.CallCapability
 import com.mateuszbury.exitcall.model.AppSettings
@@ -53,7 +54,7 @@ fun MainApp(
     onCapabilityConfirm: (CallCapability) -> Unit,
     onCapabilityDismiss: () -> Unit
 ) {
-    var currentScreen by remember {
+    var currentScreen by rememberSaveable {
         mutableStateOf(MainScreen.HOME)
     }
 
@@ -90,9 +91,9 @@ fun MainApp(
                     )
                 },
                 onScheduleCall = {
-                    onRequireCallCapabilities(true) {
-                        currentScreen = MainScreen.SCHEDULE_CALL
-                    }
+                    // Keep cancellation accessible after a permission is revoked.
+                    // Validate capabilities when the user submits a schedule.
+                    currentScreen = MainScreen.SCHEDULE_CALL
                 },
                 onCallSetup = {
                     currentScreen = MainScreen.CALL_SETUP
@@ -188,6 +189,7 @@ fun MainApp(
             OnboardingScreen(
                 capabilityAvailability = capabilityAvailability,
                 launchesDemoOnComplete = false,
+                onOpenBackgroundSettings = onOpenBatteryOptimizationSettings,
                 onRequestNotifications = {
                     onCapabilityConfirm(CallCapability.NOTIFICATIONS)
                 },
@@ -213,4 +215,3 @@ fun MainApp(
         )
     }
 }
-

@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">ExitCall</string>
+    <string name="onboarding_background_title">Background use</string>
+    <string name="onboarding_background_body">Required. Allow background use for ExitCall in Android app battery settings. This is separate from battery optimization and full-screen access. Device-specific restrictions may still apply; test a scheduled call with the screen locked.</string>
+    <string name="onboarding_required_blocking_hint">Enable notifications, the Incoming calls alert channel and background use to continue.</string>
+    <string name="home_status_background_required">Allow background use in Android app battery settings, then return to ExitCall.</string>
+    <string name="battery_settings_unavailable">Could not open settings. Open Android Settings → Apps → ExitCall → Battery and allow background use.</string>
 
     <string name="onboarding_brand">EXITCALL</string>
     <string name="onboarding_continue">Continue</string>
@@ -91,14 +96,14 @@
     <string name="settings_licenses_subtitle">Third-party software notices</string>
 
     <string name="battery_optimization_title">Battery optimization</string>
-    <string name="battery_optimization_ready">Ready · Android reports unrestricted battery use</string>
+    <string name="battery_optimization_ready">Battery optimization exemption enabled</string>
     <string name="battery_optimization_restricted">Action required · Background use is restricted</string>
     <string name="battery_optimization_recommended">Action recommended · Optimization may affect scheduled calls</string>
     <string name="battery_optimization_unknown">Review Android battery settings for scheduled-call reliability</string>
     <string name="battery_optimization_review">Review</string>
     <string name="battery_optimization_dialog_title">Battery optimization</string>
-    <string name="battery_optimization_dialog_ready">Android currently reports ExitCall as unrestricted. Device-specific power controls may still affect delivery, so test scheduled calls on this device.</string>
-    <string name="battery_optimization_dialog_restricted">Android reports that background use is restricted for ExitCall. This can prevent the full-screen call from appearing while the phone is locked, even when the alarm, ringtone and vibration still run.</string>
+    <string name="battery_optimization_dialog_ready">Android reports that ExitCall is exempt from Doze battery optimization. This does not grant full-screen access or verify every device-specific background restriction. Test a scheduled call with the screen locked.</string>
+    <string name="battery_optimization_dialog_restricted">Android reports that background use is restricted for ExitCall. Allow background use in app battery settings, then return here. Alarms and services may be restricted. Screen presentation also depends on full-screen access and the Incoming calls channel.</string>
     <string name="battery_optimization_dialog_recommended">Android currently applies battery optimization to ExitCall. Allowing unrestricted battery use may improve scheduled-call reliability, but delivery still depends on Android and device-specific power controls.</string>
     <string name="battery_optimization_dialog_unknown">ExitCall could not determine the current Android battery-optimization state. Review the system settings and test scheduled calls on this device.</string>
     <string name="battery_optimization_open_settings">Open settings</string>

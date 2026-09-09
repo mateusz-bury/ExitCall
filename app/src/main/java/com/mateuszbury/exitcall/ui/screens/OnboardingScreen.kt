@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mateuszbury.exitcall.R
 import com.mateuszbury.exitcall.capability.CallCapability
+import com.mateuszbury.exitcall.capability.CallReadiness
 import kotlinx.coroutines.launch
 
 private const val PAGE_COUNT = 5
@@ -49,13 +50,13 @@ fun OnboardingScreen(
     launchesDemoOnComplete: Boolean = true,
     onRequestNotifications: () -> Unit,
     onOpenFullScreenSettings: () -> Unit,
+    onOpenBackgroundSettings: () -> Unit,
     onComplete: () -> Unit
 ) {
-    val notificationsEnabled =
-        capabilityAvailability[CallCapability.NOTIFICATIONS] == true
+    val requiredCapabilitiesReady = CallReadiness.firstMissing(capabilityAvailability) == null
     val pagerState = rememberPagerState(
         pageCount = {
-            if (notificationsEnabled || !launchesDemoOnComplete) {
+            if (requiredCapabilitiesReady || !launchesDemoOnComplete) {
                 PAGE_COUNT
             } else {
                 PERMISSIONS_PAGE + 1
@@ -108,7 +109,8 @@ fun OnboardingScreen(
                     2 -> CapabilityPage(
                         capabilityAvailability = capabilityAvailability,
                         onRequestNotifications = onRequestNotifications,
-                        onOpenFullScreenSettings = onOpenFullScreenSettings
+                        onOpenFullScreenSettings = onOpenFullScreenSettings,
+                        onOpenBackgroundSettings = onOpenBackgroundSettings
                     )
                     3 -> TrialPage()
                     else -> ReadyPage(
@@ -126,7 +128,7 @@ fun OnboardingScreen(
         val canContinue =
             !launchesDemoOnComplete ||
                 currentPage < PERMISSIONS_PAGE ||
-                notificationsEnabled
+                requiredCapabilitiesReady
 
         Button(
             onClick = {
@@ -167,11 +169,11 @@ fun OnboardingScreen(
         if (
             launchesDemoOnComplete &&
             currentPage == PERMISSIONS_PAGE &&
-            !notificationsEnabled
+            !requiredCapabilitiesReady
         ) {
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = stringResource(R.string.onboarding_notifications_blocking_hint),
+                text = stringResource(R.string.onboarding_required_blocking_hint),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center
@@ -291,7 +293,8 @@ private fun EcMarkerPage() {
 private fun CapabilityPage(
     capabilityAvailability: Map<CallCapability, Boolean>,
     onRequestNotifications: () -> Unit,
-    onOpenFullScreenSettings: () -> Unit
+    onOpenFullScreenSettings: () -> Unit,
+    onOpenBackgroundSettings: () -> Unit
 ) {
     val notificationsEnabled =
         capabilityAvailability[CallCapability.NOTIFICATIONS] == true
@@ -299,6 +302,8 @@ private fun CapabilityPage(
         capabilityAvailability[CallCapability.FULL_SCREEN_INTENT] == true
     val exactAlarmEnabled =
         capabilityAvailability[CallCapability.EXACT_ALARM] == true
+    val backgroundEnabled =
+        capabilityAvailability[CallCapability.BACKGROUND_EXECUTION] == true
 
     PageScaffold(
         title = stringResource(R.string.onboarding_permissions_title),
@@ -334,6 +339,16 @@ private fun CapabilityPage(
                 stringResource(R.string.onboarding_open_settings)
             },
             onAction = onOpenFullScreenSettings
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+        CapabilityCard(
+            title = stringResource(R.string.onboarding_background_title),
+            description = stringResource(R.string.onboarding_background_body),
+            status = stringResource(if (backgroundEnabled) R.string.onboarding_enabled else R.string.onboarding_required),
+            enabled = backgroundEnabled,
+            actionLabel = stringResource(R.string.onboarding_open_settings),
+            onAction = onOpenBackgroundSettings
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -660,4 +675,3 @@ private fun ProgressDots(currentPage: Int) {
         }
     }
 }
-

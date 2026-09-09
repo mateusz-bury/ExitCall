@@ -294,6 +294,12 @@ fun SettingsScreen(
             item {
                 SettingsSection(title = "PERMISSIONS & DEVICE") {
                     CapabilityRow(
+                        title = stringResource(R.string.onboarding_background_title),
+                        available = capabilityAvailability[CallCapability.BACKGROUND_EXECUTION] == true,
+                        onManage = onOpenBatteryOptimizationSettings
+                    )
+                    SettingsDivider()
+                    CapabilityRow(
                         title = "Notifications",
                         available = capabilityAvailability[
                             CallCapability.NOTIFICATIONS

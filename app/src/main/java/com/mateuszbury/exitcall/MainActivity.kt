@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,6 +23,7 @@ import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.model.CallConfigStore
 import com.mateuszbury.exitcall.model.OnboardingStore
 import com.mateuszbury.exitcall.model.ScheduledCallStore
+import com.mateuszbury.exitcall.notification.CallDeliveryDiagnostics
 import com.mateuszbury.exitcall.power.BatteryOptimizationResolver
 import com.mateuszbury.exitcall.power.BatteryOptimizationStatus
 import com.mateuszbury.exitcall.scheduler.ScheduledCallScheduler
@@ -198,6 +200,10 @@ class MainActivity : ComponentActivity() {
     private fun openCapabilitySettings(
         capability: CallCapability
     ) {
+        if (capability == CallCapability.BACKGROUND_EXECUTION) {
+            openBatteryOptimizationSettings()
+            return
+        }
         val settingsIntent = capabilityResolver.settingsIntent(capability)
 
         if (settingsIntent == null) {
@@ -236,9 +242,17 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openBatteryOptimizationSettings() {
-        openCapabilitySettings(
-            batteryOptimizationResolver.settingsIntent()
-        )
+        // Try launching directly. Package visibility can make resolveActivity
+        // return null even when a settings Activity can be launched.
+        for (intent in batteryOptimizationResolver.settingsIntents()) {
+            if (runCatching { startActivity(intent) }.isSuccess) {
+                waitingForSystemSettings = true
+                return
+            }
+        }
+        Toast.makeText(this, R.string.battery_settings_unavailable, Toast.LENGTH_LONG).show()
+        refreshCapabilityAvailability()
+        refreshBatteryOptimizationStatus()
     }
 
     private fun refreshBatteryOptimizationStatus() {
@@ -318,6 +332,11 @@ class MainActivity : ComponentActivity() {
                     !onboardingCompleted && onboardingDemoActive -> {
                         DemoCallFlow(
                             onCompleted = {
+                                if (capabilityResolver.firstMissingCapability(false) != null) {
+                                    refreshCapabilityAvailability()
+                                    onboardingDemoActive = false
+                                    return@DemoCallFlow
+                                }
                                 val onboardingDefaultConfig = CallConfig()
                                 callConfigStore.save(onboardingDefaultConfig)
                                 callConfig = onboardingDefaultConfig
@@ -342,9 +361,10 @@ class MainActivity : ComponentActivity() {
                                     CallCapability.FULL_SCREEN_INTENT
                                 )
                             },
+                            onOpenBackgroundSettings = { openBatteryOptimizationSettings() },
                             onComplete = {
                                 refreshCapabilityAvailability()
-                                if (capabilityResolver.isCapabilityAvailable(CallCapability.NOTIFICATIONS)) {
+                                if (capabilityResolver.firstMissingCapability(false) == null) {
                                     onboardingDemoActive = true
                                 }
                             }
@@ -407,6 +427,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        CallDeliveryDiagnostics.log(this, "main-resumed")
 
         if (::scheduledCallStore.isInitialized) {
             scheduledCallAtMillis = scheduledCallStore.load()
@@ -424,4 +445,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-

@@ -20,6 +20,7 @@ import androidx.core.view.WindowCompat
 import com.mateuszbury.exitcall.audio.ActiveCallAudioRouter
 import com.mateuszbury.exitcall.audio.AudioRouteSnapshot
 import com.mateuszbury.exitcall.model.CallConfigStore
+import com.mateuszbury.exitcall.notification.CallDeliveryDiagnostics
 import com.mateuszbury.exitcall.screens.CallScreen
 import com.mateuszbury.exitcall.ui.screens.ActiveCallScreen
 import com.mateuszbury.exitcall.ui.screens.IncomingCallScreen
@@ -58,6 +59,7 @@ class IncomingCallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CallDeliveryDiagnostics.log(this, "activity-created")
 
         configureSystemBars()
 
@@ -167,6 +169,7 @@ class IncomingCallActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        CallDeliveryDiagnostics.log(this, "activity-new-intent")
         setIntent(intent)
 
         if (
@@ -190,6 +193,11 @@ class IncomingCallActivity : ComponentActivity() {
         }
 
         super.onDestroy()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        CallDeliveryDiagnostics.log(this, "activity-resumed")
     }
 
     private fun declineIncomingCall() {
