@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import com.mateuszbury.exitcall.capability.CallCapability
 import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.CallConfig
+import com.mateuszbury.exitcall.power.BatteryOptimizationStatus
 import com.mateuszbury.exitcall.ui.components.CallCapabilityDialog
 import com.mateuszbury.exitcall.ui.screens.CallSetupScreen
 import com.mateuszbury.exitcall.ui.screens.HomeScreen
@@ -35,6 +36,7 @@ fun MainApp(
     scheduledCallAtMillis: Long?,
     capabilityIssue: CallCapability?,
     capabilityAvailability: Map<CallCapability, Boolean>,
+    batteryOptimizationStatus: BatteryOptimizationStatus,
     canRequestNotificationPermission: Boolean,
     appVersionName: String,
     onRequireCallCapabilities: (
@@ -47,6 +49,7 @@ fun MainApp(
     onSaveCallConfig: (CallConfig) -> Unit,
     onSaveAppSettings: (AppSettings) -> Unit,
     onOpenCapabilitySettings: (CallCapability) -> Unit,
+    onOpenBatteryOptimizationSettings: () -> Unit,
     onCapabilityConfirm: (CallCapability) -> Unit,
     onCapabilityDismiss: () -> Unit
 ) {
@@ -140,12 +143,15 @@ fun MainApp(
             SettingsScreen(
                 settings = appSettings,
                 capabilityAvailability = capabilityAvailability,
+                batteryOptimizationStatus = batteryOptimizationStatus,
                 appVersionName = appVersionName,
                 onSettingsChange = { newSettings ->
                     onSaveAppSettings(newSettings)
                     appSettings = newSettings
                 },
                 onOpenCapabilitySettings = onOpenCapabilitySettings,
+                onOpenBatteryOptimizationSettings =
+                    onOpenBatteryOptimizationSettings,
                 onViewTutorial = {
                     currentScreen = MainScreen.TUTORIAL
                 },
