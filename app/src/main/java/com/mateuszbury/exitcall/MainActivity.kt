@@ -18,6 +18,7 @@ import com.mateuszbury.exitcall.capability.CallCapability
 import com.mateuszbury.exitcall.capability.CallCapabilityResolver
 import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.AppSettingsStore
+import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.model.CallConfigStore
 import com.mateuszbury.exitcall.model.OnboardingStore
 import com.mateuszbury.exitcall.model.ScheduledCallStore
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
     private var scheduledCallAtMillis by mutableStateOf<Long?>(null)
     private var capabilityIssue by mutableStateOf<CallCapability?>(null)
     private var appSettings by mutableStateOf(AppSettings())
+    private var callConfig by mutableStateOf(CallConfig())
     private var onboardingCompleted by mutableStateOf(false)
     private var onboardingDemoActive by mutableStateOf(false)
     private var capabilityAvailability by mutableStateOf(
@@ -266,7 +268,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val callConfigStore = CallConfigStore(this)
-        val initialCallConfig = callConfigStore.load()
+        callConfig = callConfigStore.load()
         val onboardingStore = OnboardingStore(this)
         onboardingCompleted = onboardingStore.isCompleted()
 
@@ -293,6 +295,9 @@ class MainActivity : ComponentActivity() {
                     !onboardingCompleted && onboardingDemoActive -> {
                         DemoCallFlow(
                             onCompleted = {
+                                val onboardingDefaultConfig = CallConfig()
+                                callConfigStore.save(onboardingDefaultConfig)
+                                callConfig = onboardingDefaultConfig
                                 onboardingStore.markCompleted()
                                 onboardingDemoActive = false
                                 onboardingCompleted = true
@@ -325,7 +330,7 @@ class MainActivity : ComponentActivity() {
 
                     else -> {
                         MainApp(
-                            initialCallConfig = initialCallConfig,
+                            initialCallConfig = callConfig,
                             initialAppSettings = appSettings,
                             scheduledCallAtMillis = scheduledCallAtMillis,
                             capabilityIssue = capabilityIssue,
@@ -350,6 +355,7 @@ class MainActivity : ComponentActivity() {
                             },
                             onSaveCallConfig = { newConfig ->
                                 callConfigStore.save(newConfig)
+                                callConfig = newConfig
                             },
                             onSaveAppSettings = { newSettings ->
                                 appSettingsStore.save(newSettings)
