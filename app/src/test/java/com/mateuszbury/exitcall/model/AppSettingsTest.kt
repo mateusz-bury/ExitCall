@@ -8,6 +8,11 @@ import org.junit.Test
 class AppSettingsTest {
 
     @Test
+    fun missedCallNotificationIsEnabledByDefault() {
+        assertTrue(AppSettings().missedCallNotificationEnabled)
+    }
+
+    @Test
     fun timeoutBoundariesAreValid() {
         assertTrue(RingDuration.isValid(5))
         assertTrue(RingDuration.isValid(60))

@@ -15,7 +15,9 @@ import androidx.core.app.Person
 import com.mateuszbury.exitcall.audio.IncomingCallAlertPlayer
 import com.mateuszbury.exitcall.model.AppSettings
 import com.mateuszbury.exitcall.model.AppSettingsStore
+import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.model.CallConfigStore
+import com.mateuszbury.exitcall.notification.MissedCallNotifier
 import com.mateuszbury.exitcall.model.RingDuration
 
 class IncomingCallService : Service() {
@@ -24,6 +26,8 @@ class IncomingCallService : Service() {
     private var isEnding = false
     private var callStarted = false
     private var unansweredTimeoutMs = 0L
+    private var activeCallConfig = CallConfig()
+    private var activeSettings = AppSettings()
 
     private val timeoutHandler = Handler(Looper.getMainLooper())
 
@@ -33,7 +37,7 @@ class IncomingCallService : Service() {
             "Incoming call timed out after ${unansweredTimeoutMs / 1000} seconds"
         )
 
-        finishIncomingCall("timeout")
+        finishIncomingCall(FinishReason.TIMEOUT)
     }
 
     companion object {
@@ -53,6 +57,8 @@ class IncomingCallService : Service() {
         private const val EXTRA_VIBRATE = "extra_vibrate"
         private const val EXTRA_RING_DURATION_SECONDS =
             "extra_ring_duration_seconds"
+        private const val EXTRA_MISSED_CALL_NOTIFICATION_ENABLED =
+            "extra_missed_call_notification_enabled"
 
         fun putSettingsSnapshot(
             intent: Intent,
@@ -66,6 +72,10 @@ class IncomingCallService : Service() {
                 .putExtra(
                     EXTRA_RING_DURATION_SECONDS,
                     settings.ringDurationSeconds
+                )
+                .putExtra(
+                    EXTRA_MISSED_CALL_NOTIFICATION_ENABLED,
+                    settings.missedCallNotificationEnabled
                 )
         }
     }
@@ -88,7 +98,7 @@ class IncomingCallService : Service() {
                 "Decline pressed from notification"
             )
 
-            finishIncomingCall("decline")
+            finishIncomingCall(FinishReason.DECLINE)
 
             return START_NOT_STICKY
         }
@@ -101,7 +111,7 @@ class IncomingCallService : Service() {
                 ?: AppSettingsStore(this).load()
 
             startIncomingCall(
-                callerName = config.callerName,
+                config = config,
                 settings = settings
             )
         }
@@ -110,14 +120,16 @@ class IncomingCallService : Service() {
     }
 
     private fun startIncomingCall(
-        callerName: String,
+        config: CallConfig,
         settings: AppSettings
     ) {
+        activeCallConfig = config
+        activeSettings = settings
         unansweredTimeoutMs = settings.ringDurationSeconds * 1_000L
 
         Log.d(
             "ExitCall",
-            "Loaded call settings: caller=$callerName, ringtone=${settings.ringtoneName}, vibrate=${settings.vibrate}, timeout=${settings.ringDurationSeconds}s"
+            "Loaded call settings: caller=${config.callerName}, ringtone=${settings.ringtoneName}, vibrate=${settings.vibrate}, timeout=${settings.ringDurationSeconds}s, missedCall=${settings.missedCallNotificationEnabled}"
         )
 
         val notificationManager =
@@ -184,7 +196,7 @@ class IncomingCallService : Service() {
         )
 
         val caller = Person.Builder()
-            .setName(callerName.ifBlank { "Unknown" })
+            .setName(config.callerName.ifBlank { "Unknown" })
             .setImportant(true)
             .build()
 
@@ -250,11 +262,15 @@ class IncomingCallService : Service() {
                     EXTRA_RING_DURATION_SECONDS,
                     defaults.ringDurationSeconds
                 )
+            ),
+            missedCallNotificationEnabled = intent.getBooleanExtra(
+                EXTRA_MISSED_CALL_NOTIFICATION_ENABLED,
+                defaults.missedCallNotificationEnabled
             )
         )
     }
 
-    private fun finishIncomingCall(reason: String) {
+    private fun finishIncomingCall(reason: FinishReason) {
         if (isEnding) return
 
         isEnding = true
@@ -270,12 +286,28 @@ class IncomingCallService : Service() {
         getSystemService(NotificationManager::class.java)
             .cancel(NOTIFICATION_ID)
 
+        if (
+            reason == FinishReason.TIMEOUT &&
+            activeSettings.missedCallNotificationEnabled
+        ) {
+            MissedCallNotifier(this).show(
+                callerName = activeCallConfig.callerName,
+                phoneNumber = activeCallConfig.phoneNumber,
+                vibrate = activeSettings.vibrate
+            )
+        }
+
         Log.d(
             "ExitCall",
             "Incoming call finished: $reason"
         )
 
         stopSelf()
+    }
+
+    private enum class FinishReason {
+        TIMEOUT,
+        DECLINE
     }
 
     private fun createNotificationChannel() {

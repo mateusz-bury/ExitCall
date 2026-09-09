@@ -252,6 +252,25 @@ fun SettingsScreen(
 
                     SettingsDivider()
 
+                    SettingsSwitchRow(
+                        title = stringResource(
+                            R.string.settings_missed_call_title
+                        ),
+                        subtitle = stringResource(
+                            R.string.settings_missed_call_subtitle
+                        ),
+                        checked = settings.missedCallNotificationEnabled,
+                        onCheckedChange = { enabled ->
+                            onSettingsChange(
+                                settings.copy(
+                                    missedCallNotificationEnabled = enabled
+                                )
+                            )
+                        }
+                    )
+
+                    SettingsDivider()
+
                     ComingSoonRow(
                         title = "Voice",
                         subtitle = "Default voice and audio scenario"

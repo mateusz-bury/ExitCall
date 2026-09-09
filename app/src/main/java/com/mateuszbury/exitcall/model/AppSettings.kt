@@ -4,7 +4,8 @@ data class AppSettings(
     val ringtoneUri: String? = null,
     val ringtoneName: String = "System default",
     val vibrate: Boolean = true,
-    val ringDurationSeconds: Int = RingDuration.DEFAULT_SECONDS
+    val ringDurationSeconds: Int = RingDuration.DEFAULT_SECONDS,
+    val missedCallNotificationEnabled: Boolean = true
 )
 
 object RingDuration {
