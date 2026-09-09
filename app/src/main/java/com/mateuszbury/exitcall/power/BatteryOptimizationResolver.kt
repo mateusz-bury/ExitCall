@@ -34,15 +34,18 @@ class BatteryOptimizationResolver(
     }
 
     fun settingsIntent(): Intent {
+        val appDetailsSettings = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.parse("package:${appContext.packageName}")
+        )
         val batteryOptimizationSettings = Intent(
             Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
         )
 
-        return batteryOptimizationSettings.takeIf {
-            it.resolveActivity(appContext.packageManager) != null
-        } ?: Intent(
-            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-            Uri.parse("package:${appContext.packageName}")
-        )
+        return runCatching {
+            batteryOptimizationSettings.takeIf {
+                it.resolveActivity(appContext.packageManager) != null
+            }
+        }.getOrNull() ?: appDetailsSettings
     }
 }
