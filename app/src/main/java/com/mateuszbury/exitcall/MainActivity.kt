@@ -22,6 +22,8 @@ import com.mateuszbury.exitcall.model.CallConfig
 import com.mateuszbury.exitcall.model.CallConfigStore
 import com.mateuszbury.exitcall.model.OnboardingStore
 import com.mateuszbury.exitcall.model.ScheduledCallStore
+import com.mateuszbury.exitcall.power.BatteryOptimizationResolver
+import com.mateuszbury.exitcall.power.BatteryOptimizationStatus
 import com.mateuszbury.exitcall.scheduler.ScheduledCallScheduler
 import com.mateuszbury.exitcall.ui.MainApp
 import com.mateuszbury.exitcall.ui.screens.DemoCallFlow
@@ -33,10 +35,14 @@ class MainActivity : ComponentActivity() {
     private lateinit var scheduledCallStore: ScheduledCallStore
     private lateinit var scheduledCallScheduler: ScheduledCallScheduler
     private lateinit var capabilityResolver: CallCapabilityResolver
+    private lateinit var batteryOptimizationResolver: BatteryOptimizationResolver
     private lateinit var appSettingsStore: AppSettingsStore
 
     private var scheduledCallAtMillis by mutableStateOf<Long?>(null)
     private var capabilityIssue by mutableStateOf<CallCapability?>(null)
+    private var batteryOptimizationStatus by mutableStateOf(
+        BatteryOptimizationStatus.UNKNOWN
+    )
     private var appSettings by mutableStateOf(AppSettings())
     private var callConfig by mutableStateOf(CallConfig())
     private var onboardingCompleted by mutableStateOf(false)
@@ -47,7 +53,7 @@ class MainActivity : ComponentActivity() {
 
     private var pendingCapabilityAction: (() -> Unit)? = null
     private var pendingRequiresExactAlarm = false
-    private var waitingForCapabilitySettings = false
+    private var waitingForSystemSettings = false
     private var notificationPermissionRequestedThisSession = false
     private var onboardingNotificationRequestInFlight = false
 
@@ -204,19 +210,19 @@ class MainActivity : ComponentActivity() {
 
     private fun openCapabilitySettings(intent: Intent) {
         capabilityIssue = null
-        waitingForCapabilitySettings = true
+        waitingForSystemSettings = true
 
         runCatching {
             startActivity(intent)
         }.onFailure {
-            waitingForCapabilitySettings = true
+            waitingForSystemSettings = true
 
             runCatching {
                 startActivity(
                     capabilityResolver.appDetailsSettingsIntent()
                 )
             }.onFailure {
-                waitingForCapabilitySettings = false
+                waitingForSystemSettings = false
                 refreshCapabilityAvailability()
 
                 if (pendingCapabilityAction != null) {
@@ -227,6 +233,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun openBatteryOptimizationSettings() {
+        openCapabilitySettings(
+            batteryOptimizationResolver.settingsIntent()
+        )
+    }
+
+    private fun refreshBatteryOptimizationStatus() {
+        if (!::batteryOptimizationResolver.isInitialized) {
+            return
+        }
+
+        batteryOptimizationStatus =
+            batteryOptimizationResolver.currentStatus()
     }
 
     private fun refreshCapabilityAvailability() {
@@ -284,8 +305,10 @@ class MainActivity : ComponentActivity() {
             context = this,
             scheduledCallScheduler = scheduledCallScheduler
         )
+        batteryOptimizationResolver = BatteryOptimizationResolver(this)
 
         refreshCapabilityAvailability()
+        refreshBatteryOptimizationStatus()
         scheduledCallScheduler.restorePersistedCall()
         scheduledCallAtMillis = scheduledCallStore.load()
 
@@ -335,6 +358,8 @@ class MainActivity : ComponentActivity() {
                             scheduledCallAtMillis = scheduledCallAtMillis,
                             capabilityIssue = capabilityIssue,
                             capabilityAvailability = capabilityAvailability,
+                            batteryOptimizationStatus =
+                                batteryOptimizationStatus,
                             canRequestNotificationPermission =
                                 canRequestNotificationRuntimePermission(),
                             appVersionName = BuildConfig.VERSION_NAME,
@@ -364,6 +389,9 @@ class MainActivity : ComponentActivity() {
                             onOpenCapabilitySettings = { capability ->
                                 openCapabilitySettings(capability)
                             },
+                            onOpenBatteryOptimizationSettings = {
+                                openBatteryOptimizationSettings()
+                            },
                             onCapabilityConfirm = { capability ->
                                 handleCapabilityAction(capability)
                             },
@@ -385,9 +413,10 @@ class MainActivity : ComponentActivity() {
         }
 
         refreshCapabilityAvailability()
+        refreshBatteryOptimizationStatus()
 
-        if (waitingForCapabilitySettings) {
-            waitingForCapabilitySettings = false
+        if (waitingForSystemSettings) {
+            waitingForSystemSettings = false
 
             if (pendingCapabilityAction != null) {
                 continuePendingCapabilityAction()
